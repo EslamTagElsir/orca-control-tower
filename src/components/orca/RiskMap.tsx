@@ -166,7 +166,6 @@ export default function RiskMap({
     };
   }, []);
 
-
   /* Markers ----------------------------------------------------------- */
   useEffect(() => {
     const map = mapRef.current;
