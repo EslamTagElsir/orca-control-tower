@@ -24,14 +24,20 @@ function upstreamBase(): string | null {
   return raw.replace(/\/+$/, "");
 }
 
+/**
+ * Fixture mode is a normal operating state, not an HTTP failure, so these
+ * responses are 200 with an explicit envelope. Returning 5xx made the browser
+ * surface them as runtime errors.
+ */
 function unconfigured(): Response {
   return Response.json(
     {
+      orca_unavailable: true,
       error: "orca_api_not_configured",
       detail:
         "No ORCA_API_INTERNAL_URL is configured for this environment. The client will operate on labelled offline fixture data.",
     },
-    { status: 503, headers: { "cache-control": "no-store" } },
+    { status: 200, headers: { "cache-control": "no-store" } },
   );
 }
 
@@ -70,8 +76,8 @@ async function forward(request: Request, splat: string): Promise<Response> {
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unknown upstream error";
     return Response.json(
-      { error: "orca_api_unreachable", detail },
-      { status: 502, headers: { "cache-control": "no-store" } },
+      { orca_unavailable: true, error: "orca_api_unreachable", detail },
+      { status: 200, headers: { "cache-control": "no-store" } },
     );
   } finally {
     clearTimeout(timer);
