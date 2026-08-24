@@ -183,7 +183,10 @@ export class SimulationEngine {
     const active: SimShipment[] = [];
     const events: SimEvent[] = [];
     for (let i = 0; i < bootstrap; i++) {
-      const shipment = this.spawnShipment(0);
+      // Alternate the candidate band so the bootstrap cohort explores both ends
+      // of the model's output range. The tier still comes from /predict.
+      const shipment = this.spawnShipment(0, i % 2 === 0 ? "elevated" : "baseline");
+
       // Stagger the bootstrap cohort along its journey so the map reads as an
       // operation already under way rather than everything leaving at once.
       const head = this.rng.float(0, 0.55);
