@@ -180,7 +180,7 @@ export function LiveOpsDemo({
           </div>
 
           <div className="mt-2 flex flex-wrap gap-2">
-            <Metric label="Active" value={summary.active} hint="Scored shipments" />
+            <Metric label="Active" value={summary.active} hint="Shipments in this view" />
             <Metric
               label="In transit"
               value={summary.in_transit}
