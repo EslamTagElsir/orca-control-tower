@@ -10,7 +10,16 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as ControlTowerRouteImport } from './routes/control-tower'
+import { Route as DecisionEconomicsRouteImport } from './routes/decision-economics'
+import { Route as ExceptionsRouteImport } from './routes/exceptions'
+import { Route as ModelMonitorRouteImport } from './routes/model-monitor'
+import { Route as NetworkMapRouteImport } from './routes/network-map'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ShipmentsRouteImport } from './routes/shipments'
+import { Route as SimulatorRouteImport } from './routes/simulator'
 import { Route as ApiOrcaSplatRouteImport } from './routes/api/orca/$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -18,9 +27,54 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ControlTowerRoute = ControlTowerRouteImport.update({
   id: '/control-tower',
   path: '/control-tower',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DecisionEconomicsRoute = DecisionEconomicsRouteImport.update({
+  id: '/decision-economics',
+  path: '/decision-economics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExceptionsRoute = ExceptionsRouteImport.update({
+  id: '/exceptions',
+  path: '/exceptions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelMonitorRoute = ModelMonitorRouteImport.update({
+  id: '/model-monitor',
+  path: '/model-monitor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NetworkMapRoute = NetworkMapRouteImport.update({
+  id: '/network-map',
+  path: '/network-map',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShipmentsRoute = ShipmentsRouteImport.update({
+  id: '/shipments',
+  path: '/shipments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SimulatorRoute = SimulatorRouteImport.update({
+  id: '/simulator',
+  path: '/simulator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOrcaSplatRoute = ApiOrcaSplatRouteImport.update({
@@ -31,31 +85,104 @@ const ApiOrcaSplatRoute = ApiOrcaSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/control-tower': typeof ControlTowerRoute
+  '/decision-economics': typeof DecisionEconomicsRoute
+  '/exceptions': typeof ExceptionsRoute
+  '/model-monitor': typeof ModelMonitorRoute
+  '/network-map': typeof NetworkMapRoute
+  '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
+  '/shipments': typeof ShipmentsRoute
+  '/simulator': typeof SimulatorRoute
   '/api/orca/$': typeof ApiOrcaSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/control-tower': typeof ControlTowerRoute
+  '/decision-economics': typeof DecisionEconomicsRoute
+  '/exceptions': typeof ExceptionsRoute
+  '/model-monitor': typeof ModelMonitorRoute
+  '/network-map': typeof NetworkMapRoute
+  '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
+  '/shipments': typeof ShipmentsRoute
+  '/simulator': typeof SimulatorRoute
   '/api/orca/$': typeof ApiOrcaSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/control-tower': typeof ControlTowerRoute
+  '/decision-economics': typeof DecisionEconomicsRoute
+  '/exceptions': typeof ExceptionsRoute
+  '/model-monitor': typeof ModelMonitorRoute
+  '/network-map': typeof NetworkMapRoute
+  '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
+  '/shipments': typeof ShipmentsRoute
+  '/simulator': typeof SimulatorRoute
   '/api/orca/$': typeof ApiOrcaSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/control-tower' | '/api/orca/$'
+  fullPaths:
+    | '/'
+    | '/analytics'
+    | '/control-tower'
+    | '/decision-economics'
+    | '/exceptions'
+    | '/model-monitor'
+    | '/network-map'
+    | '/reports'
+    | '/settings'
+    | '/shipments'
+    | '/simulator'
+    | '/api/orca/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/control-tower' | '/api/orca/$'
-  id: '__root__' | '/' | '/control-tower' | '/api/orca/$'
+  to:
+    | '/'
+    | '/analytics'
+    | '/control-tower'
+    | '/decision-economics'
+    | '/exceptions'
+    | '/model-monitor'
+    | '/network-map'
+    | '/reports'
+    | '/settings'
+    | '/shipments'
+    | '/simulator'
+    | '/api/orca/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/analytics'
+    | '/control-tower'
+    | '/decision-economics'
+    | '/exceptions'
+    | '/model-monitor'
+    | '/network-map'
+    | '/reports'
+    | '/settings'
+    | '/shipments'
+    | '/simulator'
+    | '/api/orca/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnalyticsRoute: typeof AnalyticsRoute
   ControlTowerRoute: typeof ControlTowerRoute
+  DecisionEconomicsRoute: typeof DecisionEconomicsRoute
+  ExceptionsRoute: typeof ExceptionsRoute
+  ModelMonitorRoute: typeof ModelMonitorRoute
+  NetworkMapRoute: typeof NetworkMapRoute
+  ReportsRoute: typeof ReportsRoute
+  SettingsRoute: typeof SettingsRoute
+  ShipmentsRoute: typeof ShipmentsRoute
+  SimulatorRoute: typeof SimulatorRoute
   ApiOrcaSplatRoute: typeof ApiOrcaSplatRoute
 }
 
@@ -68,11 +195,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/control-tower': {
       id: '/control-tower'
       path: '/control-tower'
       fullPath: '/control-tower'
       preLoaderRoute: typeof ControlTowerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/decision-economics': {
+      id: '/decision-economics'
+      path: '/decision-economics'
+      fullPath: '/decision-economics'
+      preLoaderRoute: typeof DecisionEconomicsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/exceptions': {
+      id: '/exceptions'
+      path: '/exceptions'
+      fullPath: '/exceptions'
+      preLoaderRoute: typeof ExceptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/model-monitor': {
+      id: '/model-monitor'
+      path: '/model-monitor'
+      fullPath: '/model-monitor'
+      preLoaderRoute: typeof ModelMonitorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/network-map': {
+      id: '/network-map'
+      path: '/network-map'
+      fullPath: '/network-map'
+      preLoaderRoute: typeof NetworkMapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shipments': {
+      id: '/shipments'
+      path: '/shipments'
+      fullPath: '/shipments'
+      preLoaderRoute: typeof ShipmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/simulator': {
+      id: '/simulator'
+      path: '/simulator'
+      fullPath: '/simulator'
+      preLoaderRoute: typeof SimulatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/orca/$': {
@@ -87,7 +277,16 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnalyticsRoute: AnalyticsRoute,
   ControlTowerRoute: ControlTowerRoute,
+  DecisionEconomicsRoute: DecisionEconomicsRoute,
+  ExceptionsRoute: ExceptionsRoute,
+  ModelMonitorRoute: ModelMonitorRoute,
+  NetworkMapRoute: NetworkMapRoute,
+  ReportsRoute: ReportsRoute,
+  SettingsRoute: SettingsRoute,
+  ShipmentsRoute: ShipmentsRoute,
+  SimulatorRoute: SimulatorRoute,
   ApiOrcaSplatRoute: ApiOrcaSplatRoute,
 }
 export const routeTree = rootRouteImport
