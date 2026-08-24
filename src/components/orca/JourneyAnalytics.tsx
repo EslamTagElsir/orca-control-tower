@@ -690,7 +690,7 @@ export function JourneyAnalyticsView({ data }: { data: JourneyAnalyticsData }) {
     <div className="space-y-3">
       <TemporalStrip />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 2xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
         <KpiStat
           label="Completed Journeys"
           value={num(kpis.completed)}
