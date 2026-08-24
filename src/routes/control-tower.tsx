@@ -196,12 +196,17 @@ function ControlTowerBody({
         remainingMs={demo.remainingMs}
         elapsedMs={demo.elapsedMs}
         summary={demo.summary}
+        runId={demo.runId}
+        mix={demo.mix}
+        whatIfs={demo.whatIfs}
+        castSize={demo.castSize}
         onStart={demo.start}
         onPause={demo.pause}
         onResume={demo.resume}
         onStop={demo.stop}
         onRestart={demo.restart}
       />
+
 
       <div className="grid gap-3 xl:grid-cols-3">
         <Panel className="xl:col-span-2">
