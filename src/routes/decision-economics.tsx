@@ -15,7 +15,11 @@ function DecisionEconomicsPage() {
     <RouteShell
       title="Decision Economics"
       subtitle="Exposure, benefit and net-benefit ledger per shipment."
-      endpoints={["GET /api/orca/demo/overview", "POST /api/orca/demo/scenario", "POST /api/orca/recommend"]}
+      endpoints={[
+        "GET /api/orca/demo/overview",
+        "POST /api/orca/demo/scenario",
+        "POST /api/orca/recommend",
+      ]}
     />
   );
 }

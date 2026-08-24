@@ -47,15 +47,22 @@ export function EventStream({
               onClick={() => onSelect(event.shipment_id)}
               className="group flex w-full items-start gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-surface-raised"
             >
-              <Icon className={cn("mt-0.5 size-3.5 shrink-0", TYPE_TONE[event.event_type])} aria-hidden />
-              <span className="orca-num shrink-0 text-[11px] text-muted-foreground">{event.timestamp}</span>
+              <Icon
+                className={cn("mt-0.5 size-3.5 shrink-0", TYPE_TONE[event.event_type])}
+                aria-hidden
+              />
+              <span className="orca-num shrink-0 text-[11px] text-muted-foreground">
+                {event.timestamp}
+              </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xs text-foreground/90">{event.detail}</span>
                 <span className="mt-0.5 flex items-center gap-1.5">
                   <span className="orca-num text-[10px] text-muted-foreground">
                     {event.event_type} · {event.shipment_id}
                   </span>
-                  <span className="truncate text-[10px] text-muted-foreground/60">{event.provenance}</span>
+                  <span className="truncate text-[10px] text-muted-foreground/60">
+                    {event.provenance}
+                  </span>
                 </span>
               </span>
               {tier ? (

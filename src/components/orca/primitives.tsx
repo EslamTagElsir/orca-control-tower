@@ -8,14 +8,12 @@ import { pct } from "@/lib/orca/format";
 
 /* ---------------------------------------------------------------- Panel */
 
-export function Panel({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
-  return <section className={cn("orca-panel flex flex-col overflow-hidden", className)}>{children}</section>;
+export function Panel({ className, children }: { className?: string; children: ReactNode }) {
+  return (
+    <section className={cn("orca-panel flex flex-col overflow-hidden", className)}>
+      {children}
+    </section>
+  );
 }
 
 export function PanelHeader({

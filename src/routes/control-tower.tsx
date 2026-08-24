@@ -96,8 +96,8 @@ function ControlTower() {
         >
           <span className="font-semibold tracking-wide">{FIXTURE_NOTICE}</span>
           <span className="text-danger/80">
-            The ORCA API is unreachable{reason ? ` (${reason})` : ""}. Every figure below is deterministic
-            stand-in data and must not be read as a model output.
+            The ORCA API is unreachable{reason ? ` (${reason})` : ""}. Every figure below is
+            deterministic stand-in data and must not be read as a model output.
           </span>
         </div>
       ) : null}
@@ -106,8 +106,8 @@ function ControlTower() {
         <div>
           <h1 className="text-lg font-semibold tracking-tight">Control Tower</h1>
           <p className="text-xs text-muted-foreground">
-            Portfolio of {num(overview.kpis.active_shipments)} scored shipments · seed {overview.seed} · model{" "}
-            {overview.model_version}
+            Portfolio of {num(overview.kpis.active_shipments)} scored shipments · seed{" "}
+            {overview.seed} · model {overview.model_version}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -124,7 +124,10 @@ function ControlTower() {
             onClick={() => query.refetch()}
             className="inline-flex items-center gap-1.5 rounded-md border border-hairline bg-surface px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
-            <RefreshCw className={query.isFetching ? "size-3.5 animate-spin" : "size-3.5"} aria-hidden />
+            <RefreshCw
+              className={query.isFetching ? "size-3.5 animate-spin" : "size-3.5"}
+              aria-hidden
+            />
             Refresh
           </button>
         </div>

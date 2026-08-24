@@ -16,10 +16,7 @@ import { createFileRoute } from "@tanstack/react-router";
 const UPSTREAM_TIMEOUT_MS = 8000;
 
 function upstreamBase(): string | null {
-  const raw =
-    process.env["ORCA_API_INTERNAL_URL"] ??
-    process.env["ORCA_API_URL"] ??
-    null;
+  const raw = process.env["ORCA_API_INTERNAL_URL"] ?? process.env["ORCA_API_URL"] ?? null;
   if (!raw) return null;
   return raw.replace(/\/+$/, "");
 }

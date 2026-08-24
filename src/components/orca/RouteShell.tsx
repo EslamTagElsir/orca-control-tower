@@ -47,8 +47,8 @@ export function RouteShell({
         <PanelBody className="space-y-3">
           <p className="flex items-start gap-2 text-xs text-muted-foreground">
             <Construction className="mt-0.5 size-3.5 shrink-0 text-warn" aria-hidden />
-            This screen is scaffolded next. It will read exclusively from the endpoints below — no new
-            metrics or time series are fabricated in the UI.
+            This screen is scaffolded next. It will read exclusively from the endpoints below — no
+            new metrics or time series are fabricated in the UI.
           </p>
           <ul className="space-y-1">
             {endpoints.map((endpoint) => (

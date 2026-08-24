@@ -73,9 +73,14 @@ function economics(p: number, severity: number) {
   const expected_exposure = p * Math.max(severity, 0) * delayCost;
   const expected_benefit = p * Math.min(Math.max(severity, 0), efficacy) * delayCost;
   const net_benefit = expected_benefit - intervention;
-  const recommendation =
-    p < 0.3 ? "NO_ACTION" : net_benefit > 0 ? "INTERVENE" : "MONITOR";
-  return { expected_exposure, expected_benefit, intervention_cost: intervention, net_benefit, recommendation } as const;
+  const recommendation = p < 0.3 ? "NO_ACTION" : net_benefit > 0 ? "INTERVENE" : "MONITOR";
+  return {
+    expected_exposure,
+    expected_benefit,
+    intervention_cost: intervention,
+    net_benefit,
+    recommendation,
+  } as const;
 }
 
 function buildPortfolio(seed: number, n = 120): OrcaShipment[] {
@@ -119,7 +124,8 @@ function buildPortfolio(seed: number, n = 120): OrcaShipment[] {
 }
 
 function attentionScore(s: OrcaShipment): number {
-  const prio = s.customer_priority === "CRITICAL" ? 0.15 : s.customer_priority === "PRIORITY" ? 0.08 : 0;
+  const prio =
+    s.customer_priority === "CRITICAL" ? 0.15 : s.customer_priority === "PRIORITY" ? 0.08 : 0;
   return s.risk * 0.65 + (Math.max(s.eta_variance_hours, 0) / 48) * 0.2 + prio;
 }
 
@@ -139,9 +145,11 @@ function buildEvents(portfolio: OrcaShipment[], seed: number, count = 24): OrcaE
     const [typ, label] = types[i % types.length]!;
     let detail = label;
     if (typ === "MODEL") detail = `Model refresh: late probability ${(s.risk * 100).toFixed(1)}%`;
-    else if (typ === "DECISION") detail = `Decision support refreshed: ${s.decision.replace(/_/g, " ")}`;
+    else if (typ === "DECISION")
+      detail = `Decision support refreshed: ${s.decision.replace(/_/g, " ")}`;
     else if (typ === "EXCEPTION") detail = `Fixture exception on ${s.destination} lane`;
-    else if (typ === "ETA") detail = `Fixture ETA variance ${s.eta_variance_hours >= 0 ? "+" : ""}${s.eta_variance_hours.toFixed(1)}h`;
+    else if (typ === "ETA")
+      detail = `Fixture ETA variance ${s.eta_variance_hours >= 0 ? "+" : ""}${s.eta_variance_hours.toFixed(1)}h`;
     const t = start + i * 11;
     const hh = String(Math.floor(t / 3600) % 24).padStart(2, "0");
     const mm = String(Math.floor((t % 3600) / 60)).padStart(2, "0");
@@ -177,7 +185,11 @@ export function fixtureOverview(seed = 20260823): OverviewResponse {
     byDestination.set(s.destination, cur);
   }
   const top_destinations: TopDestination[] = [...byDestination.entries()]
-    .map(([destination, v]) => ({ destination, risk: v.risk / v.shipments, shipments: v.shipments }))
+    .map(([destination, v]) => ({
+      destination,
+      risk: v.risk / v.shipments,
+      shipments: v.shipments,
+    }))
     .sort((a, b) => b.risk - a.risk || b.shipments - a.shipments)
     .slice(0, 5);
 
@@ -196,7 +208,9 @@ export function fixtureOverview(seed = 20260823): OverviewResponse {
       critical_exceptions: frame.filter((s) => s.risk >= 0.45).length,
       intervention_candidates: frame.filter((s) => s.decision === "INTERVENE").length,
       estimated_exposure: frame.reduce((a, s) => a + s.expected_exposure, 0),
-      potential_net_benefit: frame.filter((s) => s.net_benefit > 0).reduce((a, s) => a + s.net_benefit, 0),
+      potential_net_benefit: frame
+        .filter((s) => s.net_benefit > 0)
+        .reduce((a, s) => a + s.net_benefit, 0),
       modeled_on_time_likelihood: Math.max(0, 1 - mean),
       average_risk: mean,
     },
@@ -223,7 +237,11 @@ export function fixtureShipment(shipmentId: string, seed = 20260823): ShipmentDe
     "Weight (Kilograms)",
   ].map((feature) => {
     const shap = (r() - 0.35) * 0.9;
-    return { feature, shap_value: shap, direction: shap > 0 ? ("raises" as const) : ("reduces" as const) };
+    return {
+      feature,
+      shap_value: shap,
+      direction: shap > 0 ? ("raises" as const) : ("reduces" as const),
+    };
   });
 
   return {
@@ -243,7 +261,9 @@ export function fixtureShipment(shipmentId: string, seed = 20260823): ShipmentDe
     severity_interval_90: s.severity_interval_90,
     model_version: "fixture",
     shipment_mode: ["Air", "Ocean", "Truck", "Air Charter"][Math.floor(r() * 4)]!,
-    vendor: ["SCMS from RDC", "Orgenics, Ltd", "Aurobindo Pharma Ltd", "Ranbaxy Fine Chemicals"][Math.floor(r() * 4)]!,
+    vendor: ["SCMS from RDC", "Orgenics, Ltd", "Aurobindo Pharma Ltd", "Ranbaxy Fine Chemicals"][
+      Math.floor(r() * 4)
+    ]!,
     fulfill_via: r() > 0.5 ? "Direct Drop" : "From RDC",
     line_item_value: Math.round(r() * 480000),
     risk_drivers: drivers.sort((a, b) => Math.abs(b.shap_value) - Math.abs(a.shap_value)),

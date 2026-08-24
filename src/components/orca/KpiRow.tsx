@@ -1,11 +1,4 @@
-import {
-  AlertTriangle,
-  CircleDollarSign,
-  Gauge,
-  ShieldAlert,
-  Target,
-  Truck,
-} from "lucide-react";
+import { AlertTriangle, CircleDollarSign, Gauge, ShieldAlert, Target, Truck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -46,11 +39,20 @@ function KpiCard({
     <article className="orca-panel relative flex min-w-0 flex-col gap-2.5 p-3.5">
       <div className="flex items-start justify-between gap-2">
         <h3 className={cn("orca-label leading-4", t.text)}>{label}</h3>
-        <span className={cn("grid size-7 shrink-0 place-items-center rounded-md border", t.ring, t.bg, t.text)}>
+        <span
+          className={cn(
+            "grid size-7 shrink-0 place-items-center rounded-md border",
+            t.ring,
+            t.bg,
+            t.text,
+          )}
+        >
           <Icon className="size-3.5" aria-hidden />
         </span>
       </div>
-      <p className="orca-num truncate text-[26px] font-semibold leading-none tracking-tight">{value}</p>
+      <p className="orca-num truncate text-[26px] font-semibold leading-none tracking-tight">
+        {value}
+      </p>
       <div className="flex items-start gap-1.5">
         <p
           className="min-w-0 flex-1 text-[11px] leading-4 text-balance text-muted-foreground"
