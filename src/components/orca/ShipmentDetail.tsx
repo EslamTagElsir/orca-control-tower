@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Check, CircleDot, Circle, TrendingDown, TrendingUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useHydrated } from "@/hooks/use-hydrated";
 import { shipmentQuery } from "@/lib/orca/client";
 import { useOrca } from "@/lib/orca/context";
 import { days, featureLabel, hours, moneyExact, pct } from "@/lib/orca/format";
@@ -95,7 +96,9 @@ function RiskDrivers({ drivers }: { drivers: ShipmentDetailResponse["risk_driver
 
 export function ShipmentDetail({ shipmentId }: { shipmentId: string | null }) {
   const { seed } = useOrca();
-  const query = useQuery(shipmentQuery(shipmentId, seed));
+  const hydrated = useHydrated();
+  const base = shipmentQuery(shipmentId, seed);
+  const query = useQuery({ ...base, enabled: hydrated && base.enabled });
 
   if (!shipmentId)
     return <PanelEmpty message="Select a shipment from the map, stream or exception queue." />;
