@@ -10,9 +10,9 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { OrcaProvider } from "../lib/orca/context";
-import { AppShell } from "../components/orca/AppShell";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { OrcaProvider } from "@/lib/orca/context";
+import { AppShell } from "@/components/orca/AppShell";
+import { reportLovableError } from "@/lib/lovable-error-reporting";
 
 function NotFoundComponent() {
   return (
