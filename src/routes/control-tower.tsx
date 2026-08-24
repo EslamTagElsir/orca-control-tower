@@ -199,7 +199,9 @@ function ControlTowerBody({
         runId={demo.runId}
         mix={demo.mix}
         whatIfs={demo.whatIfs}
+        whatIfsPlanned={demo.whatIfsPlanned}
         castSize={demo.castSize}
+        fixtureMode={source === "fixture"}
         onStart={demo.start}
         onPause={demo.pause}
         onResume={demo.resume}
