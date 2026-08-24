@@ -15,7 +15,7 @@
 
 import { makeRng, newSeed, runIdFromSeed, type Rng } from "../prng";
 import { riskTier } from "../risk";
-import type { FeatureMap } from "../source-data";
+import { rowToFeatures, type FeatureMap } from "../source-data";
 import type { PredictResponse, RecommendResponse, DecisionAction } from "../types";
 import {
   applyShock,
@@ -26,6 +26,7 @@ import {
   stageDetail,
   stageFamily,
 } from "./event-engine";
+import type { TargetBand } from "./mutation-profiles";
 import { createAutomaticGeneratorSource } from "./shipment-generator";
 import { advance } from "./route-engine";
 import {
@@ -129,6 +130,8 @@ export class SimulationEngine {
   private sequence = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastTickAt = 0;
+  /** Verbatim /predict responses keyed by templateId|candidateKey (identical feature rows). */
+  private predictCache = new Map<string, PredictResponse>();
 
   /* -------------------- store contract -------------------- */
 
@@ -162,6 +165,7 @@ export class SimulationEngine {
     this.queue = [];
     this.inFlight = 0;
     this.sequence = 0;
+    this.predictCache.clear();
 
     const startedAtEpoch = Date.now();
     this.snapshot = {
@@ -178,7 +182,10 @@ export class SimulationEngine {
     const active: SimShipment[] = [];
     const events: SimEvent[] = [];
     for (let i = 0; i < bootstrap; i++) {
-      const shipment = this.spawnShipment(0);
+      // Alternate the candidate band so the bootstrap cohort explores both ends
+      // of the model's output range. The tier still comes from /predict.
+      const shipment = this.spawnShipment(0, i % 2 === 0 ? "elevated" : "baseline");
+
       // Stagger the bootstrap cohort along its journey so the map reads as an
       // operation already under way rather than everything leaving at once.
       const head = this.rng.float(0, 0.55);
@@ -459,12 +466,13 @@ export class SimulationEngine {
 
   /* -------------------- spawning -------------------- */
 
-  private spawnShipment(simClockMs: number): SimShipment {
+  private spawnShipment(simClockMs: number, band?: TargetBand): SimShipment {
     this.sequence += 1;
     const shipment = this.source.next({
       simClockMs,
       sequence: this.sequence,
       runId: this.snapshot.runId,
+      targetBand: band ?? this.pickBand(),
     });
     this.enqueueScore({
       shipmentId: shipment.id,
@@ -474,6 +482,74 @@ export class SimulationEngine {
     });
     shipment.lastScoreRequestAt = simClockMs - SIM_CONFIG.rescoreCooldownMs;
     return shipment;
+  }
+
+  /**
+   * Chooses which candidate band the next shipment aims at, based on the tiers
+   * the MODEL has actually returned for the current population. This only
+   * selects an input recipe to try — it never writes a tier.
+   */
+  private pickBand(): TargetBand {
+    const scored = this.snapshot.active.filter((s) => s.model.phase === "scored");
+    if (scored.length >= 4) {
+      const elevated = scored.filter(
+        (s) => s.model.tier !== "LOW_RISK" && s.model.tier !== "UNSCORED",
+      ).length;
+      const share = elevated / scored.length;
+      if (share < 0.35) return "elevated";
+      if (share > 0.6) return "baseline";
+    }
+    return this.rng.chance(0.5) ? "elevated" : "baseline";
+  }
+
+  /**
+   * Bounded creation-time candidate search. Each candidate is a real /predict
+   * call on a bounded, in-domain pre-outcome feature state; the engine simply
+   * keeps the candidate the MODEL rated highest and stops as soon as the model
+   * leaves the LOW band. Identical feature rows reuse the verbatim cached
+   * /predict response instead of re-calling the backend.
+   */
+  private async searchCandidates(
+    shipment: SimShipment,
+    port: ModelPort,
+  ): Promise<{ prediction: PredictResponse; networkCalls: number }> {
+    const candidates =
+      shipment.candidates.length > 0
+        ? shipment.candidates
+        : [{ key: "as_planned", label: "As planned (unmodified template)", raw: shipment.raw }];
+
+    let best: { candidate: (typeof candidates)[number]; prediction: PredictResponse } | null = null;
+    let networkCalls = 0;
+    const trace: string[] = [];
+
+    for (const candidate of candidates) {
+      const cacheKey = `${shipment.templateId}|${candidate.key}`;
+      const cached = this.predictCache.get(cacheKey);
+      let prediction = cached;
+      if (!prediction) {
+        prediction = await port.predict(rowToFeatures(candidate.raw));
+        networkCalls += 1;
+        this.predictCache.set(cacheKey, prediction);
+      }
+      const tier = prediction.risk_tier ?? riskTier(prediction.probability_late);
+      trace.push(
+        `${candidate.label} → ORCA risk ${prediction.probability_late.toFixed(3)} · tier ${tier}${cached ? " (cached model output for an identical feature row)" : ""}`,
+      );
+      if (!best || prediction.probability_late > best.prediction.probability_late) {
+        best = { candidate, prediction };
+      }
+      if (shipment.targetBand === "baseline") break;
+      if (prediction.probability_late > 0.3) break;
+    }
+
+    const chosen = best!;
+    shipment.raw = chosen.candidate.raw;
+    shipment.features = rowToFeatures(chosen.candidate.raw);
+    shipment.appliedProfiles =
+      chosen.candidate.key === "as_planned" ? [] : [chosen.candidate.label];
+    shipment.candidateSearch = trace;
+    shipment.candidates = [];
+    return { prediction: chosen.prediction, networkCalls: Math.max(networkCalls, 0) };
   }
 
   /* -------------------- model calls -------------------- */
@@ -503,7 +579,6 @@ export class SimulationEngine {
   private async score(shipment: SimShipment, request: ScoreRequest) {
     const port = this.port;
     if (!port) return;
-    const features = shipment.features;
     const previousRisk = shipment.model.risk;
     const previousTier =
       shipment.model.phase === "scored" && shipment.model.tier !== "UNSCORED"
@@ -511,9 +586,12 @@ export class SimulationEngine {
         : null;
 
     try {
-      const prediction = await port.predict(features);
+      const searched = request.reason === "initial";
+      const { prediction, networkCalls } = searched
+        ? await this.searchCandidates(shipment, port)
+        : { prediction: await port.predict(shipment.features), networkCalls: 1 };
       const metrics = { ...this.snapshot.metrics };
-      metrics.predictCalls += 1;
+      metrics.predictCalls += networkCalls;
       if (request.reason === "shock") metrics.rescores += 1;
 
       const tier = prediction.risk_tier ?? riskTier(prediction.probability_late);
@@ -533,10 +611,14 @@ export class SimulationEngine {
         recommendation: shipment.model.recommendation,
       };
 
+      const searchSuffix =
+        searched && shipment.candidateSearch.length > 1
+          ? ` · ${shipment.candidateSearch.length} candidate feature states scored, highest ORCA output kept`
+          : "";
       const detail =
         request.reason === "shock"
           ? `Re-scored after ${request.detail} · risk ${(previousRisk ?? 0).toFixed(3)} → ${prediction.probability_late.toFixed(3)} · tier ${tier}`
-          : `Scored by ORCA · risk ${prediction.probability_late.toFixed(3)} · tier ${tier} · ${prediction.model_version}`;
+          : `Scored by ORCA · risk ${prediction.probability_late.toFixed(3)} · tier ${tier} · ${prediction.model_version}${searchSuffix}`;
 
       const event = makeEvent({
         startedAtEpoch: this.snapshot.startedAtEpoch,
@@ -547,7 +629,11 @@ export class SimulationEngine {
         provenance: request.reason === "shock" ? SIM_PROVENANCE.shockResult : SIM_PROVENANCE.model,
         riskBefore: previousRisk,
         riskAfter: prediction.probability_late,
-        ...(request.audit.length > 0 ? { featureAudit: request.audit } : {}),
+        ...(request.audit.length > 0
+          ? { featureAudit: request.audit }
+          : searched && shipment.candidateSearch.length > 1
+            ? { featureAudit: shipment.candidateSearch }
+            : {}),
       });
 
       this.snapshot = {

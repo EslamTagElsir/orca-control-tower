@@ -13,11 +13,11 @@
  * Framework-agnostic: plain TypeScript.
  */
 
-import { holdoutJourneys } from "../holdout-data";
+import { holdoutJourneys, type HoldoutJourney } from "../holdout-data";
 import { rowToFeatures } from "../source-data";
 import type { Rng } from "../prng";
 import { buildWaypoints, destinationCentroid, distanceKm, siteCentroid, siteLabel } from "./geo";
-import { pickBiasProfile, pickShockProfile } from "./mutation-profiles";
+import { candidateLadder, pickShockProfile, type TargetBand } from "./mutation-profiles";
 import { nextMilestoneFor } from "./route-engine";
 import { UNSCORED_MODEL, type PlannedShock, type ShipmentSource, type SimShipment } from "./types";
 
@@ -36,14 +36,35 @@ function runShort(runId: string): string {
   return runId.replace(/^RUN-/, "");
 }
 
+/**
+ * Real-signal template weight for the ELEVATED band. Empirically, the ORCA
+ * model rates "From RDC" + Air lanes highest even before any candidate
+ * escalation, so an elevated search that starts there has the most model
+ * headroom. This only biases which REAL row is used as the feature template —
+ * the resulting tier is always whatever /predict returns.
+ */
+function signalWeight(j: HoldoutJourney): number {
+  const rdc = /from rdc/i.test(j.raw["Fulfill Via"] ?? "") ? 1 : 0;
+  const air = /air/i.test(j.raw["Shipment Mode"] ?? "") ? 0.6 : 0;
+  const n = (k: string) => {
+    const v = Number(j.raw[k]);
+    return Number.isFinite(v) ? v : 0;
+  };
+  const signals =
+    n("country_hist_delay_rate") * 2 + n("site_hist_delay_rate") + n("vendor_hist_delay_rate");
+  return 0.05 + rdc * 3 + air + signals;
+}
+
 export function createAutomaticGeneratorSource(rng: Rng): ShipmentSource {
   const templates = holdoutJourneys().filter((j) => j.raw["Manufacturing Site"]);
+  const weighted = templates.map((item) => ({ item, weight: signalWeight(item) }));
 
   return {
     kind: "automatic",
     label: "Automatic operational generator",
-    next({ simClockMs, sequence, runId }) {
-      const template = rng.pick(templates);
+    next({ simClockMs, sequence, runId, targetBand }) {
+      const band: TargetBand = targetBand ?? (rng.chance(0.55) ? "elevated" : "baseline");
+      const template = band === "elevated" ? rng.weighted(weighted) : rng.pick(templates);
 
       // Template features only — outcomes are removed from the twin.
       const raw: Record<string, string> = { ...template.raw };
@@ -51,8 +72,9 @@ export function createAutomaticGeneratorSource(rng: Rng): ShipmentSource {
       delete raw["Delay_Days"];
       delete raw["ID"];
 
-      const bias = pickBiasProfile(rng);
-      const biased = bias.mutate(raw);
+      const ladder = candidateLadder(band);
+      const candidates = ladder.map((p) => ({ key: p.key, label: p.label, raw: p.mutate(raw) }));
+      const first = candidates[0]!;
 
       const mode = template.shipment_mode;
       const start = siteCentroid(template.manufacturing_site);
@@ -121,11 +143,15 @@ export function createAutomaticGeneratorSource(rng: Rng): ShipmentSource {
         nextMilestone: "Dispatch from origin",
         latestEvent: null,
 
-        raw: biased,
-        features: rowToFeatures(biased),
+        raw: first.raw,
+        features: rowToFeatures(first.raw),
         featureAudit: [],
-        appliedProfiles: bias.key === "as_planned" ? [] : [bias.label],
+        appliedProfiles: first.key === "as_planned" ? [] : [first.label],
+        targetBand: band,
+        candidates,
+        candidateSearch: [],
         model: { ...UNSCORED_MODEL },
+
         plannedShocks,
         plannedPings: [rng.float(0.4, 0.52), rng.float(0.6, 0.72)],
         firedPings: [],

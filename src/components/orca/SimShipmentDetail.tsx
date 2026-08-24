@@ -190,6 +190,25 @@ export function SimShipmentDetail({ shipmentId }: { shipmentId: string | null })
         </div>
       ) : null}
 
+      {shipment.candidateSearch.length > 1 ? (
+        <div className="space-y-1.5">
+          <span className="orca-label text-[10px]">
+            Creation candidate search — {SIM_PROVENANCE.model}
+          </span>
+          <p className="text-[10px] text-muted-foreground/80">
+            Bounded in-domain candidate feature states, each scored by a real ORCA /predict call.
+            The candidate the model rated highest was kept; no tier was assigned locally.
+          </p>
+          <ul className="orca-num space-y-0.5">
+            {shipment.candidateSearch.map((line, i) => (
+              <li key={`${line}-${i}`} className="text-[10px] text-foreground/80">
+                {line}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <span className="orca-label text-[10px]">SHAP risk drivers</span>
