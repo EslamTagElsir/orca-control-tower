@@ -106,16 +106,25 @@ export default function RiskMap({
   }, []);
 
   /* Route polylines --------------------------------------------------- */
+  const routesRef = useRef(routes);
+  routesRef.current = routes;
+  const selectedRef = useRef(selectedId);
+  selectedRef.current = selectedId;
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
+    // The simulation commits a new snapshot several times per second. Feeding
+    // every commit into the GeoJSON source starves the tile worker and nothing
+    // ever paints, so route geometry is refreshed on a slow interval instead.
     const apply = () => {
       const source = map.getSource("orca-routes") as GeoJSONSource | undefined;
       if (!source) return;
-      const features = (routes ?? []).flatMap((route) => {
+      const currentSelected = selectedRef.current;
+      const features = (routesRef.current ?? []).flatMap((route) => {
         const color = TIER_MAP_HEX[route.tier];
-        const selected = route.id === selectedId;
+        const selected = route.id === currentSelected;
         return (
           [
             ["travelled", route.travelled],
@@ -132,14 +141,29 @@ export default function RiskMap({
             },
           }));
       });
-      console.log("[dbg] routes", (routes ?? []).length, "features", features.length);
       source.setData({ type: "FeatureCollection", features } as never);
     };
 
-    console.log("[dbg] effect ready=", readyRef.current, "routes=", (routes ?? []).length);
-    if (readyRef.current) apply();
-    else map.once("load", apply);
-  }, [routes, selectedId]);
+    const schedule = () => {
+      apply();
+      return setInterval(apply, ROUTE_REFRESH_MS);
+    };
+
+    if (readyRef.current) {
+      const timer = schedule();
+      return () => clearInterval(timer);
+    }
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const onLoad = () => {
+      timer = schedule();
+    };
+    map.once("load", onLoad);
+    return () => {
+      map.off("load", onLoad);
+      if (timer) clearInterval(timer);
+    };
+  }, []);
+
 
   /* Markers ----------------------------------------------------------- */
   useEffect(() => {
