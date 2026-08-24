@@ -55,7 +55,6 @@ function signalWeight(j: HoldoutJourney): number {
   return 0.05 + rdc * 3 + air + signals;
 }
 
-
 export function createAutomaticGeneratorSource(rng: Rng): ShipmentSource {
   const templates = holdoutJourneys().filter((j) => j.raw["Manufacturing Site"]);
   const weighted = templates.map((item) => ({ item, weight: signalWeight(item) }));
@@ -64,8 +63,7 @@ export function createAutomaticGeneratorSource(rng: Rng): ShipmentSource {
     kind: "automatic",
     label: "Automatic operational generator",
     next({ simClockMs, sequence, runId, targetBand }) {
-      const band: TargetBand =
-        targetBand ?? (rng.chance(0.55) ? "elevated" : "baseline");
+      const band: TargetBand = targetBand ?? (rng.chance(0.55) ? "elevated" : "baseline");
       const template = band === "elevated" ? rng.weighted(weighted) : rng.pick(templates);
 
       // Template features only — outcomes are removed from the twin.
@@ -83,7 +81,6 @@ export function createAutomaticGeneratorSource(rng: Rng): ShipmentSource {
       const end = destinationCentroid(template.country);
       const waypoints = buildWaypoints(start, end, mode);
       const km = distanceKm(start, end);
-
 
       const baseMinutes =
         rng.float(JOURNEY_MINUTES[0], JOURNEY_MINUTES[1]) * modeFactor(mode) +

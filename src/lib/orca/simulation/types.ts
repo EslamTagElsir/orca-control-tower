@@ -19,7 +19,6 @@ import type { FeatureMap } from "../source-data";
 import type { DecisionAction, DisplayTier, EventType, RiskTier } from "../types";
 import type { TargetBand } from "./mutation-profiles";
 
-
 /* ------------------------------------------------------------------ */
 /* Provenance vocabulary                                               */
 /* ------------------------------------------------------------------ */
@@ -352,5 +351,4 @@ export interface ShipmentSource {
     /** Requested creation-time candidate band; the tier still comes from /predict. */
     targetBand?: TargetBand;
   }): SimShipment;
-
 }

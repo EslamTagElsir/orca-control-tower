@@ -41,7 +41,6 @@ import {
   type SimulationSnapshot,
 } from "./types";
 
-
 /* ------------------------------------------------------------------ */
 /* Tunables                                                            */
 /* ------------------------------------------------------------------ */
@@ -134,7 +133,6 @@ export class SimulationEngine {
   /** Verbatim /predict responses keyed by templateId|candidateKey (identical feature rows). */
   private predictCache = new Map<string, PredictResponse>();
 
-
   /* -------------------- store contract -------------------- */
 
   subscribe = (listener: () => void): (() => void) => {
@@ -168,7 +166,6 @@ export class SimulationEngine {
     this.inFlight = 0;
     this.sequence = 0;
     this.predictCache.clear();
-
 
     const startedAtEpoch = Date.now();
     this.snapshot = {
@@ -555,7 +552,6 @@ export class SimulationEngine {
     return { prediction: chosen.prediction, networkCalls: Math.max(networkCalls, 0) };
   }
 
-
   /* -------------------- model calls -------------------- */
 
   private enqueueScore(request: ScoreRequest) {
@@ -624,7 +620,6 @@ export class SimulationEngine {
           ? `Re-scored after ${request.detail} · risk ${(previousRisk ?? 0).toFixed(3)} → ${prediction.probability_late.toFixed(3)} · tier ${tier}`
           : `Scored by ORCA · risk ${prediction.probability_late.toFixed(3)} · tier ${tier} · ${prediction.model_version}${searchSuffix}`;
 
-
       const event = makeEvent({
         startedAtEpoch: this.snapshot.startedAtEpoch,
         simClockMs: this.snapshot.simClockMs,
@@ -639,7 +634,6 @@ export class SimulationEngine {
           : searched && shipment.candidateSearch.length > 1
             ? { featureAudit: shipment.candidateSearch }
             : {}),
-
       });
 
       this.snapshot = {

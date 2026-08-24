@@ -212,4 +212,3 @@ export function candidateLadder(band: TargetBand): CandidateProfile[] {
   if (band === "baseline") return [CANDIDATE_PROFILES[0]!];
   return [CANDIDATE_PROFILES[1]!, CANDIDATE_PROFILES[2]!, CANDIDATE_PROFILES[3]!];
 }
-
