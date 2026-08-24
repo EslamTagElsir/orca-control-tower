@@ -131,6 +131,9 @@ export class SimulationEngine {
   private sequence = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastTickAt = 0;
+  /** Verbatim /predict responses keyed by templateId|candidateKey (identical feature rows). */
+  private predictCache = new Map<string, PredictResponse>();
+
 
   /* -------------------- store contract -------------------- */
 
