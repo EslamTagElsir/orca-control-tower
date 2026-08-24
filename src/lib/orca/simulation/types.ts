@@ -17,6 +17,8 @@
 
 import type { FeatureMap } from "../source-data";
 import type { DecisionAction, DisplayTier, EventType, RiskTier } from "../types";
+import type { TargetBand } from "./mutation-profiles";
+
 
 /* ------------------------------------------------------------------ */
 /* Provenance vocabulary                                               */
