@@ -16,7 +16,7 @@ import {
 } from "@/components/orca/primitives";
 import { KpiRow } from "@/components/orca/KpiRow";
 import { ExceptionSummary, RiskDistributionChart, TopRiskyLanes } from "@/components/orca/Charts";
-import { EventStream } from "@/components/orca/EventStream";
+import { EventStream, type StreamEvent } from "@/components/orca/EventStream";
 import { ExceptionsTable } from "@/components/orca/ExceptionsTable";
 import { ShipmentDetail } from "@/components/orca/ShipmentDetail";
 import { LiveOpsDemo } from "@/components/orca/LiveOpsDemo";
@@ -113,7 +113,7 @@ function ControlTowerBody({
 }: {
   overview: OverviewResponse;
   source: DataSource;
-  reason?: string;
+  reason?: string | undefined;
   isFetching: boolean;
   onRefresh: () => void;
 }) {
@@ -141,8 +141,8 @@ function ControlTowerBody({
     demo.phase === "idle"
       ? overview.priority_exceptions
       : overview.priority_exceptions.map(applyOps);
-  const streamEvents =
-    demo.events.length > 0 ? [...demo.events].reverse().concat(overview.events) : overview.events;
+  const streamEvents: StreamEvent[] =
+    demo.events.length > 0 ? [...[...demo.events].reverse(), ...overview.events] : overview.events;
 
   const focusId = selectedShipmentId ?? overview.priority_exceptions[0]?.id ?? null;
 
