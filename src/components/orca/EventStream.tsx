@@ -22,15 +22,19 @@ const TYPE_TONE: Record<EventType, string> = {
   DECISION: "text-primary",
 };
 
+/** Presentation-only extension: synthetic live-operations events carry a label. */
+export type StreamEvent = OrcaEvent & { ops_label?: string };
+
 export function EventStream({
   events,
   shipments,
   onSelect,
 }: {
-  events: OrcaEvent[];
+  events: StreamEvent[];
   shipments: OrcaShipment[];
   onSelect: (id: string) => void;
 }) {
+
   if (events.length === 0) return <PanelEmpty message="No events in the current feed." />;
 
   const riskById = new Map(shipments.map((s) => [s.id, s.risk]));
