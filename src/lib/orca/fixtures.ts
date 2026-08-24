@@ -82,14 +82,14 @@ function buildPortfolio(seed: number, n = 120): OrcaShipment[] {
   const r = rng(seed);
   const out: OrcaShipment[] = [];
   for (let i = 0; i < n; i++) {
-    const lane = LANES[i % LANES.length];
+    const lane = LANES[i % LANES.length]!;
     // Beta-ish skew towards lower risk with a heavy right tail.
     const base = r();
     const risk = Math.min(0.97, Math.max(0.02, Math.pow(base, 1.55) * 0.95 + r() * 0.06));
     const severity = 1.5 + Math.pow(r(), 1.3) * 22;
     const lo = Math.max(0.2, severity * 0.42);
     const hi = severity * (1.9 + r() * 0.7);
-    const status = STATUSES[Math.floor(r() * STATUSES.length)];
+    const status = STATUSES[Math.floor(r() * STATUSES.length)]!;
     const eta = Math.round((r() * 36 - 6) * 10) / 10;
     const econ = economics(risk, severity);
     out.push({
@@ -109,7 +109,7 @@ function buildPortfolio(seed: number, n = 120): OrcaShipment[] {
       net_benefit: econ.net_benefit,
       status,
       progress_pct: Math.floor(r() * 100),
-      customer_priority: PRIORITIES[Math.floor(r() * PRIORITIES.length)],
+      customer_priority: PRIORITIES[Math.floor(r() * PRIORITIES.length)]!,
       lat: lane.lat + (r() - 0.5) * 5,
       lon: lane.lon + (r() - 0.5) * 5,
       provenance: "OFFLINE FIXTURE DATA — NOT ORCA OUTPUT",
@@ -135,8 +135,8 @@ function buildEvents(portfolio: OrcaShipment[], seed: number, count = 24): OrcaE
   const start = 18 * 3600 + 30 * 60;
   const events: OrcaEvent[] = [];
   for (let i = 0; i < count; i++) {
-    const s = portfolio[Math.floor(r() * portfolio.length)];
-    const [typ, label] = types[i % types.length];
+    const s = portfolio[Math.floor(r() * portfolio.length)]!;
+    const [typ, label] = types[i % types.length]!;
     let detail = label;
     if (typ === "MODEL") detail = `Model refresh: late probability ${(s.risk * 100).toFixed(1)}%`;
     else if (typ === "DECISION") detail = `Decision support refreshed: ${s.decision.replace(/_/g, " ")}`;
@@ -211,7 +211,7 @@ export function fixtureOverview(seed = 20260823): OverviewResponse {
 
 export function fixtureShipment(shipmentId: string, seed = 20260823): ShipmentDetailResponse {
   const frame = buildPortfolio(seed);
-  const s = frame.find((x) => x.id === shipmentId) ?? frame[0];
+  const s = frame.find((x) => x.id === shipmentId) ?? frame[0]!;
   const r = rng(Number(s.id) || 1);
   const progress = s.progress_pct;
   const drivers = [
@@ -242,8 +242,8 @@ export function fixtureShipment(shipmentId: string, seed = 20260823): ShipmentDe
     severity_p50: s.severity_p50,
     severity_interval_90: s.severity_interval_90,
     model_version: "fixture",
-    shipment_mode: ["Air", "Ocean", "Truck", "Air Charter"][Math.floor(r() * 4)],
-    vendor: ["SCMS from RDC", "Orgenics, Ltd", "Aurobindo Pharma Ltd", "Ranbaxy Fine Chemicals"][Math.floor(r() * 4)],
+    shipment_mode: ["Air", "Ocean", "Truck", "Air Charter"][Math.floor(r() * 4)]!,
+    vendor: ["SCMS from RDC", "Orgenics, Ltd", "Aurobindo Pharma Ltd", "Ranbaxy Fine Chemicals"][Math.floor(r() * 4)]!,
     fulfill_via: r() > 0.5 ? "Direct Drop" : "From RDC",
     line_item_value: Math.round(r() * 480000),
     risk_drivers: drivers.sort((a, b) => Math.abs(b.shap_value) - Math.abs(a.shap_value)),

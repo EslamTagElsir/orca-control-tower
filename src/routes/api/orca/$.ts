@@ -55,7 +55,7 @@ async function forward(request: Request, splat: string): Promise<Response> {
     const upstream = await fetch(target, {
       method,
       headers,
-      body: method === "GET" || method === "HEAD" ? undefined : await request.text(),
+      body: method === "GET" || method === "HEAD" ? null : await request.text(),
       signal: controller.signal,
     });
 
