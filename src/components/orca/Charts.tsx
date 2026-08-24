@@ -50,7 +50,7 @@ export function ExceptionSummary({ shipments }: { shipments: OrcaShipment[] }) {
 
   return (
     <div className="flex h-full min-h-[220px] flex-col items-center gap-3 sm:flex-row">
-      <div className="relative h-[180px] w-[180px] shrink-0">
+      <div className="relative h-[160px] w-[160px] shrink-0 xl:h-[150px] xl:w-[150px] 2xl:h-[180px] 2xl:w-[180px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -82,13 +82,13 @@ export function ExceptionSummary({ shipments }: { shipments: OrcaShipment[] }) {
       </div>
       <ul className="min-w-0 flex-1 space-y-1.5">
         {data.map((d) => (
-          <li key={d.name} className="flex items-center gap-2 text-xs">
+          <li key={d.name} className="flex items-start gap-2 text-xs">
             <span
-              className="size-2.5 shrink-0 rounded-[3px]"
+              className="mt-0.5 size-2.5 shrink-0 rounded-[3px]"
               style={{ background: ISSUE_COLORS[d.name] ?? "var(--chart-1)" }}
               aria-hidden
             />
-            <span className="min-w-0 flex-1 truncate text-foreground/85">{d.name}</span>
+            <span className="min-w-0 flex-1 leading-tight text-foreground/85">{d.name}</span>
             <span className="orca-num shrink-0 text-muted-foreground">
               {pct(d.value / total, 0)} ({d.value})
             </span>
@@ -122,7 +122,7 @@ export function RiskDistributionChart({ distribution }: { distribution: RiskDist
 
   return (
     <div className="flex h-full min-h-[200px] flex-col items-center gap-3 sm:flex-row">
-      <div className="relative h-[168px] w-[168px] shrink-0">
+      <div className="relative h-[160px] w-[160px] shrink-0 xl:h-[150px] xl:w-[150px] 2xl:h-[168px] 2xl:w-[168px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -154,9 +154,9 @@ export function RiskDistributionChart({ distribution }: { distribution: RiskDist
       </div>
       <ul className="min-w-0 flex-1 space-y-1.5">
         {data.map((d) => (
-          <li key={d.tier} className="flex items-center gap-2 text-xs">
-            <span className="size-2.5 shrink-0 rounded-[3px]" style={{ background: d.fill }} aria-hidden />
-            <span className="min-w-0 flex-1 truncate">
+          <li key={d.tier} className="flex items-start gap-2 text-xs">
+            <span className="mt-0.5 size-2.5 shrink-0 rounded-[3px]" style={{ background: d.fill }} aria-hidden />
+            <span className="min-w-0 flex-1 leading-tight">
               <span className="text-foreground/85">{d.name}</span>{" "}
               <span className="orca-num text-muted-foreground/70">({TIER_RANGE[d.tier]})</span>
             </span>

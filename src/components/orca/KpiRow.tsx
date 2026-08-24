@@ -45,7 +45,7 @@ function KpiCard({
   return (
     <article className="orca-panel relative flex min-w-0 flex-col gap-2.5 p-3.5">
       <div className="flex items-start justify-between gap-2">
-        <h3 className={cn("orca-label truncate", t.text)}>{label}</h3>
+        <h3 className={cn("orca-label leading-4", t.text)}>{label}</h3>
         <span className={cn("grid size-7 shrink-0 place-items-center rounded-md border", t.ring, t.bg, t.text)}>
           <Icon className="size-3.5" aria-hidden />
         </span>
