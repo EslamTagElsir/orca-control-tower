@@ -8,6 +8,9 @@ import type { SimRouteGeometry } from "@/lib/orca/simulation/selectors";
 import { TIER_CSS_VAR, TIER_LABEL, TIER_MAP_HEX } from "@/lib/orca/risk";
 import { pct } from "@/lib/orca/format";
 
+/** Route geometry refresh cadence — slow enough for the tile worker to paint. */
+const ROUTE_REFRESH_MS = 2000;
+
 /**
  * Interactive risk map.
  *
@@ -94,7 +97,6 @@ export default function RiskMap({
       readyRef.current = true;
     });
     mapRef.current = map;
-    (window as unknown as { __orcaMap?: unknown }).__orcaMap = map;
 
     return () => {
       markers.forEach((m) => m.remove());
