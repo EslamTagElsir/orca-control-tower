@@ -42,16 +42,25 @@ function runShort(runId: string): string {
  * headroom, so an `elevated` candidate search starts from one of them. This
  * only biases which real row is used as a template — it never sets a risk value.
  */
+/**
+ * Real-signal template weight for the ELEVATED band. Empirically, the ORCA
+ * model rates "From RDC" + Air lanes highest even before any candidate
+ * escalation, so an elevated search that starts there has the most model
+ * headroom. This only biases which REAL row is used as the feature template —
+ * the resulting tier is always whatever /predict returns.
+ */
 function signalWeight(j: HoldoutJourney): number {
+  const rdc = /from rdc/i.test(j.raw["Fulfill Via"] ?? "") ? 1 : 0;
+  const air = /air/i.test(j.raw["Shipment Mode"] ?? "") ? 0.6 : 0;
   const n = (k: string) => {
     const v = Number(j.raw[k]);
     return Number.isFinite(v) ? v : 0;
   };
-  const base =
-    n("country_hist_delay_rate") * 3 + n("site_hist_delay_rate") * 2 + n("vendor_hist_delay_rate");
-  const rdc = /from rdc/i.test(j.raw["Fulfill Via"] ?? "") ? 0.35 : 0;
-  return 0.05 + base + rdc;
+  const signals =
+    n("country_hist_delay_rate") * 2 + n("site_hist_delay_rate") + n("vendor_hist_delay_rate");
+  return 0.05 + rdc * 3 + air + signals;
 }
+
 
 export function createAutomaticGeneratorSource(rng: Rng): ShipmentSource {
   const templates = holdoutJourneys().filter((j) => j.raw["Manufacturing Site"]);
