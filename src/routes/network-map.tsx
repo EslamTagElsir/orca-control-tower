@@ -39,7 +39,7 @@ function NetworkMapPage() {
         return (
           <PageFrame
             title="Network Map"
-            subtitle={`${num(points.length)} shipment positions from the ORCA map_points payload · seed ${overview.seed}`}
+            subtitle={`${num(points.length)} scored shipments · risk from ORCA /predict, map placement is a synthetic demo overlay`}
             source={source}
             reason={reason}
             actions={<EvidenceBadge label={overview.evidence.real_data} />}
