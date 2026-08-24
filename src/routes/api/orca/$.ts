@@ -29,6 +29,20 @@ function upstreamBase(): string | null {
 }
 
 /**
+ * A loopback upstream resolves to the SERVER container, not the operator's
+ * workstation, so it can only ever work in a local dev sandbox. Detect it so
+ * the offline envelope explains the real cause instead of "fetch failed".
+ */
+function isLoopback(base: string): boolean {
+  try {
+    const host = new URL(base).hostname;
+    return host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "0.0.0.0";
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Fixture mode is a normal operating state, not an HTTP failure, so these
  * responses are 200 with an explicit envelope. Returning 5xx made the browser
  * surface them as runtime errors.
@@ -78,9 +92,17 @@ async function forward(request: Request, splat: string): Promise<Response> {
       },
     });
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "Unknown upstream error";
+    const raw = error instanceof Error ? error.message : "Unknown upstream error";
+    const detail = isLoopback(base)
+      ? `Configured ORCA upstream ${base} is a loopback address, which resolves to the app server (not your workstation) and has no ORCA service listening (${raw}). Set ORCA_API_INTERNAL_URL to a publicly reachable ORCA base URL, or switch Settings to Direct Browser mode for a local FastAPI with CORS enabled.`
+      : `ORCA upstream ${base} is unreachable (${raw}).`;
     return Response.json(
-      { orca_unavailable: true, error: "orca_api_unreachable", detail },
+      {
+        orca_unavailable: true,
+        error: "orca_api_unreachable",
+        detail,
+        upstream_kind: isLoopback(base) ? "loopback" : "remote",
+      },
       { status: 200, headers: { "cache-control": "no-store" } },
     );
   } finally {
