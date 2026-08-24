@@ -29,7 +29,7 @@ function ShipmentsPage() {
         return (
           <PageFrame
             title="Shipments"
-            subtitle={`Investigation workspace over ${num(shipments.length)} scored shipments · seed ${overview.seed} · model ${overview.model_version}`}
+            subtitle={`Investigation workspace over ${num(shipments.length)} scored source rows · model ${overview.model_version}`}
             source={source}
             reason={reason}
             actions={<EvidenceBadge label={overview.evidence.model_output} />}
@@ -38,7 +38,7 @@ function ShipmentsPage() {
               <Panel className="h-[calc(100vh-13rem)] min-h-[24rem]">
                 <PanelHeader
                   title="Shipment index"
-                  hint="From ORCA map_points, highest risk first"
+                  hint="Bundled real source rows, highest predicted risk first"
                   source={source}
                 />
                 <ShipmentPicker

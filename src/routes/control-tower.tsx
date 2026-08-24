@@ -106,8 +106,8 @@ function ControlTower() {
         <div>
           <h1 className="text-lg font-semibold tracking-tight">Control Tower</h1>
           <p className="text-xs text-muted-foreground">
-            Portfolio of {num(overview.kpis.active_shipments)} scored shipments · seed{" "}
-            {overview.seed} · model {overview.model_version}
+            Portfolio of {num(overview.kpis.active_shipments)} real source rows scored by ORCA ·
+            model {overview.model_version}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -139,7 +139,7 @@ function ControlTower() {
         <Panel className="xl:col-span-2">
           <PanelHeader
             title="Global Risk Heat Map"
-            hint={`${overview.map_points.length} positions from ORCA map_points`}
+            hint={`${overview.map_points.length} shipments · country placement is a synthetic demo overlay`}
             source={source}
           />
           <div className="h-[380px] w-full">
