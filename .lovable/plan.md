@@ -96,4 +96,6 @@ Midnight navy background, layered blue-gray surfaces, hairline borders, compact 
 
 ## What you need to do
 
-Add CORS to `src/delay_intelligence/api/main.py` so the browser can call your local API — I'll paste the exact snippet when the build lands.
+1. Confirm you're OK building here on TanStack Start with the port-back mapping above (or tell me to hand off code for your Next.js repo instead).
+2. Keep `uvicorn delay_intelligence.api.main:app --port 8000` running locally so the proxy can reach it; otherwise the app shows the OFFLINE FIXTURE banner.
+3. Optional: apply the env-configurable CORS snippet I'll provide — only needed if you bypass the proxy.
