@@ -153,6 +153,8 @@ export default function RiskMap({
       }
 
       svg.replaceChildren(frag);
+      // eslint-disable-next-line no-console
+      console.log('ORCADBG routes', (routesRef.current ?? []).length, JSON.stringify((routesRef.current ?? [])[0]?.remaining?.slice(0,2) ?? null), svg.childElementCount);
     };
 
     const schedule = () => {
