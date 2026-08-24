@@ -74,7 +74,7 @@ Everything below is real, working UI wired to `/demo/overview` and `/demo/shipme
 - **Top Risky Lanes** — horizontal bars from `top_destinations` (mean risk + shipment count).
 - **Node Congestion** — destination-level pressure panel derived from portfolio aggregation (mean risk, exception count, direction), labelled as derived from demo overlay.
 - **Shipment Tracking Timeline** — real `timeline` stages for the selected shipment, active stage emphasised.
-- **Risk Score Trend** — sparkline over the selected shipment's risk against the 90% severity band; where the API exposes no time series, the panel shows the current risk plus interval and says so, rather than fabricating history.
+- **Risk Score Trend** — the ORCA API exposes no historical risk series, so this panel does **not** draw a fabricated sparkline. It shows the selected shipment's current calibrated risk with its 90% severity interval as a range visualisation, plus an explicit note: "Historical risk series not exposed by the current ORCA API." Any derived figure elsewhere carries a `DERIVED` label.
 - **Risk Distribution** — donut over the real `risk_distribution` tiers using backend thresholds.
 - Full loading skeletons, error + retry, and empty states on every panel. Desktop-first, tablet/laptop reflow.
 
