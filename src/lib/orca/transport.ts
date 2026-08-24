@@ -27,7 +27,9 @@ export const PROXY_BASE_PATH = "/api/orca";
 const STORAGE_KEY = "orca.connection.v1";
 
 const DEFAULT_CONFIG: ConnectionConfig = {
-  mode: "direct",
+  // Proxy is the safe default: same-origin, no CORS and no mixed-content issue
+  // on an HTTPS preview. Direct browser mode is opt-in from Settings.
+  mode: "proxy",
   baseUrl: DEFAULT_DIRECT_BASE_URL,
 };
 
