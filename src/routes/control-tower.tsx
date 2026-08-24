@@ -111,9 +111,15 @@ function ControlTower() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <EvidenceBadge label={overview.evidence.real_data} />
-          <EvidenceBadge label={overview.evidence.model_output} />
-          <EvidenceBadge label={overview.evidence.simulated} />
+          {[
+            overview.evidence.real_data,
+            overview.evidence.model_output,
+            overview.evidence.simulated,
+          ]
+            .filter((label, i, all) => label && all.indexOf(label) === i)
+            .map((label) => (
+              <EvidenceBadge key={label} label={label} />
+            ))}
           <button
             onClick={() => query.refetch()}
             className="inline-flex items-center gap-1.5 rounded-md border border-hairline bg-surface px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
