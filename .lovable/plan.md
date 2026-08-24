@@ -15,7 +15,7 @@ The intelligence layer stays exactly as it is. I inspected it and will build aga
 | `GET /demo/scenarios` | 4 scenarios: steady state, vendor reliability, lane disruption, transport switch |
 | `POST /demo/scenario` | baseline vs result risk/severity, `risk_delta_pp`, economics, `feature_audit`, disclaimer |
 
-Backend risk tiers are `LOW_RISK ≤0.30 · WATCH ≤0.60 · HIGH_RISK ≤0.85 · CRITICAL`. Every payload already carries provenance strings (`REAL HOLDOUT ANCHOR`, `MODEL OUTPUT`, `SYNTHETIC DEMO OVERLAY`, `SIMULATED SCENARIO`) — the UI will surface those verbatim rather than inventing its own labels. No Python is rewritten, no contract is changed.
+Backend risk tiers are authoritative and never redefined by the UI: `LOW ≤ 0.30 · WATCH ≤ 0.60 · HIGH ≤ 0.85 · CRITICAL > 0.85`. Demo/attention cut-offs (such as the `critical_exceptions` ≥ 0.45 field) are a distinct concept and are always labelled as a demo exception/priority threshold, never as CRITICAL risk. Every payload already carries provenance strings (`REAL HOLDOUT ANCHOR`, `MODEL OUTPUT`, `SYNTHETIC DEMO OVERLAY`, `SIMULATED SCENARIO`) — the UI will surface those verbatim rather than inventing its own labels. No Python is rewritten, no contract is changed.
 
 ## Framework constraint — please read
 
