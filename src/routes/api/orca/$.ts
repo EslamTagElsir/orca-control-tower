@@ -104,6 +104,23 @@ async function forward(request: Request, splat: string): Promise<Response> {
     }
 
     const body = await upstream!.text();
+
+    // An exhausted gateway failure is the same operating state as an
+    // unreachable upstream: return the 200 offline envelope the client already
+    // understands so the shipment stays labelled unscored instead of the
+    // browser surfacing a 502 runtime error and blanking the page.
+    if (RETRY_STATUSES.has(upstream!.status)) {
+      return Response.json(
+        {
+          orca_unavailable: true,
+          error: "orca_api_gateway_error",
+          detail: `ORCA upstream ${base} returned ${upstream!.status} after ${RETRY_ATTEMPTS} attempts — the intelligence layer is saturated or restarting. No substitute model value is applied.`,
+          upstream_kind: "remote",
+        },
+        { status: 200, headers: { "cache-control": "no-store" } },
+      );
+    }
+
     return new Response(body, {
       status: upstream!.status,
       headers: {
@@ -111,6 +128,7 @@ async function forward(request: Request, splat: string): Promise<Response> {
         "cache-control": "no-store",
       },
     });
+
   } catch (error) {
     const raw = error instanceof Error ? error.message : "Unknown upstream error";
     const detail = isLoopback(base)
