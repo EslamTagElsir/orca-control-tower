@@ -626,7 +626,12 @@ export class SimulationEngine {
         provenance: request.reason === "shock" ? SIM_PROVENANCE.shockResult : SIM_PROVENANCE.model,
         riskBefore: previousRisk,
         riskAfter: prediction.probability_late,
-        ...(request.audit.length > 0 ? { featureAudit: request.audit } : {}),
+        ...(request.audit.length > 0
+          ? { featureAudit: request.audit }
+          : searched && shipment.candidateSearch.length > 1
+            ? { featureAudit: shipment.candidateSearch }
+            : {}),
+
       });
 
       this.snapshot = {
