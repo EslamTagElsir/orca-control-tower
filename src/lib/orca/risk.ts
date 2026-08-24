@@ -68,6 +68,19 @@ export const TIER_CSS_VAR: Record<DisplayTier, string> = {
   UNSCORED: "var(--muted-foreground)",
 };
 
+/**
+ * Hex mirror of the risk tokens for renderers that cannot parse CSS custom
+ * properties or oklch() — currently MapLibre paint expressions. Keep in sync
+ * with --risk-* in src/styles.css.
+ */
+export const TIER_MAP_HEX: Record<RiskTier, string> = {
+  LOW_RISK: "#1cb474",
+  WATCH: "#ecab21",
+  HIGH_RISK: "#f36c24",
+  CRITICAL: "#e8273c",
+  UNSCORED: "#8b93ab",
+};
+
 export function tierColor(tier: DisplayTier): string {
   return TIER_CSS_VAR[tier];
 }

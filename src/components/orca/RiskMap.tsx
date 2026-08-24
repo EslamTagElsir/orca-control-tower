@@ -5,7 +5,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { ShipmentRow } from "@/lib/orca/types";
 import type { SimRouteGeometry } from "@/lib/orca/simulation/selectors";
-import { TIER_CSS_VAR, TIER_LABEL } from "@/lib/orca/risk";
+import { TIER_CSS_VAR, TIER_LABEL, TIER_MAP_HEX } from "@/lib/orca/risk";
 import { pct } from "@/lib/orca/format";
 
 /**
@@ -113,7 +113,7 @@ export default function RiskMap({
       const source = map.getSource("orca-routes") as GeoJSONSource | undefined;
       if (!source) return;
       const features = (routes ?? []).flatMap((route) => {
-        const color = TIER_CSS_VAR[route.tier];
+        const color = TIER_MAP_HEX[route.tier];
         const selected = route.id === selectedId;
         return (
           [
