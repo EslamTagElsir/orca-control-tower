@@ -101,6 +101,6 @@ Midnight navy background, layered blue-gray surfaces, hairline borders, compact 
 
 ## What you need to do
 
-1. Confirm you're OK building here on TanStack Start with the port-back mapping above (or tell me to hand off code for your Next.js repo instead).
-2. Keep `uvicorn delay_intelligence.api.main:app --port 8000` running locally so the proxy can reach it; otherwise the app shows the OFFLINE FIXTURE banner.
-3. Optional: apply the env-configurable CORS snippet I'll provide — only needed if you bypass the proxy.
+1. Nothing to see live ORCA data in Preview until you expose FastAPI publicly. Preview will run in labelled fixture mode by design.
+2. When you're ready: start a tunnel (`cloudflared tunnel --url http://localhost:8000` or ngrok) and give me the HTTPS URL — I'll store it as the `ORCA_API_INTERNAL_URL` secret and Preview flips to LIVE with no code change.
+3. Running the app locally instead: set `ORCA_API_INTERNAL_URL=http://localhost:8000` in your local env and it connects directly.
