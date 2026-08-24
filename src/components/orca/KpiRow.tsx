@@ -51,8 +51,11 @@ function KpiCard({
         </span>
       </div>
       <p className="orca-num truncate text-[26px] font-semibold leading-none tracking-tight">{value}</p>
-      <div className="flex items-center gap-1.5">
-        <p className="min-w-0 flex-1 truncate text-[11px] leading-4 text-muted-foreground" title={definition}>
+      <div className="flex items-start gap-1.5">
+        <p
+          className="min-w-0 flex-1 text-[11px] leading-4 text-balance text-muted-foreground"
+          title={definition}
+        >
           {definition}
         </p>
         {derived ? <DerivedBadge /> : null}

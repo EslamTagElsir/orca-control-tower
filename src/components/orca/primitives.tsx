@@ -31,9 +31,13 @@ export function PanelHeader({
 }) {
   return (
     <header className="flex items-center justify-between gap-3 border-b border-hairline px-4 py-2.5">
-      <div className="flex min-w-0 items-center gap-2">
-        <h2 className="orca-label truncate">{title}</h2>
-        {hint ? <span className="truncate text-[11px] text-muted-foreground/70">{hint}</span> : null}
+      <div className="flex min-w-0 items-baseline gap-2">
+        <h2 className="orca-label shrink-0 whitespace-nowrap">{title}</h2>
+        {hint ? (
+          <span className="hidden min-w-0 truncate text-[11px] text-muted-foreground/70 lg:inline">
+            {hint}
+          </span>
+        ) : null}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {source ? <SourceBadge source={source} /> : null}
