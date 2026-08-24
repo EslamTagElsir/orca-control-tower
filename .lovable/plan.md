@@ -15,7 +15,7 @@ The intelligence layer stays exactly as it is. I inspected it and will build aga
 | `GET /demo/scenarios` | 4 scenarios: steady state, vendor reliability, lane disruption, transport switch |
 | `POST /demo/scenario` | baseline vs result risk/severity, `risk_delta_pp`, economics, `feature_audit`, disclaimer |
 
-Backend risk tiers are `LOW_RISK ≤0.30 · WATCH ≤0.60 · HIGH_RISK ≤0.85 · CRITICAL`. Every payload already carries provenance strings (`REAL HOLDOUT ANCHOR`, `MODEL OUTPUT`, `SYNTHETIC DEMO OVERLAY`, `SIMULATED SCENARIO`) — the UI will surface those verbatim rather than inventing its own labels. No Python is rewritten, no contract is changed.
+Backend risk tiers are authoritative and never redefined by the UI: `LOW ≤ 0.30 · WATCH ≤ 0.60 · HIGH ≤ 0.85 · CRITICAL > 0.85`. Demo/attention cut-offs (such as the `critical_exceptions` ≥ 0.45 field) are a distinct concept and are always labelled as a demo exception/priority threshold, never as CRITICAL risk. Every payload already carries provenance strings (`REAL HOLDOUT ANCHOR`, `MODEL OUTPUT`, `SYNTHETIC DEMO OVERLAY`, `SIMULATED SCENARIO`) — the UI will surface those verbatim rather than inventing its own labels. No Python is rewritten, no contract is changed.
 
 ## Framework constraint — please read
 
@@ -66,7 +66,8 @@ Fixtures are labelled at panel level, not just globally, so no fixture number ca
 Everything below is real, working UI wired to `/demo/overview` and `/demo/shipments/{id}`:
 
 - **App shell** — collapsible sidebar (ORCA / CONTROL TOWER brand, 10 nav items, icons, active + hover states), top bar with menu toggle, connection pill, shipment selector fed by `priority_exceptions`, New Scenario, Reset Demo, notifications from the event stream, clock, avatar.
-- **KPI row** — Active Shipments, Exceptions (≥0.30), Critical (≥0.45), Intervention Candidates, Modeled On-Time Likelihood, Average Risk. Each mapped 1:1 to a real `kpis` field with its own evidence badge. No invented "vs yesterday" deltas — the API has no prior period, so the sublabel states the definition instead.
+- **KPI row** — Active Shipments, Exceptions (risk ≥ 0.30), Priority Exceptions (demo attention threshold ≥ 0.45), Intervention Candidates, Modeled On-Time Likelihood, Average Risk. Each mapped 1:1 to a real `kpis` field with its own evidence badge. No invented "vs yesterday" deltas — the API has no prior period, so the sublabel states the definition instead.
+- **Risk-tier vocabulary is authoritative and single-sourced.** The word CRITICAL is reserved exclusively for the backend model tier `risk > 0.85`, defined once in `src/lib/orca/risk.ts` and used by every tier badge, donut segment, map colour and table chip. The `critical_exceptions` field from `/demo/overview` uses a separate demo attention cut-off (≥ 0.45), so it is surfaced as **"Priority Exceptions"** with the sublabel "demo attention threshold ≥ 0.45 — not the CRITICAL model tier", and rendered in the warn colour, never the critical colour. The two definitions are never mixed, aliased, or shown under the same label anywhere in the UI.
 - **Risk Heat Map** — real interactive map (MapLibre GL + free raster basemap, dark styled) plotting `map_points` by lat/lon, radius/colour by risk tier, zoom, pan, tooltips, click-to-select shipment.
 - **Exception Summary** — donut over the real issue categories produced by `_issue_for` (Network disruption, Customs review, ETA variance, Origin readiness, Reliability watch, Normal operations) with count + percentage legend.
 - **Live Event Stream** — real `events` array (timestamp, type, shipment, detail), severity derived from event type and shipment risk, click-through to the shipment.
