@@ -171,7 +171,10 @@ export function LiveOpsDemo({
             aria-valuenow={Math.round(progressPct)}
           >
             <div
-              className={cn("h-full rounded-full bg-primary", reducedMotion ? "" : "transition-all")}
+              className={cn(
+                "h-full rounded-full bg-primary",
+                reducedMotion ? "" : "transition-all",
+              )}
               style={{ width: `${progressPct}%` }}
             />
           </div>

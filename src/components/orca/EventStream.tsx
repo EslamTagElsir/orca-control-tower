@@ -34,7 +34,6 @@ export function EventStream({
   shipments: OrcaShipment[];
   onSelect: (id: string) => void;
 }) {
-
   if (events.length === 0) return <PanelEmpty message="No events in the current feed." />;
 
   const riskById = new Map(shipments.map((s) => [s.id, s.risk]));
