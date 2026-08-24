@@ -32,12 +32,13 @@ import {
   FAMILY_LABEL,
   LIVE_OPS_DURATION_SEC,
   LIVE_OPS_PROVENANCE,
+  MAX_TIMELINE_EVENTS,
   type LiveOpsRunPlan,
   type ScenarioFamily,
   type ScheduleEntry,
 } from "@/lib/orca/live-ops-plan";
 
-export { LIVE_OPS_PROVENANCE, FAMILY_LABEL };
+export { LIVE_OPS_PROVENANCE, FAMILY_LABEL, MAX_TIMELINE_EVENTS };
 export type { ScenarioFamily, LiveOpsRunPlan };
 
 export const LIVE_OPS_DURATION_MS = LIVE_OPS_DURATION_SEC * 1000;
@@ -145,29 +146,36 @@ export function projectLiveOps(
   return { events, stateById };
 }
 
+/**
+ * Run-scoped summary. Every metric is computed over the run cast only
+ * (`castIds`), never the wider scored portfolio. Baseline risk (`s.risk`) is
+ * read-only model/fixture output — synthetic ops never alter it.
+ */
 export function summariseLiveOps(
   shipments: OrcaShipment[],
+  castIds: string[],
   stateById: Map<string, LiveOpsShipmentState>,
   eventCount: number,
   whatIfs: LiveOpsWhatIf[],
 ): LiveOpsSummary {
+  const castSet = new Set(castIds);
+  const cast = shipments.filter((s) => castSet.has(s.id));
   let delivered = 0;
-  let inTransit = 0;
   let open = 0;
-  for (const s of shipments) {
+  for (const s of cast) {
     const st = stateById.get(s.id);
     if (!st) continue;
     if (st.delivered) delivered += 1;
-    else inTransit += 1;
-    if (st.exception_open && !st.delivered) open += 1;
+    else if (st.exception_open) open += 1;
   }
   const deltas = whatIfs.map((w) => Math.abs(w.deltaPp));
   return {
-    active: shipments.length,
-    in_transit: inTransit,
-    at_risk: shipments.filter((s) => s.risk >= 0.3).length,
+    active: cast.length,
+    // Delivered + In Transit always reconciles with the run cast size.
+    in_transit: Math.max(0, cast.length - delivered),
+    at_risk: cast.filter((s) => s.risk >= 0.3).length,
     delivered,
-    critical: shipments.filter((s) => s.risk > 0.85).length,
+    critical: cast.filter((s) => s.risk > 0.85).length,
     events_processed: eventCount,
     open_exceptions: open,
     scenarios_evaluated: whatIfs.length,
@@ -352,12 +360,29 @@ export function useLiveOperationsDemo(shipments: OrcaShipment[]) {
         detail: `What-if "${w.scenarioLabel}": baseline ${(w.baselineRisk * 100).toFixed(1)}% → scenario ${(w.scenarioRisk * 100).toFixed(1)}% (${w.deltaPp >= 0 ? "+" : ""}${w.deltaPp.toFixed(1)} pp)`,
         provenance: `${SCENARIO_INPUT_LABEL} → ${SCENARIO_RESULT_LABEL}`,
       }));
-    return [...events, ...modelEvents].sort((a, b) => a.at - b.at);
+    const merged = [...events, ...modelEvents].sort((a, b) => a.at - b.at);
+    // Hard cap: the plan reserves slots for what-if results, but never report
+    // more than MAX_TIMELINE_EVENTS. Model events are always retained.
+    if (merged.length <= MAX_TIMELINE_EVENTS) return merged;
+    let over = merged.length - MAX_TIMELINE_EVENTS;
+    const capped: LiveOpsEvent[] = [];
+    for (const e of merged) {
+      const droppable =
+        over > 0 &&
+        e.family !== "MODEL_SCENARIO" &&
+        (e.family === "IN_TRANSIT" || e.family === "ETA_SLIP" || e.family === "FINAL_MILE");
+      if (droppable) {
+        over -= 1;
+        continue;
+      }
+      capped.push(e);
+    }
+    return capped.slice(0, MAX_TIMELINE_EVENTS);
   }, [events, whatIfs, elapsedMs, clock.startedAt]);
 
   const summary = useMemo(
-    () => summariseLiveOps(shipments, stateById, timeline.length, whatIfs),
-    [shipments, stateById, timeline.length, whatIfs],
+    () => summariseLiveOps(shipments, plan?.castIds ?? [], stateById, timeline.length, whatIfs),
+    [shipments, plan, stateById, timeline.length, whatIfs],
   );
 
   const start = useCallback(() => {
@@ -406,6 +431,8 @@ export function useLiveOperationsDemo(shipments: OrcaShipment[]) {
     runId: plan?.runId ?? null,
     seed: clock.seed,
     mix: plan?.mix ?? [],
+    /** Planned what-if picks for this run — NOT completed model evaluations. */
+    whatIfsPlanned: plan?.whatIfs.length ?? 0,
     castSize: plan?.castIds.length ?? 0,
     start,
     pause,

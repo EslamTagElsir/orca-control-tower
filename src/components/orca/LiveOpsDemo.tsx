@@ -106,7 +106,9 @@ export function LiveOpsDemo({
   runId,
   mix,
   whatIfs,
+  whatIfsPlanned,
   castSize,
+  fixtureMode,
   onStart,
   onPause,
   onResume,
@@ -120,7 +122,9 @@ export function LiveOpsDemo({
   runId: string | null;
   mix: { family: ScenarioFamily; count: number }[];
   whatIfs: LiveOpsWhatIf[];
+  whatIfsPlanned: number;
   castSize: number;
+  fixtureMode: boolean;
   onStart: () => void;
   onPause: () => void;
   onResume: () => void;
@@ -130,6 +134,7 @@ export function LiveOpsDemo({
   const reducedMotion = usePrefersReducedMotion();
   const active = phase === "running" || phase === "paused";
   const progressPct = Math.min(100, (elapsedMs / LIVE_OPS_DURATION_MS) * 100);
+  const evaluated = summary.scenarios_evaluated;
 
   return (
     <section
@@ -239,7 +244,12 @@ export function LiveOpsDemo({
 
           {mix.length > 0 ? (
             <div className="mt-2 flex flex-wrap items-center gap-1">
-              <span className="orca-label text-[10px]">Scenario mix</span>
+              <span
+                className="orca-label text-[10px]"
+                title="Planned scenario occurrences in this run plan — not completed events"
+              >
+                Planned mix
+              </span>
               <span className="text-[10px] text-muted-foreground/70">
                 {castSize} shipments in this run ·
               </span>
@@ -251,11 +261,32 @@ export function LiveOpsDemo({
                   {FAMILY_LABEL[m.family]} ×{m.count}
                 </span>
               ))}
+              {whatIfsPlanned > 0 ? (
+                evaluated > 0 ? (
+                  <span
+                    className="rounded-sm border border-model/40 bg-model/10 px-1.5 py-0.5 text-[10px] font-semibold text-model"
+                    title={`${SCENARIO_RESULT_LABEL} — ${evaluated} of ${whatIfsPlanned} planned re-scores returned by /predict`}
+                  >
+                    Model What-If ×{evaluated}
+                  </span>
+                ) : (
+                  <span
+                    className="rounded-sm border border-hairline bg-surface-raised px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                    title={
+                      fixtureMode
+                        ? "Backend unavailable — model re-score skipped"
+                        : "Model re-score scheduled — no result yet"
+                    }
+                  >
+                    What-If Planned ×{whatIfsPlanned}
+                  </span>
+                )
+              ) : null}
             </div>
           ) : null}
 
           <div className="mt-2 flex flex-wrap gap-2">
-            <Metric label="Active" value={summary.active} hint="Shipments in this view" />
+            <Metric label="Active" value={summary.active} hint="Shipments in this run" />
             <Metric
               label="In transit"
               value={summary.in_transit}
@@ -265,7 +296,9 @@ export function LiveOpsDemo({
             <Metric
               label="At risk"
               value={summary.at_risk}
-              hint="Model risk ≥ 0.30"
+              hint={
+                fixtureMode ? "Fixture risk ≥ 0.30 — not ORCA output" : "Baseline model risk ≥ 0.30"
+              }
               tone="text-warn"
             />
             <Metric
@@ -277,7 +310,9 @@ export function LiveOpsDemo({
             <Metric
               label="Critical"
               value={summary.critical}
-              hint="Model risk > 0.85"
+              hint={
+                fixtureMode ? "Fixture risk > 0.85 — not ORCA output" : "Baseline model risk > 0.85"
+              }
               tone="text-danger"
             />
             <Metric
@@ -300,18 +335,23 @@ export function LiveOpsDemo({
           {phase === "complete" ? (
             <p className="mt-2 rounded-md border border-hairline bg-surface-raised px-2.5 py-1.5 text-[11px] text-muted-foreground">
               Run {runId} complete — {num(summary.events_processed)} synthetic operational events
-              processed over 5 minutes. {num(summary.delivered)} delivered,{" "}
-              {num(summary.in_transit)} still in transit, {num(summary.open_exceptions)} exception
-              {summary.open_exceptions === 1 ? "" : "s"} still open, {num(summary.at_risk)} carrying
-              model risk ≥ 0.30.{" "}
-              {summary.scenarios_evaluated > 0
-                ? `${num(summary.scenarios_evaluated)} model what-if scenario${summary.scenarios_evaluated === 1 ? "" : "s"} evaluated via /predict${
-                    summary.biggest_delta_pp !== null
-                      ? `, largest scenario risk delta ${summary.biggest_delta_pp.toFixed(1)} pp`
-                      : ""
-                  }.`
-                : "No model what-if scenarios were evaluated (backend unavailable)."}{" "}
-              Model scores were never altered by operational motion.
+              processed over 5 minutes across {num(summary.active)} shipments in this run.{" "}
+              {num(summary.delivered)} delivered, {num(summary.in_transit)} still in transit,{" "}
+              {num(summary.open_exceptions)} exception
+              {summary.open_exceptions === 1 ? "" : "s"} still open, {num(summary.at_risk)} carrying{" "}
+              {fixtureMode ? "fixture" : "baseline model"} risk ≥ 0.30.{" "}
+              {whatIfsPlanned === 0
+                ? "No what-if scenarios were planned for this run."
+                : evaluated > 0
+                  ? `${num(whatIfsPlanned)} what-if scenario${whatIfsPlanned === 1 ? "" : "s"} planned, ${num(evaluated)} evaluated via /predict${
+                      summary.biggest_delta_pp !== null
+                        ? `, largest scenario risk delta ${summary.biggest_delta_pp.toFixed(1)} pp`
+                        : ""
+                    }.`
+                  : `${num(whatIfsPlanned)} what-if scenario${whatIfsPlanned === 1 ? "" : "s"} planned, 0 evaluated — backend unavailable, model re-score skipped.`}{" "}
+              {fixtureMode
+                ? "Fixture risk values are stand-in data, not ORCA output, and were never altered by operational motion."
+                : "Model scores were never altered by operational motion."}
             </p>
           ) : null}
         </>

@@ -17,6 +17,8 @@ import { makeRng, runIdFromSeed, type Rng } from "./prng";
 
 export const LIVE_OPS_PROVENANCE = "SYNTHETIC LIVE OPERATIONS";
 export const LIVE_OPS_DURATION_SEC = 300;
+/** Hard cap on what the demo reports as "Events Processed" for one run. */
+export const MAX_TIMELINE_EVENTS = 45;
 
 export type ScenarioFamily =
   | "DISPATCH"
@@ -425,27 +427,50 @@ export function buildRunPlan(shipments: OrcaShipment[], seed: number): LiveOpsRu
   }));
 
   // Deterministic sort, then trim to a live-but-not-chaotic event budget.
+  // Slots are reserved for the planned what-if result events so that the final
+  // merged timeline can never exceed MAX_TIMELINE_EVENTS.
   entries.sort((a, b) => a.at - b.at || a.shipmentId.localeCompare(b.shipmentId));
-  const MAX_EVENTS = 45;
+  const synthBudget = Math.max(1, MAX_TIMELINE_EVENTS - whatIfs.length);
   let schedule = entries;
-  if (schedule.length > MAX_EVENTS) {
+  if (schedule.length > synthBudget) {
     const droppable = new Set<ScenarioFamily>(["IN_TRANSIT", "ETA_SLIP", "FINAL_MILE"]);
+    // Pass 1: thin out non-essential motion, newest-first.
+    let over = schedule.length - synthBudget;
     const keep: ScheduleEntry[] = [];
-    let over = schedule.length - MAX_EVENTS;
     for (let i = schedule.length - 1; i >= 0; i--) {
       const e = schedule[i]!;
-      if (over > 0 && droppable.has(e.family) && i % 2 === 1) {
+      if (over > 0 && droppable.has(e.family)) {
         over -= 1;
         continue;
       }
       keep.unshift(e);
     }
     schedule = keep;
+    // Pass 2: hard cap — never report more than the budget. Essential
+    // guarantees (DELIVERED / open exception / escalation) sit late in the
+    // run, so trim from the earliest low-signal entries first.
+    if (schedule.length > synthBudget) {
+      const essential = new Set<ScenarioFamily>([
+        "DELIVERED",
+        "DELIVERY_WINDOW",
+        "RECOVERY",
+        "MODE_INTERVENTION",
+      ]);
+      const trimmed: ScheduleEntry[] = [];
+      let stillOver = schedule.length - synthBudget;
+      for (const e of schedule) {
+        if (stillOver > 0 && !essential.has(e.family) && !e.opensException && e.at > 0) {
+          stillOver -= 1;
+          continue;
+        }
+        trimmed.push(e);
+      }
+      schedule = trimmed.slice(0, synthBudget);
+    }
   }
 
   const counts = new Map<ScenarioFamily, number>();
   for (const e of schedule) counts.set(e.family, (counts.get(e.family) ?? 0) + 1);
-  if (whatIfs.length > 0) counts.set("MODEL_SCENARIO", whatIfs.length);
   const mix = [...counts.entries()]
     .map(([family, count]) => ({ family, count }))
     .sort(
