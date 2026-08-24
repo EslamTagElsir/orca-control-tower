@@ -14,12 +14,16 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as ControlTowerRouteImport } from './routes/control-tower'
 import { Route as DecisionEconomicsRouteImport } from './routes/decision-economics'
 import { Route as ExceptionsRouteImport } from './routes/exceptions'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as ModelMonitorRouteImport } from './routes/model-monitor'
 import { Route as NetworkMapRouteImport } from './routes/network-map'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ShipmentsRouteImport } from './routes/shipments'
 import { Route as SimulatorRouteImport } from './routes/simulator'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiOrcaSplatRouteImport } from './routes/api/orca/$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -45,6 +49,11 @@ const DecisionEconomicsRoute = DecisionEconomicsRouteImport.update({
 const ExceptionsRoute = ExceptionsRouteImport.update({
   id: '/exceptions',
   path: '/exceptions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ModelMonitorRoute = ModelMonitorRouteImport.update({
@@ -77,6 +86,24 @@ const SimulatorRoute = SimulatorRouteImport.update({
   path: '/simulator',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiOrcaSplatRoute = ApiOrcaSplatRouteImport.update({
   id: '/api/orca/$',
   path: '/api/orca/$',
@@ -89,12 +116,16 @@ export interface FileRoutesByFullPath {
   '/control-tower': typeof ControlTowerRoute
   '/decision-economics': typeof DecisionEconomicsRoute
   '/exceptions': typeof ExceptionsRoute
+  '/mcp': typeof McpRoute
   '/model-monitor': typeof ModelMonitorRoute
   '/network-map': typeof NetworkMapRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/shipments': typeof ShipmentsRoute
   '/simulator': typeof SimulatorRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/orca/$': typeof ApiOrcaSplatRoute
 }
 export interface FileRoutesByTo {
@@ -103,12 +134,16 @@ export interface FileRoutesByTo {
   '/control-tower': typeof ControlTowerRoute
   '/decision-economics': typeof DecisionEconomicsRoute
   '/exceptions': typeof ExceptionsRoute
+  '/mcp': typeof McpRoute
   '/model-monitor': typeof ModelMonitorRoute
   '/network-map': typeof NetworkMapRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/shipments': typeof ShipmentsRoute
   '/simulator': typeof SimulatorRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/orca/$': typeof ApiOrcaSplatRoute
 }
 export interface FileRoutesById {
@@ -118,12 +153,16 @@ export interface FileRoutesById {
   '/control-tower': typeof ControlTowerRoute
   '/decision-economics': typeof DecisionEconomicsRoute
   '/exceptions': typeof ExceptionsRoute
+  '/mcp': typeof McpRoute
   '/model-monitor': typeof ModelMonitorRoute
   '/network-map': typeof NetworkMapRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/shipments': typeof ShipmentsRoute
   '/simulator': typeof SimulatorRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/orca/$': typeof ApiOrcaSplatRoute
 }
 export interface FileRouteTypes {
@@ -134,12 +173,16 @@ export interface FileRouteTypes {
     | '/control-tower'
     | '/decision-economics'
     | '/exceptions'
+    | '/mcp'
     | '/model-monitor'
     | '/network-map'
     | '/reports'
     | '/settings'
     | '/shipments'
     | '/simulator'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/orca/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -148,12 +191,16 @@ export interface FileRouteTypes {
     | '/control-tower'
     | '/decision-economics'
     | '/exceptions'
+    | '/mcp'
     | '/model-monitor'
     | '/network-map'
     | '/reports'
     | '/settings'
     | '/shipments'
     | '/simulator'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/orca/$'
   id:
     | '__root__'
@@ -162,12 +209,16 @@ export interface FileRouteTypes {
     | '/control-tower'
     | '/decision-economics'
     | '/exceptions'
+    | '/mcp'
     | '/model-monitor'
     | '/network-map'
     | '/reports'
     | '/settings'
     | '/shipments'
     | '/simulator'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/orca/$'
   fileRoutesById: FileRoutesById
 }
@@ -177,12 +228,16 @@ export interface RootRouteChildren {
   ControlTowerRoute: typeof ControlTowerRoute
   DecisionEconomicsRoute: typeof DecisionEconomicsRoute
   ExceptionsRoute: typeof ExceptionsRoute
+  McpRoute: typeof McpRoute
   ModelMonitorRoute: typeof ModelMonitorRoute
   NetworkMapRoute: typeof NetworkMapRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   ShipmentsRoute: typeof ShipmentsRoute
   SimulatorRoute: typeof SimulatorRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiOrcaSplatRoute: typeof ApiOrcaSplatRoute
 }
 
@@ -221,6 +276,13 @@ declare module '@tanstack/react-router' {
       path: '/exceptions'
       fullPath: '/exceptions'
       preLoaderRoute: typeof ExceptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/model-monitor': {
@@ -265,6 +327,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SimulatorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/orca/$': {
       id: '/api/orca/$'
       path: '/api/orca/$'
@@ -281,12 +364,17 @@ const rootRouteChildren: RootRouteChildren = {
   ControlTowerRoute: ControlTowerRoute,
   DecisionEconomicsRoute: DecisionEconomicsRoute,
   ExceptionsRoute: ExceptionsRoute,
+  McpRoute: McpRoute,
   ModelMonitorRoute: ModelMonitorRoute,
   NetworkMapRoute: NetworkMapRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   ShipmentsRoute: ShipmentsRoute,
   SimulatorRoute: SimulatorRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiOrcaSplatRoute: ApiOrcaSplatRoute,
 }
 export const routeTree = rootRouteImport
