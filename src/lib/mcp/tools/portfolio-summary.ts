@@ -17,7 +17,10 @@ export default defineTool({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: ({ group_by, top }) => {
     const rows = sourceRows();
-    const acc = new Map<string, { key: string; shipments: number; total_line_item_value: number }>();
+    const acc = new Map<
+      string,
+      { key: string; shipments: number; total_line_item_value: number }
+    >();
 
     for (const row of rows) {
       const key = String(row[group_by] ?? "UNKNOWN") || "UNKNOWN";
@@ -28,9 +31,14 @@ export default defineTool({
     }
 
     const groups = [...acc.values()]
-      .sort((a, b) => b.shipments - a.shipments || b.total_line_item_value - a.total_line_item_value)
+      .sort(
+        (a, b) => b.shipments - a.shipments || b.total_line_item_value - a.total_line_item_value,
+      )
       .slice(0, top)
-      .map((g) => ({ ...g, total_line_item_value: Math.round(g.total_line_item_value * 100) / 100 }));
+      .map((g) => ({
+        ...g,
+        total_line_item_value: Math.round(g.total_line_item_value * 100) / 100,
+      }));
 
     const payload = {
       group_by,

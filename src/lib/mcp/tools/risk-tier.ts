@@ -8,7 +8,11 @@ export default defineTool({
   description:
     "Classify a predicted late probability (0-1) into the authoritative ORCA risk tier: LOW_RISK <= 0.30, WATCH <= 0.60, HIGH_RISK <= 0.85, CRITICAL > 0.85.",
   inputSchema: {
-    probability_late: z.number().min(0).max(1).describe("Model probability of late delivery, 0 to 1."),
+    probability_late: z
+      .number()
+      .min(0)
+      .max(1)
+      .describe("Model probability of late delivery, 0 to 1."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: ({ probability_late }) => {

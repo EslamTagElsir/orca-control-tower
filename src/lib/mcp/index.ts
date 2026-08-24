@@ -12,5 +12,10 @@ export default defineMcp({
     "Tools for ORCA Command, a supply-chain delay-intelligence control tower. Use `list_shipments` and `get_shipment` to inspect the real bundled ORCA demo shipment rows and their backend-ready feature maps, `portfolio_summary` to aggregate the portfolio, and `risk_tier` to classify a predicted late probability using ORCA's authoritative thresholds (LOW_RISK <= 0.30, WATCH <= 0.60, HIGH_RISK <= 0.85, CRITICAL > 0.85). These tools return source data only; live model scores come from the ORCA FastAPI backend inside the app.",
   // Cast erases per-tool generics; `exactOptionalPropertyTypes` rejects the
   // inferred `outputSchema?: undefined` against the SDK's erased element type.
-  tools: [listShipments, getShipment, riskTierTool, portfolioSummary] as unknown as McpDefinitionInput["tools"],
+  tools: [
+    listShipments,
+    getShipment,
+    riskTierTool,
+    portfolioSummary,
+  ] as unknown as McpDefinitionInput["tools"],
 });
