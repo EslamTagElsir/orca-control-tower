@@ -7,7 +7,7 @@ import type { OrcaShipment } from "@/lib/orca/types";
 import { PanelEmpty, RiskBadge } from "./primitives";
 
 /**
- * Search + select over the shipments ORCA already returned in /demo/overview.
+ * Search + select over the bundled real source rows scored by ORCA /predict.
  * No shipment fields are invented; the list is exactly what the payload holds.
  */
 export function ShipmentPicker({

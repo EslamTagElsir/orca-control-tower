@@ -125,11 +125,12 @@ export function ScenarioDisclaimer({ text }: { text: string }) {
 }
 
 /**
- * Reusable Sense → Simulate → Decide workbench over
- * GET /demo/scenarios and POST /demo/scenario.
+ * Reusable Sense → Simulate → Decide workbench.
  *
- * The endpoint response is authoritative: no risk, severity or economics value
- * is recomputed in the UI.
+ * The current backend has no scenario endpoint, so scenarios run through the
+ * frontend what-if adapter: audited pre-outcome feature edits scored by the
+ * real /predict and /recommend endpoints. Risk and severity are always model
+ * output; economics remain configurable planning assumptions.
  */
 export function ScenarioWorkbench({
   shipments,
@@ -184,7 +185,7 @@ export function ScenarioWorkbench({
       <Panel>
         <PanelHeader
           title={variant === "economics" ? "Decision inputs" : "Scenario inputs"}
-          hint="Request contract of POST /demo/scenario"
+          hint="Frontend what-if adapter over POST /predict + POST /recommend"
           source={scenarios.data?.source}
         />
         <PanelBody className="space-y-4 overflow-y-auto">
@@ -287,7 +288,7 @@ export function ScenarioWorkbench({
         <Panel>
           <PanelHeader
             title={variant === "economics" ? "Decision economics" : "Baseline vs scenario"}
-            hint="Values returned by ORCA — never recomputed in the UI"
+            hint="Risk and severity come from real /predict output — never recomputed in the UI"
             source={resultSource}
             actions={result ? <EvidenceBadge label={result.evidence_label} /> : undefined}
           />

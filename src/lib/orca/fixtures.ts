@@ -205,8 +205,8 @@ export function fixtureOverview(seed = 20260823): OverviewResponse {
     kpis: {
       active_shipments: frame.length,
       exceptions: frame.filter((s) => s.risk >= 0.3).length,
-      critical_exceptions: frame.filter((s) => s.risk >= 0.45).length,
-      intervention_candidates: frame.filter((s) => s.decision === "INTERVENE").length,
+      critical_exceptions: frame.filter((s) => s.risk > 0.85).length,
+      model_positive: frame.filter((s) => s.risk >= 0.5).length,
       estimated_exposure: frame.reduce((a, s) => a + s.expected_exposure, 0),
       potential_net_benefit: frame
         .filter((s) => s.net_benefit > 0)

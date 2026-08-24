@@ -4,7 +4,6 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DataSource, OrcaKpis } from "@/lib/orca/types";
 import { money, num, pct } from "@/lib/orca/format";
-import { PRIORITY_ATTENTION_LABEL, PRIORITY_ATTENTION_SUBLABEL } from "@/lib/orca/risk";
 import { DerivedBadge, SourceBadge } from "./primitives";
 
 type Tone = "primary" | "warn" | "danger" | "success" | "model";
@@ -87,17 +86,17 @@ export function KpiRow({ kpis, source }: { kpis: OrcaKpis; source: DataSource })
         source={source}
       />
       <KpiCard
-        label={PRIORITY_ATTENTION_LABEL}
+        label="Critical"
         value={num(kpis.critical_exceptions)}
-        definition={PRIORITY_ATTENTION_SUBLABEL}
+        definition="CRITICAL model tier — late risk > 0.85"
         icon={ShieldAlert}
         tone="warn"
         source={source}
       />
       <KpiCard
-        label="Intervention Candidates"
-        value={num(kpis.intervention_candidates)}
-        definition="Decision engine returned INTERVENE"
+        label="Model Positive"
+        value={num(kpis.model_positive)}
+        definition="Predictions above the model decision threshold (/predict)"
         icon={Target}
         tone="danger"
         source={source}

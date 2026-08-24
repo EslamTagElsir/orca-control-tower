@@ -5,7 +5,7 @@ import type { DataSource, OverviewResponse } from "@/lib/orca/types";
 import { Panel, PanelBody, PanelError, PanelSkeleton } from "./primitives";
 
 /**
- * Shared pending/error gate around the /demo/overview payload so every page
+ * Shared pending/error gate around the composed overview payload so every page
  * reuses the same states instead of re-implementing them.
  */
 export function OverviewBoundary({

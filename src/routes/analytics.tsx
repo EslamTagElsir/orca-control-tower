@@ -15,7 +15,7 @@ function AnalyticsPage() {
     <RouteShell
       title="Analytics"
       subtitle="Aggregations computed from the ORCA overview payload."
-      endpoints={["GET /api/orca/demo/overview (risk_distribution, top_destinations)"]}
+      endpoints={["POST /predict over bundled real source rows (risk distribution, lanes)"]}
     />
   );
 }

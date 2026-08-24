@@ -87,12 +87,10 @@ export interface OrcaShipment {
 export interface OrcaKpis {
   active_shipments: number;
   exceptions: number;
-  /**
-   * Presenter attention threshold (risk >= 0.45) defined in demo_service.overview.
-   * This is NOT the CRITICAL model tier (risk > 0.85). Never relabel it as such.
-   */
+  /** CRITICAL model tier count (risk > 0.85). */
   critical_exceptions: number;
-  intervention_candidates: number;
+  /** Count of predictions above the model decision threshold (classification_decision). */
+  model_positive: number;
   estimated_exposure: number;
   potential_net_benefit: number;
   modeled_on_time_likelihood: number;
