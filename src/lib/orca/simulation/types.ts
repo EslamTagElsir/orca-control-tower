@@ -241,7 +241,22 @@ export interface SimShipment {
   /** Which mutation profiles have been applied, in order. */
   appliedProfiles: string[];
 
+  /**
+   * Which part of the model's output range this shipment's creation-time
+   * candidate ladder aimed at. It is a SEARCH TARGET ONLY — the tier below is
+   * always whatever ORCA /predict actually returned.
+   */
+  targetBand: TargetBand;
+  /**
+   * Ordered creation-time candidate feature states, scored in order by real
+   * /predict calls. Cleared once the search resolves.
+   */
+  candidates: { key: string; label: string; raw: Record<string, string> }[];
+  /** Human-readable trace of the candidate search (recipe → model risk). */
+  candidateSearch: string[];
+
   model: SimModelState;
+
   plannedShocks: PlannedShock[];
   /** Routine progress pings that never call the model. */
   plannedPings: number[];
