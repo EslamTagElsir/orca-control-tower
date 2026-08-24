@@ -59,6 +59,16 @@ function unconfigured(): Response {
   );
 }
 
+/**
+ * The hosted ORCA container drops a request with a bare 502/503/504 when the
+ * simulation fires a burst of concurrent /predict + /recommend calls. That is a
+ * transient upstream condition, not a dead backend, so retry it a bounded
+ * number of times with a short backoff before surfacing the failure.
+ */
+const RETRY_STATUSES = new Set([502, 503, 504]);
+const RETRY_ATTEMPTS = 3;
+const RETRY_BASE_MS = 250;
+
 async function forward(request: Request, splat: string): Promise<Response> {
   const base = upstreamBase();
   if (!base) return unconfigured();
@@ -71,26 +81,37 @@ async function forward(request: Request, splat: string): Promise<Response> {
   if (contentType) headers.set("content-type", contentType);
   headers.set("accept", "application/json");
 
+  const method = request.method.toUpperCase();
+  // Read once: the request body stream cannot be replayed across retries.
+  const payload = method === "GET" || method === "HEAD" ? null : await request.text();
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
 
   try {
-    const method = request.method.toUpperCase();
-    const upstream = await fetch(target, {
-      method,
-      headers,
-      body: method === "GET" || method === "HEAD" ? null : await request.text(),
-      signal: controller.signal,
-    });
+    let upstream: Response | null = null;
+    for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
+      upstream = await fetch(target, {
+        method,
+        headers,
+        body: payload,
+        signal: controller.signal,
+      });
+      if (!RETRY_STATUSES.has(upstream.status)) break;
+      if (attempt < RETRY_ATTEMPTS - 1) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_BASE_MS * (attempt + 1)));
+      }
+    }
 
-    const body = await upstream.text();
+    const body = await upstream!.text();
     return new Response(body, {
-      status: upstream.status,
+      status: upstream!.status,
       headers: {
-        "content-type": upstream.headers.get("content-type") ?? "application/json",
+        "content-type": upstream!.headers.get("content-type") ?? "application/json",
         "cache-control": "no-store",
       },
     });
+
   } catch (error) {
     const raw = error instanceof Error ? error.message : "Unknown upstream error";
     const detail = isLoopback(base)
