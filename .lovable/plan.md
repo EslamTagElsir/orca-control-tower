@@ -17,17 +17,44 @@ The intelligence layer stays exactly as it is. I inspected it and will build aga
 
 Backend risk tiers are `LOW_RISK ≤0.30 · WATCH ≤0.60 · HIGH_RISK ≤0.85 · CRITICAL`. Every payload already carries provenance strings (`REAL HOLDOUT ANCHOR`, `MODEL OUTPUT`, `SYNTHETIC DEMO OVERLAY`, `SIMULATED SCENARIO`) — the UI will surface those verbatim rather than inventing its own labels. No Python is rewritten, no contract is changed.
 
+## Framework constraint — please read
+
+This Lovable project cannot run Next.js. Lovable builds and hosts React on TanStack Start (Vite), and there is no supported path to swap the framework inside this workspace. So the choice is not "Next.js vs TanStack Start" — it is "build here on TanStack Start" or "don't build here".
+
+My recommendation: build it here, but mirror your Next.js architecture exactly so the work ports back to your repo with minimal friction. Everything you asked for architecturally is preserved; only the framework primitive changes:
+
+| Your Next.js app | What I build here | Porting effort |
+|---|---|---|
+| `app/api/orca/[...path]/route.ts` proxy | `src/routes/api/orca/$.ts` server route, same proxy behaviour, same `/api/orca/*` public path | Rewrite one ~35-line file |
+| `ORCA_API_INTERNAL_URL` env var | Same env var name, read server-side inside the handler | None |
+| React 19 + TS components | React 19 + TS components, framework-agnostic | Copy as-is |
+| Centralised service layer | `src/lib/orca/*` — identical, no framework imports | Copy as-is |
+| `app/globals.css` tokens | `src/styles.css` tokens | Copy values |
+
+Components, types, adapters, fixtures, charts and the whole service layer are plain React/TypeScript with zero framework coupling — that's the great majority of this work. Only the proxy route and route-file wrappers are framework-specific. If you'd rather I not build here at all and instead hand you the code for your own Next.js repo, say so and I'll change course.
+
 ## Connection model
 
-Your FastAPI runs locally on `localhost:8000`. The browser calls it directly through a configurable base URL (default `http://localhost:8000`), stored in localStorage and editable in Settings and from the top bar. You add CORS middleware to FastAPI once (I'll give you the three-line snippet).
+Same chain you specified, with the proxy on this side:
 
-A connection controller polls `/health`. Three states, always visible in the top bar:
+```text
+Browser → /api/orca/*  (server proxy, this app)
+        → FastAPI (ORCA_API_INTERNAL_URL, default http://localhost:8000)
+        → ORCA intelligence layer
+```
+
+Components never see a FastAPI URL. They call `src/lib/orca/client.ts`, which only ever hits the relative `/api/orca/*` path. Moving the backend to a tunnelled HTTPS endpoint later is a single env-var change with no UI edits.
+
+Because the proxy is server-side and same-origin, **no CORS is needed for the normal path**. I'll still include the minimal, env-configurable CORS snippet for FastAPI (`CORSMiddleware` with `allow_origins` read from an `ORCA_ALLOWED_ORIGINS` env var, no wildcard) so direct browser calls work if you ever want them — that is the only backend change proposed, and nothing in the model, registry, calibration, conformal, SHAP, decision engine or API contracts is touched.
+
+A connection controller polls `/api/orca/health`. Three states, always visible in the top bar:
 
 - **LIVE — ORCA v{model_version}** (green): real API
 - **CONNECTING** (amber): retrying with backoff
-- **OFFLINE FIXTURE DATA** (red): backend unreachable — falls back to fixtures shaped exactly like the real payloads, with a persistent banner and a `FIXTURE` badge on every panel. Reconnects automatically and swaps back to live data.
+- **OFFLINE FIXTURE DATA — NOT ORCA OUTPUT** (red): backend unreachable — falls back to fixtures shaped exactly like the real payloads. Persistent full-width banner, red-tinted chrome, and a `FIXTURE` badge on every panel. Auto-reconnects and swaps back to live data as soon as `/health` answers.
 
 Fixtures are labelled at panel level, not just globally, so no fixture number can ever be mistaken for ORCA output.
+
 
 ## Phase 1 — Flagship Control Tower (this pass)
 
