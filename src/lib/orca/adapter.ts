@@ -48,7 +48,7 @@ import type {
 } from "./types";
 
 /** Max simultaneous model calls against the backend. */
-const CONCURRENCY = 5;
+const CONCURRENCY = 3;
 
 /* ------------------------------------------------------------------ */
 /* Core endpoint calls                                                 */

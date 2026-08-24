@@ -66,8 +66,8 @@ function unconfigured(): Response {
  * number of times with a short backoff before surfacing the failure.
  */
 const RETRY_STATUSES = new Set([502, 503, 504]);
-const RETRY_ATTEMPTS = 3;
-const RETRY_BASE_MS = 250;
+const RETRY_ATTEMPTS = 4;
+const RETRY_BASE_MS = 500;
 
 async function forward(request: Request, splat: string): Promise<Response> {
   const base = upstreamBase();
@@ -99,7 +99,7 @@ async function forward(request: Request, splat: string): Promise<Response> {
       });
       if (!RETRY_STATUSES.has(upstream.status)) break;
       if (attempt < RETRY_ATTEMPTS - 1) {
-        await new Promise((resolve) => setTimeout(resolve, RETRY_BASE_MS * (attempt + 1)));
+        await new Promise((resolve) => setTimeout(resolve, RETRY_BASE_MS * 2 ** attempt));
       }
     }
 
