@@ -1,15 +1,12 @@
 import { useEffect, useRef } from "react";
 import * as maplibregl from "maplibre-gl";
-import type { GeoJSONSource, Map as MapLibreMap, Marker } from "maplibre-gl";
+import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { ShipmentRow } from "@/lib/orca/types";
 import type { SimRouteGeometry } from "@/lib/orca/simulation/selectors";
 import { TIER_CSS_VAR, TIER_LABEL, TIER_MAP_HEX } from "@/lib/orca/risk";
 import { pct } from "@/lib/orca/format";
-
-/** Route geometry refresh cadence — slow enough for the tile worker to paint. */
-const ROUTE_REFRESH_MS = 2000;
 
 /**
  * Interactive risk map.
@@ -33,6 +30,7 @@ export default function RiskMap({
   onSelect: (id: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const readyRef = useRef(false);
   const markersRef = useRef<Map<string, Marker>>(new Map());
@@ -69,33 +67,9 @@ export default function RiskMap({
     map.scrollZoom.disable();
     map.on("load", () => {
       map.resize();
-      const empty = { type: "FeatureCollection", features: [] } as const;
-      map.addSource("orca-routes", { type: "geojson", data: empty as never });
-      map.addLayer({
-        id: "orca-routes-remaining",
-        type: "line",
-        source: "orca-routes",
-        filter: ["==", ["get", "segment"], "remaining"],
-        paint: {
-          "line-color": ["get", "color"],
-          "line-width": 1.4,
-          "line-opacity": 0.5,
-          "line-dasharray": [2, 2],
-        },
-      });
-      map.addLayer({
-        id: "orca-routes-travelled",
-        type: "line",
-        source: "orca-routes",
-        filter: ["==", ["get", "segment"], "travelled"],
-        paint: {
-          "line-color": ["get", "color"],
-          "line-width": ["case", ["get", "selected"], 3.2, 2],
-          "line-opacity": ["case", ["get", "selected"], 1, 0.85],
-        },
-      });
       readyRef.current = true;
     });
+
     mapRef.current = map;
 
     return () => {
@@ -107,7 +81,7 @@ export default function RiskMap({
     };
   }, []);
 
-  /* Route polylines --------------------------------------------------- */
+  /* Route polylines — SVG overlay above the MapLibre canvas ------------ */
   const routesRef = useRef(routes);
   routesRef.current = routes;
   const selectedRef = useRef(selectedId);
@@ -115,54 +89,94 @@ export default function RiskMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    const svg = svgRef.current;
+    if (!map || !svg) return;
 
-    // The simulation commits a new snapshot several times per second. Feeding
-    // every commit into the GeoJSON source starves the tile worker and nothing
-    // ever paints, so route geometry is refreshed on a slow interval instead.
-    const apply = () => {
-      const source = map.getSource("orca-routes") as GeoJSONSource | undefined;
-      if (!source) return;
-      const currentSelected = selectedRef.current;
-      const features = (routesRef.current ?? []).flatMap((route) => {
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    let frame: number | null = null;
+
+    /** Project one lat/lon polyline to screen-space SVG path data. */
+    const toPathData = (coords: readonly (readonly [number, number])[], width: number) => {
+      const parts: string[] = [];
+      let prevX: number | null = null;
+      for (const [lat, lon] of coords) {
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+        const p = map.project([lon, lat]);
+        // Break the path when the projection wraps across the antimeridian.
+        const wrapped = prevX !== null && Math.abs(p.x - prevX) > width * 0.6;
+        parts.push(
+          `${parts.length === 0 || wrapped ? "M" : "L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`,
+        );
+        prevX = p.x;
+      }
+      return parts.length >= 2 ? parts.join(" ") : "";
+    };
+
+    const draw = () => {
+      frame = null;
+      const rect = map.getCanvas().getBoundingClientRect();
+      const width = rect.width || 1;
+      const height = rect.height || 1;
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+      const selected = selectedRef.current;
+      const hasFocus = Boolean(
+        selected && (routesRef.current ?? []).some((r) => r.id === selected),
+      );
+      const frag = document.createDocumentFragment();
+
+      for (const route of routesRef.current ?? []) {
         const color = TIER_MAP_HEX[route.tier];
-        const selected = route.id === currentSelected;
-        return (
-          [
-            ["travelled", route.travelled],
-            ["remaining", route.remaining],
-          ] as const
-        )
-          .filter(([, coords]) => coords.length >= 2)
-          .map(([segment, coords]) => ({
-            type: "Feature" as const,
-            properties: { id: route.id, segment, color, selected },
-            geometry: {
-              type: "LineString" as const,
-              coordinates: coords.map(([lat, lon]) => [lon, lat]),
-            },
-          }));
-      });
-      source.setData({ type: "FeatureCollection", features } as never);
+        const isSelected = route.id === selected;
+        const dim = hasFocus && !isSelected;
+
+        for (const segment of ["remaining", "travelled"] as const) {
+          const coords = segment === "travelled" ? route.travelled : route.remaining;
+          const d = toPathData(coords, width);
+          if (!d) continue;
+          const path = document.createElementNS(SVG_NS, "path");
+          path.setAttribute("d", d);
+          path.setAttribute("fill", "none");
+          path.setAttribute("stroke", color);
+          path.setAttribute("stroke-linecap", "round");
+          path.setAttribute("stroke-linejoin", "round");
+          if (segment === "travelled") {
+            path.setAttribute("stroke-width", isSelected ? "3.4" : "1.9");
+            path.setAttribute("opacity", dim ? "0.22" : isSelected ? "1" : "0.85");
+          } else {
+            path.setAttribute("stroke-width", isSelected ? "2" : "1.3");
+            path.setAttribute("stroke-dasharray", "5 5");
+            path.setAttribute("opacity", dim ? "0.12" : isSelected ? "0.7" : "0.42");
+          }
+          frag.appendChild(path);
+        }
+      }
+
+      svg.replaceChildren(frag);
     };
 
     const schedule = () => {
-      apply();
-      return setInterval(apply, ROUTE_REFRESH_MS);
+      if (frame !== null) return;
+      frame = requestAnimationFrame(draw);
     };
 
-    if (readyRef.current) {
-      const timer = schedule();
-      return () => clearInterval(timer);
-    }
-    let timer: ReturnType<typeof setInterval> | null = null;
-    const onLoad = () => {
-      timer = schedule();
-    };
-    map.once("load", onLoad);
+    map.on("move", schedule);
+    map.on("zoom", schedule);
+    map.on("resize", schedule);
+    map.on("load", schedule);
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(schedule) : null;
+    if (observer && containerRef.current) observer.observe(containerRef.current);
+    const interval = setInterval(schedule, 200);
+    schedule();
+
     return () => {
-      map.off("load", onLoad);
-      if (timer) clearInterval(timer);
+      map.off("move", schedule);
+      map.off("zoom", schedule);
+      map.off("resize", schedule);
+      map.off("load", schedule);
+      observer?.disconnect();
+      clearInterval(interval);
+      if (frame !== null) cancelAnimationFrame(frame);
     };
   }, []);
 
@@ -172,6 +186,7 @@ export default function RiskMap({
     if (!map) return;
 
     const seen = new Set<string>();
+    const hasFocus = selectedId !== null && points.some((p) => p.id === selectedId);
 
     for (const point of points) {
       if (!Number.isFinite(point.lat) || !Number.isFinite(point.lon)) continue;
@@ -179,6 +194,7 @@ export default function RiskMap({
       const color = TIER_CSS_VAR[point.risk_tier];
       const size = 10 + (point.risk_tier === "UNSCORED" ? 2 : point.risk * 16);
       const active = point.id === selectedId;
+      const opacity = hasFocus && !active ? "0.35" : "0.9";
 
       const html = `<div style="padding:8px 10px;min-width:190px">
            <div style="font-size:12px;font-weight:600">${point.id}</div>
@@ -205,13 +221,14 @@ export default function RiskMap({
           ? "2px solid var(--foreground)"
           : "1px solid rgba(255,255,255,.35)";
         el.style.boxShadow = `0 0 0 ${Math.round(size / 2)}px ${color}22, 0 0 ${Math.round(size)}px ${color}55`;
+        el.style.opacity = opacity;
         continue;
       }
 
       const el = document.createElement("button");
       el.type = "button";
       el.setAttribute("aria-label", `Shipment ${point.id}, ${TIER_LABEL[point.risk_tier]} risk`);
-      el.style.cssText = `width:${size}px;height:${size}px;border-radius:9999px;background:${color};opacity:.9;cursor:pointer;border:${
+      el.style.cssText = `width:${size}px;height:${size}px;border-radius:9999px;background:${color};opacity:${opacity};cursor:pointer;border:${
         active ? "2px solid var(--foreground)" : "1px solid rgba(255,255,255,.35)"
       };box-shadow:0 0 0 ${Math.round(size / 2)}px ${color}22, 0 0 ${Math.round(size)}px ${color}55;`;
       el.addEventListener("click", () => selectRef.current(point.id));
@@ -234,6 +251,12 @@ export default function RiskMap({
   return (
     <div className="relative h-full w-full">
       <div ref={containerRef} className="h-full w-full" />
+      <svg
+        ref={svgRef}
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        aria-hidden
+        preserveAspectRatio="none"
+      />
       <div className="pointer-events-none absolute bottom-3 left-3 rounded-md border border-hairline bg-surface/90 px-3 py-2 backdrop-blur">
         <p className="orca-label mb-1.5 text-[10px]">Model risk tier</p>
         <div className="flex items-center gap-2">

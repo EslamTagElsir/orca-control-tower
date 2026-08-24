@@ -17,7 +17,12 @@ import { holdoutJourneys, type HoldoutJourney } from "../holdout-data";
 import { rowToFeatures } from "../source-data";
 import type { Rng } from "../prng";
 import { buildWaypoints, destinationCentroid, distanceKm, siteCentroid, siteLabel } from "./geo";
-import { candidateLadder, pickShockProfile, type TargetBand } from "./mutation-profiles";
+import {
+  candidateLadder,
+  MEASURED_ELEVATED,
+  pickShockProfile,
+  type TargetBand,
+} from "./mutation-profiles";
 import { nextMilestoneFor } from "./route-engine";
 import { UNSCORED_MODEL, type PlannedShock, type ShipmentSource, type SimShipment } from "./types";
 
@@ -58,13 +63,21 @@ function signalWeight(j: HoldoutJourney): number {
 export function createAutomaticGeneratorSource(rng: Rng): ShipmentSource {
   const templates = holdoutJourneys().filter((j) => j.raw["Manufacturing Site"]);
   const weighted = templates.map((item) => ({ item, weight: signalWeight(item) }));
+  const measuredElevated = templates.filter((t) => MEASURED_ELEVATED[t.id]);
 
   return {
     kind: "automatic",
     label: "Automatic operational generator",
     next({ simClockMs, sequence, runId, targetBand }) {
       const band: TargetBand = targetBand ?? (rng.chance(0.55) ? "elevated" : "baseline");
-      const template = band === "elevated" ? rng.weighted(weighted) : rng.pick(templates);
+      // Elevated band: prefer templates the MODEL was measured to lift out of
+      // LOW, otherwise fall back to the real-signal weighting.
+      const template =
+        band === "elevated"
+          ? measuredElevated.length > 0 && rng.chance(0.8)
+            ? rng.pick(measuredElevated)
+            : rng.weighted(weighted)
+          : rng.pick(templates);
 
       // Template features only — outcomes are removed from the twin.
       const raw: Record<string, string> = { ...template.raw };
@@ -72,7 +85,7 @@ export function createAutomaticGeneratorSource(rng: Rng): ShipmentSource {
       delete raw["Delay_Days"];
       delete raw["ID"];
 
-      const ladder = candidateLadder(band);
+      const ladder = candidateLadder(band, template.id);
       const candidates = ladder.map((p) => ({ key: p.key, label: p.label, raw: p.mutate(raw) }));
       const first = candidates[0]!;
 

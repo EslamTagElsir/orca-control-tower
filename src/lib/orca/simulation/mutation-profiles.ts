@@ -208,7 +208,45 @@ export function candidateProfile(key: string): CandidateProfile {
  *    them in order and stops as soon as the MODEL returns a higher band, so the
  *    resulting tier is always whatever /predict said.
  */
-export function candidateLadder(band: TargetBand): CandidateProfile[] {
+export function candidateLadder(band: TargetBand, templateId?: string): CandidateProfile[] {
   if (band === "baseline") return [CANDIDATE_PROFILES[0]!];
-  return [CANDIDATE_PROFILES[1]!, CANDIDATE_PROFILES[2]!, CANDIDATE_PROFILES[3]!];
+  const ladder = [CANDIDATE_PROFILES[1]!, CANDIDATE_PROFILES[2]!, CANDIDATE_PROFILES[3]!];
+  const measured = templateId ? MEASURED_ELEVATED[templateId] : undefined;
+  if (!measured) return ladder;
+  // Start with the recipe the model was actually measured to rate highest for
+  // this template, then fall back to the rest of the ladder (max 4 attempts).
+  const first = candidateProfile(measured.candidateKey);
+  return [first, ...ladder.filter((p) => p.key !== first.key)];
 }
+
+/**
+ * MEASURED model behaviour, not an assumption: each of these REAL holdout
+ * templates was scored against the deployed ORCA build with the candidate
+ * ladder above, and the listed recipe is the one the MODEL returned a non-LOW
+ * tier for (probability recorded verbatim from /predict). Used only to bias
+ * which template/recipe is TRIED first — every displayed tier still comes from
+ * a live /predict response.
+ *
+ * Sensitivity sweep result for the deployed build (v2.0.0-demo): inside the
+ * real observed feature domain the model saturates at probability_late = 0.60,
+ * i.e. LOW and WATCH are the only tiers reachable at creation time. HIGH /
+ * CRITICAL only appear later, from in-flight shock re-scores.
+ */
+export const MEASURED_ELEVATED: Record<string, { candidateKey: string; probability: number }> = {
+  "83930": { candidateKey: "full_signal_stack", probability: 0.5294117647058824 },
+  "83342": { candidateKey: "elevated_lane", probability: 0.4666666666666667 },
+  "83922": { candidateKey: "as_planned", probability: 0.4666666666666667 },
+  "83932": { candidateKey: "full_signal_stack", probability: 0.4666666666666667 },
+  "86216": { candidateKey: "elevated_lane", probability: 0.4666666666666667 },
+  "85601": { candidateKey: "elevated_lane", probability: 0.375 },
+  "83349": { candidateKey: "full_signal_stack", probability: 0.375 },
+  "85602": { candidateKey: "lane_and_site", probability: 0.375 },
+  "86211": { candidateKey: "full_signal_stack", probability: 0.375 },
+  "34140": { candidateKey: "as_planned", probability: 0.375 },
+  "86822": { candidateKey: "as_planned", probability: 0.375 },
+  "82820": { candidateKey: "elevated_lane", probability: 0.375 },
+  "37076": { candidateKey: "full_signal_stack", probability: 0.375 },
+};
+
+/** Template ids the MODEL has been measured to lift out of LOW. */
+export const MEASURED_ELEVATED_IDS = Object.keys(MEASURED_ELEVATED);
