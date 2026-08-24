@@ -36,7 +36,19 @@ interface SimulationContextValue {
   setSpeed: (speed: SimSpeed) => void;
 }
 
-const SimulationContext = createContext<SimulationContextValue | null>(null);
+/**
+ * Kept on a global slot so a dev HMR re-evaluation of this module reuses the
+ * very same context object. Otherwise the root provider (old module instance)
+ * and a code-split route (fresh instance) end up on two different contexts and
+ * `useSimulation` throws even though the provider is mounted.
+ */
+const CONTEXT_SLOT = "__orcaSimulationContext";
+const globalSlot = globalThis as typeof globalThis & {
+  [CONTEXT_SLOT]?: React.Context<SimulationContextValue | null>;
+};
+const SimulationContext =
+  globalSlot[CONTEXT_SLOT] ??
+  (globalSlot[CONTEXT_SLOT] = createContext<SimulationContextValue | null>(null));
 
 const IDLE = idleSnapshot();
 const serverSnapshot = () => IDLE;
