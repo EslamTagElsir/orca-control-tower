@@ -207,7 +207,6 @@ function ControlTowerBody({
         onRestart={demo.restart}
       />
 
-
       <div className="grid gap-3 xl:grid-cols-3">
         <Panel className="xl:col-span-2">
           <PanelHeader

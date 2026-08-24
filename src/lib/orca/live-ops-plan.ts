@@ -373,7 +373,10 @@ export function buildRunPlan(shipments: OrcaShipment[], seed: number): LiveOpsRu
     const keep = cast[cast.length - 1]!;
     for (let i = entries.length - 1; i >= 0; i--) {
       const e = entries[i]!;
-      if (e.shipmentId === keep.id && (e.family === "DELIVERED" || e.family === "DELIVERY_WINDOW")) {
+      if (
+        e.shipmentId === keep.id &&
+        (e.family === "DELIVERED" || e.family === "DELIVERY_WINDOW")
+      ) {
         entries.splice(i, 1);
       }
     }
@@ -445,7 +448,9 @@ export function buildRunPlan(shipments: OrcaShipment[], seed: number): LiveOpsRu
   if (whatIfs.length > 0) counts.set("MODEL_SCENARIO", whatIfs.length);
   const mix = [...counts.entries()]
     .map(([family, count]) => ({ family, count }))
-    .sort((a, b) => b.count - a.count || FAMILY_LABEL[a.family].localeCompare(FAMILY_LABEL[b.family]));
+    .sort(
+      (a, b) => b.count - a.count || FAMILY_LABEL[a.family].localeCompare(FAMILY_LABEL[b.family]),
+    );
 
   return { seed, runId, castIds: cast.map((s) => s.id), schedule, whatIfs, mix };
 }

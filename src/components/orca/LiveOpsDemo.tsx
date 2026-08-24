@@ -302,8 +302,8 @@ export function LiveOpsDemo({
               Run {runId} complete — {num(summary.events_processed)} synthetic operational events
               processed over 5 minutes. {num(summary.delivered)} delivered,{" "}
               {num(summary.in_transit)} still in transit, {num(summary.open_exceptions)} exception
-              {summary.open_exceptions === 1 ? "" : "s"} still open,{" "}
-              {num(summary.at_risk)} carrying model risk ≥ 0.30.{" "}
+              {summary.open_exceptions === 1 ? "" : "s"} still open, {num(summary.at_risk)} carrying
+              model risk ≥ 0.30.{" "}
               {summary.scenarios_evaluated > 0
                 ? `${num(summary.scenarios_evaluated)} model what-if scenario${summary.scenarios_evaluated === 1 ? "" : "s"} evaluated via /predict${
                     summary.biggest_delta_pp !== null
