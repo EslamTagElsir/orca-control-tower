@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Check, CircleDot, Circle, TrendingDown, TrendingUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useHydrated } from "@/hooks/use-hydrated";
 import { shipmentQuery } from "@/lib/orca/client";
 import { useOrca } from "@/lib/orca/context";
 import { days, featureLabel, hours, moneyExact, pct } from "@/lib/orca/format";
@@ -13,7 +14,8 @@ function Timeline({ stages }: { stages: ShipmentDetailResponse["timeline"] }) {
   return (
     <ol className="space-y-0">
       {stages.map((stage, i) => {
-        const Icon = stage.state === "complete" ? Check : stage.state === "active" ? CircleDot : Circle;
+        const Icon =
+          stage.state === "complete" ? Check : stage.state === "active" ? CircleDot : Circle;
         const tone =
           stage.state === "complete"
             ? "text-success border-success/40 bg-success/10"
@@ -23,12 +25,17 @@ function Timeline({ stages }: { stages: ShipmentDetailResponse["timeline"] }) {
         return (
           <li key={stage.label} className="flex gap-2.5">
             <div className="flex flex-col items-center">
-              <span className={cn("grid size-5 shrink-0 place-items-center rounded-full border", tone)}>
+              <span
+                className={cn("grid size-5 shrink-0 place-items-center rounded-full border", tone)}
+              >
                 <Icon className="size-2.5" aria-hidden />
               </span>
               {i < stages.length - 1 ? (
                 <span
-                  className={cn("w-px flex-1", stage.state === "complete" ? "bg-success/40" : "bg-hairline")}
+                  className={cn(
+                    "w-px flex-1",
+                    stage.state === "complete" ? "bg-success/40" : "bg-hairline",
+                  )}
                   aria-hidden
                 />
               ) : null}
@@ -49,7 +56,8 @@ function Timeline({ stages }: { stages: ShipmentDetailResponse["timeline"] }) {
 }
 
 function RiskDrivers({ drivers }: { drivers: ShipmentDetailResponse["risk_drivers"] }) {
-  if (drivers.length === 0) return <PanelEmpty message="No SHAP drivers returned for this shipment." />;
+  if (drivers.length === 0)
+    return <PanelEmpty message="No SHAP drivers returned for this shipment." />;
   const max = Math.max(...drivers.map((d) => Math.abs(d.shap_value)), 1e-6);
 
   return (
@@ -88,9 +96,12 @@ function RiskDrivers({ drivers }: { drivers: ShipmentDetailResponse["risk_driver
 
 export function ShipmentDetail({ shipmentId }: { shipmentId: string | null }) {
   const { seed } = useOrca();
-  const query = useQuery(shipmentQuery(shipmentId, seed));
+  const hydrated = useHydrated();
+  const base = shipmentQuery(shipmentId, seed);
+  const query = useQuery({ ...base, enabled: hydrated && Boolean(shipmentId) });
 
-  if (!shipmentId) return <PanelEmpty message="Select a shipment from the map, stream or exception queue." />;
+  if (!shipmentId)
+    return <PanelEmpty message="Select a shipment from the map, stream or exception queue." />;
   if (query.isPending) return <PanelSkeleton rows={8} />;
   if (query.isError)
     return <PanelError message={(query.error as Error).message} onRetry={() => query.refetch()} />;

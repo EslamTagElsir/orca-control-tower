@@ -115,7 +115,9 @@ function Clock() {
     const id = setInterval(tick, 30_000);
     return () => clearInterval(id);
   }, []);
-  return <span className="orca-num hidden text-xs text-muted-foreground md:inline">{now ?? "—"}</span>;
+  return (
+    <span className="orca-num hidden text-xs text-muted-foreground md:inline">{now ?? "—"}</span>
+  );
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -189,13 +191,21 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span
               className={cn(
                 "size-2 rounded-full",
-                connection === "live" ? "bg-success" : connection === "connecting" ? "bg-warn" : "bg-danger",
+                connection === "live"
+                  ? "bg-success"
+                  : connection === "connecting"
+                    ? "bg-warn"
+                    : "bg-danger",
               )}
               aria-hidden
             />
             {!collapsed ? (
               <span className="truncate">
-                {connection === "live" ? "System healthy" : connection === "connecting" ? "Connecting…" : "Fixture mode"}
+                {connection === "live"
+                  ? "System healthy"
+                  : connection === "connecting"
+                    ? "Connecting…"
+                    : "Fixture mode"}
               </span>
             ) : null}
           </div>
@@ -255,7 +265,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-hairline px-4 py-2.5 text-[11px] text-muted-foreground">
           <span>ORCA Control Tower · Decision intelligence for resilient supply chains</span>
           <span className="orca-num">
-            {connection === "live" ? "Connected to ORCA intelligence layer" : "Offline fixture data — not ORCA output"}
+            {connection === "live"
+              ? "Connected to ORCA intelligence layer"
+              : "Offline fixture data — not ORCA output"}
           </span>
         </footer>
       </div>

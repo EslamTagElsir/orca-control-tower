@@ -47,7 +47,10 @@ export function ExceptionsTable({
     return [...filtered].sort((a, b) => {
       const av = a[sortKey];
       const bv = b[sortKey];
-      const cmp = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv));
+      const cmp =
+        typeof av === "number" && typeof bv === "number"
+          ? av - bv
+          : String(av).localeCompare(String(bv));
       return desc ? -cmp : cmp;
     });
   }, [shipments, query, tier, sortKey, desc]);
@@ -60,7 +63,15 @@ export function ExceptionsTable({
     }
   }
 
-  const SortHead = ({ label, k, align = "left" }: { label: string; k: SortKey; align?: "left" | "right" }) => (
+  const SortHead = ({
+    label,
+    k,
+    align = "left",
+  }: {
+    label: string;
+    k: SortKey;
+    align?: "left" | "right";
+  }) => (
     <th
       scope="col"
       className={cn("px-3 py-2 font-medium", align === "right" ? "text-right" : "text-left")}
@@ -88,7 +99,10 @@ export function ExceptionsTable({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b border-hairline px-3 py-2">
         <div className="relative min-w-[10rem] flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Search
+            className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -121,7 +135,11 @@ export function ExceptionsTable({
                 <SortHead label="Issue" k="issue" />
                 <SortHead label="Risk" k="risk" align="right" />
                 <SortHead label="Pred. delay" k="severity_p50" align="right" />
-                {!compact ? <th scope="col" className="px-3 py-2 text-left font-medium text-muted-foreground">Decision</th> : null}
+                {!compact ? (
+                  <th scope="col" className="px-3 py-2 text-left font-medium text-muted-foreground">
+                    Decision
+                  </th>
+                ) : null}
                 <SortHead label="Exposure" k="expected_exposure" align="right" />
                 <th scope="col" className="px-3 py-2 text-right font-medium text-muted-foreground">
                   <span className="sr-only">Actions</span>
@@ -139,14 +157,20 @@ export function ExceptionsTable({
                   )}
                 >
                   <td className="orca-num px-3 py-2 font-medium">{s.id}</td>
-                  <td className="max-w-[16rem] truncate px-3 py-2 text-foreground/85" title={s.route}>
+                  <td
+                    className="max-w-[16rem] truncate px-3 py-2 text-foreground/85"
+                    title={s.route}
+                  >
                     {s.route}
                   </td>
                   <td className="px-3 py-2 text-muted-foreground">{s.issue}</td>
                   <td className="px-3 py-2 text-right">
                     <RiskBadge tier={s.risk_tier} value={s.risk} />
                   </td>
-                  <td className="orca-num px-3 py-2 text-right" title={`90% interval ${days(s.severity_interval_90[0])} – ${days(s.severity_interval_90[1])}`}>
+                  <td
+                    className="orca-num px-3 py-2 text-right"
+                    title={`90% interval ${days(s.severity_interval_90[0])} – ${days(s.severity_interval_90[1])}`}
+                  >
                     {days(s.severity_p50)}
                     <span className="ml-1 text-[10px] text-muted-foreground">
                       {hours(s.eta_variance_hours, 0)}
@@ -157,7 +181,9 @@ export function ExceptionsTable({
                       <DecisionBadge decision={s.decision} />
                     </td>
                   ) : null}
-                  <td className="orca-num px-3 py-2 text-right text-muted-foreground">{money(s.expected_exposure)}</td>
+                  <td className="orca-num px-3 py-2 text-right text-muted-foreground">
+                    {money(s.expected_exposure)}
+                  </td>
                   <td className="px-3 py-2 text-right">
                     <span className="inline-grid size-6 place-items-center rounded-md border border-hairline text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                       <Eye className="size-3.5" aria-hidden />
@@ -171,9 +197,11 @@ export function ExceptionsTable({
       )}
 
       <p className="border-t border-hairline px-3 py-1.5 text-[10px] text-muted-foreground">
-        Risk is the calibrated late probability; predicted delay is severity p50 with a 90% interval on hover.
-        Exposure = risk × severity × configured delay cost. {rows.length} of {shipments.length} shown ·{" "}
-        {pct(rows.filter((r) => r.risk > 0.85).length / Math.max(rows.length, 1), 0)} in the CRITICAL tier.
+        Risk is the calibrated late probability; predicted delay is severity p50 with a 90% interval
+        on hover. Exposure = risk × severity × configured delay cost. {rows.length} of{" "}
+        {shipments.length} shown ·{" "}
+        {pct(rows.filter((r) => r.risk > 0.85).length / Math.max(rows.length, 1), 0)} in the
+        CRITICAL tier.
       </p>
     </div>
   );

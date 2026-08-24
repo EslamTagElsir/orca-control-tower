@@ -50,7 +50,7 @@ export function ExceptionSummary({ shipments }: { shipments: OrcaShipment[] }) {
 
   return (
     <div className="flex h-full min-h-[220px] flex-col items-center gap-3 sm:flex-row">
-      <div className="relative h-[180px] w-[180px] shrink-0">
+      <div className="relative h-[160px] w-[160px] shrink-0 xl:h-[150px] xl:w-[150px] 2xl:h-[180px] 2xl:w-[180px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -69,26 +69,31 @@ export function ExceptionSummary({ shipments }: { shipments: OrcaShipment[] }) {
             </Pie>
             <Tooltip
               contentStyle={tooltipStyle}
-              formatter={(value: number, name: string) => [`${value} (${pct(value / total, 0)})`, name]}
+              formatter={(value: number, name: string) => [
+                `${value} (${pct(value / total, 0)})`,
+                name,
+              ]}
             />
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <div className="text-center">
             <p className="orca-num text-2xl font-semibold leading-none">{num(total)}</p>
-            <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">Shipments</p>
+            <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+              Shipments
+            </p>
           </div>
         </div>
       </div>
       <ul className="min-w-0 flex-1 space-y-1.5">
         {data.map((d) => (
-          <li key={d.name} className="flex items-center gap-2 text-xs">
+          <li key={d.name} className="flex items-start gap-2 text-xs">
             <span
-              className="size-2.5 shrink-0 rounded-[3px]"
+              className="mt-0.5 size-2.5 shrink-0 rounded-[3px]"
               style={{ background: ISSUE_COLORS[d.name] ?? "var(--chart-1)" }}
               aria-hidden
             />
-            <span className="min-w-0 flex-1 truncate text-foreground/85">{d.name}</span>
+            <span className="min-w-0 flex-1 leading-tight text-foreground/85">{d.name}</span>
             <span className="orca-num shrink-0 text-muted-foreground">
               {pct(d.value / total, 0)} ({d.value})
             </span>
@@ -122,7 +127,7 @@ export function RiskDistributionChart({ distribution }: { distribution: RiskDist
 
   return (
     <div className="flex h-full min-h-[200px] flex-col items-center gap-3 sm:flex-row">
-      <div className="relative h-[168px] w-[168px] shrink-0">
+      <div className="relative h-[160px] w-[160px] shrink-0 xl:h-[150px] xl:w-[150px] 2xl:h-[168px] 2xl:w-[168px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -141,7 +146,10 @@ export function RiskDistributionChart({ distribution }: { distribution: RiskDist
             </Pie>
             <Tooltip
               contentStyle={tooltipStyle}
-              formatter={(value: number, name: string) => [`${value} (${pct(value / total, 0)})`, name]}
+              formatter={(value: number, name: string) => [
+                `${value} (${pct(value / total, 0)})`,
+                name,
+              ]}
             />
           </PieChart>
         </ResponsiveContainer>
@@ -154,9 +162,13 @@ export function RiskDistributionChart({ distribution }: { distribution: RiskDist
       </div>
       <ul className="min-w-0 flex-1 space-y-1.5">
         {data.map((d) => (
-          <li key={d.tier} className="flex items-center gap-2 text-xs">
-            <span className="size-2.5 shrink-0 rounded-[3px]" style={{ background: d.fill }} aria-hidden />
-            <span className="min-w-0 flex-1 truncate">
+          <li key={d.tier} className="flex items-start gap-2 text-xs">
+            <span
+              className="mt-0.5 size-2.5 shrink-0 rounded-[3px]"
+              style={{ background: d.fill }}
+              aria-hidden
+            />
+            <span className="min-w-0 flex-1 leading-tight">
               <span className="text-foreground/85">{d.name}</span>{" "}
               <span className="orca-num text-muted-foreground/70">({TIER_RANGE[d.tier]})</span>
             </span>
@@ -179,14 +191,20 @@ export function TopRiskyLanes({
   destinations: TopDestination[];
   onSelect?: (destination: string) => void;
 }) {
-  if (destinations.length === 0) return <PanelEmpty message="No destination aggregates returned." />;
+  if (destinations.length === 0)
+    return <PanelEmpty message="No destination aggregates returned." />;
 
   const data = destinations.map((d) => ({ ...d, riskPct: d.risk * 100 }));
 
   return (
     <div className="h-full min-h-[200px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ top: 4, right: 40, bottom: 4, left: 4 }} barSize={16}>
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ top: 4, right: 40, bottom: 4, left: 4 }}
+          barSize={16}
+        >
           <XAxis
             type="number"
             domain={[0, 100]}

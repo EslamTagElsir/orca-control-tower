@@ -53,7 +53,8 @@ export interface ExplainResponse {
 
 export interface RecommendResponse {
   recommendation: string;
-  decision_reason: string;
+  /** FastAPI returns a list of reason strings, not a single string. */
+  decision_reason: string[];
   expected_impact_type: string;
   robustness: string;
   human_approval_required: boolean;

@@ -14,12 +14,7 @@
 
 import { queryOptions } from "@tanstack/react-query";
 
-import {
-  fixtureOverview,
-  fixtureScenarioRun,
-  fixtureScenarios,
-  fixtureShipment,
-} from "./fixtures";
+import { fixtureOverview, fixtureScenarioRun, fixtureScenarios, fixtureShipment } from "./fixtures";
 import type {
   DataSource,
   HealthResponse,
@@ -104,10 +99,7 @@ function isUnreachable(error: unknown): boolean {
   );
 }
 
-async function withFixture<T>(
-  live: () => Promise<T>,
-  fallback: () => T,
-): Promise<Sourced<T>> {
+async function withFixture<T>(live: () => Promise<T>, fallback: () => T): Promise<Sourced<T>> {
   try {
     return { data: await live(), source: "live" };
   } catch (error) {
@@ -155,7 +147,8 @@ export function getShipment(
 ): Promise<Sourced<ShipmentDetailResponse>> {
   const query = seed ? `?seed=${seed}` : "";
   return withFixture(
-    () => request<ShipmentDetailResponse>(`/demo/shipments/${encodeURIComponent(shipmentId)}${query}`),
+    () =>
+      request<ShipmentDetailResponse>(`/demo/shipments/${encodeURIComponent(shipmentId)}${query}`),
     () => fixtureShipment(shipmentId, seed),
   );
 }

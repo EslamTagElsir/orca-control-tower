@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+import { useHydrated } from "@/hooks/use-hydrated";
 import { healthQuery, overviewQuery } from "./client";
 import type { ConnectionState } from "./types";
 
@@ -28,7 +29,10 @@ export function OrcaProvider({ children }: { children: ReactNode }) {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshMs, setRefreshMs] = useState(30_000);
 
-  const health = useQuery(healthQuery(autoRefresh ? 20_000 : false));
+  // Queries stay disabled until hydration so SSR output and the first client
+  // render agree (fixture fallback can resolve before hydration completes).
+  const hydrated = useHydrated();
+  const health = useQuery({ ...healthQuery(autoRefresh ? 20_000 : false), enabled: hydrated });
 
   const connection: ConnectionState = health.isPending
     ? "connecting"
@@ -70,5 +74,6 @@ export function useOrca(): OrcaContextValue {
 /** Shared overview query bound to the current seed / refresh preference. */
 export function useOverview() {
   const { seed, autoRefresh, refreshMs } = useOrca();
-  return useQuery(overviewQuery(seed, autoRefresh ? refreshMs : false));
+  const hydrated = useHydrated();
+  return useQuery({ ...overviewQuery(seed, autoRefresh ? refreshMs : false), enabled: hydrated });
 }
