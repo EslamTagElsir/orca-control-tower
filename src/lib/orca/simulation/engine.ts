@@ -15,7 +15,7 @@
 
 import { makeRng, newSeed, runIdFromSeed, type Rng } from "../prng";
 import { riskTier } from "../risk";
-import type { FeatureMap } from "../source-data";
+import { rowToFeatures, type FeatureMap } from "../source-data";
 import type { PredictResponse, RecommendResponse, DecisionAction } from "../types";
 import {
   applyShock,
@@ -26,6 +26,7 @@ import {
   stageDetail,
   stageFamily,
 } from "./event-engine";
+import type { TargetBand } from "./mutation-profiles";
 import { createAutomaticGeneratorSource } from "./shipment-generator";
 import { advance } from "./route-engine";
 import {
@@ -39,6 +40,7 @@ import {
   type SimSpeed,
   type SimulationSnapshot,
 } from "./types";
+
 
 /* ------------------------------------------------------------------ */
 /* Tunables                                                            */
