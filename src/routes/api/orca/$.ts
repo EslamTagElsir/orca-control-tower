@@ -76,8 +76,8 @@ async function forward(request: Request, splat: string): Promise<Response> {
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unknown upstream error";
     return Response.json(
-      { error: "orca_api_unreachable", detail },
-      { status: 502, headers: { "cache-control": "no-store" } },
+      { orca_unavailable: true, error: "orca_api_unreachable", detail },
+      { status: 200, headers: { "cache-control": "no-store" } },
     );
   } finally {
     clearTimeout(timer);
