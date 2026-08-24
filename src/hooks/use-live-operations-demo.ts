@@ -431,6 +431,8 @@ export function useLiveOperationsDemo(shipments: OrcaShipment[]) {
     runId: plan?.runId ?? null,
     seed: clock.seed,
     mix: plan?.mix ?? [],
+    /** Planned what-if picks for this run — NOT completed model evaluations. */
+    whatIfsPlanned: plan?.whatIfs.length ?? 0,
     castSize: plan?.castIds.length ?? 0,
     start,
     pause,
