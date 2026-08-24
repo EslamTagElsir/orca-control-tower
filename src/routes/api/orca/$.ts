@@ -42,7 +42,6 @@ function isLoopback(base: string): boolean {
   }
 }
 
-
 /**
  * Fixture mode is a normal operating state, not an HTTP failure, so these
  * responses are 200 with an explicit envelope. Returning 5xx made the browser
@@ -98,10 +97,14 @@ async function forward(request: Request, splat: string): Promise<Response> {
       ? `Configured ORCA upstream ${base} is a loopback address, which resolves to the app server (not your workstation) and has no ORCA service listening (${raw}). Set ORCA_API_INTERNAL_URL to a publicly reachable ORCA base URL, or switch Settings to Direct Browser mode for a local FastAPI with CORS enabled.`
       : `ORCA upstream ${base} is unreachable (${raw}).`;
     return Response.json(
-      { orca_unavailable: true, error: "orca_api_unreachable", detail, upstream_kind: isLoopback(base) ? "loopback" : "remote" },
+      {
+        orca_unavailable: true,
+        error: "orca_api_unreachable",
+        detail,
+        upstream_kind: isLoopback(base) ? "loopback" : "remote",
+      },
       { status: 200, headers: { "cache-control": "no-store" } },
     );
-
   } finally {
     clearTimeout(timer);
   }
