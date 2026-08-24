@@ -23,9 +23,9 @@ export function PanelHeader({
   actions,
 }: {
   title: string;
-  hint?: string;
-  source?: DataSource;
-  actions?: ReactNode;
+  hint?: string | undefined;
+  source?: DataSource | undefined;
+  actions?: ReactNode | undefined;
 }) {
   return (
     <header className="flex items-center justify-between gap-3 border-b border-hairline px-4 py-2.5">

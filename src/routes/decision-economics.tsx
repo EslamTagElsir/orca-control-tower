@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { RouteShell, routeHead } from "@/components/orca/RouteShell";
+import { money } from "@/lib/orca/format";
+import { routeHead } from "@/components/orca/RouteShell";
+import { PageFrame } from "@/components/orca/PageFrame";
+import { OverviewBoundary } from "@/components/orca/OverviewBoundary";
+import { EvidenceBadge, Panel, PanelBody, PanelHeader } from "@/components/orca/primitives";
+import { ScenarioWorkbench } from "@/components/orca/ScenarioWorkbench";
 
 export const Route = createFileRoute("/decision-economics")({
   head: routeHead(
@@ -12,14 +17,50 @@ export const Route = createFileRoute("/decision-economics")({
 
 function DecisionEconomicsPage() {
   return (
-    <RouteShell
-      title="Decision Economics"
-      subtitle="Exposure, benefit and net-benefit ledger per shipment."
-      endpoints={[
-        "GET /api/orca/demo/overview",
-        "POST /api/orca/demo/scenario",
-        "POST /api/orca/recommend",
-      ]}
-    />
+    <OverviewBoundary>
+      {({ overview, source, reason }) => (
+        <PageFrame
+          title="Decision Economics"
+          subtitle="Exposure, benefit and net-benefit ledger per shipment, computed by ORCA from your stated cost assumptions."
+          source={source}
+          reason={reason}
+          actions={<EvidenceBadge label={overview.evidence.simulated} />}
+        >
+          <Panel>
+            <PanelHeader
+              title="Portfolio context"
+              hint="Aggregate figures returned in /demo/overview kpis"
+              source={source}
+            />
+            <PanelBody className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-md border border-hairline bg-surface-sunken px-3 py-2">
+                <p className="orca-label text-[10px]">Estimated exposure</p>
+                <p className="orca-num mt-0.5 text-sm font-semibold">
+                  {money(overview.kpis.estimated_exposure)}
+                </p>
+              </div>
+              <div className="rounded-md border border-hairline bg-surface-sunken px-3 py-2">
+                <p className="orca-label text-[10px]">Potential net benefit</p>
+                <p className="orca-num mt-0.5 text-sm font-semibold">
+                  {money(overview.kpis.potential_net_benefit)}
+                </p>
+              </div>
+              <div className="rounded-md border border-hairline bg-surface-sunken px-3 py-2">
+                <p className="orca-label text-[10px]">Intervention candidates</p>
+                <p className="orca-num mt-0.5 text-sm font-semibold">
+                  {overview.kpis.intervention_candidates}
+                </p>
+              </div>
+              <div className="rounded-md border border-hairline bg-surface-sunken px-3 py-2">
+                <p className="orca-label text-[10px]">Exceptions</p>
+                <p className="orca-num mt-0.5 text-sm font-semibold">{overview.kpis.exceptions}</p>
+              </div>
+            </PanelBody>
+          </Panel>
+
+          <ScenarioWorkbench shipments={overview.map_points} variant="economics" />
+        </PageFrame>
+      )}
+    </OverviewBoundary>
   );
 }
