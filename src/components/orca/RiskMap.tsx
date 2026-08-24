@@ -75,8 +75,8 @@ export default function RiskMap({
         filter: ["==", ["get", "segment"], "remaining"],
         paint: {
           "line-color": ["get", "color"],
-          "line-width": 1,
-          "line-opacity": 0.22,
+          "line-width": 1.4,
+          "line-opacity": 0.5,
           "line-dasharray": [2, 2],
         },
       });
@@ -87,8 +87,8 @@ export default function RiskMap({
         filter: ["==", ["get", "segment"], "travelled"],
         paint: {
           "line-color": ["get", "color"],
-          "line-width": ["case", ["get", "selected"], 2.6, 1.5],
-          "line-opacity": ["case", ["get", "selected"], 0.95, 0.6],
+          "line-width": ["case", ["get", "selected"], 3.2, 2],
+          "line-opacity": ["case", ["get", "selected"], 1, 0.85],
         },
       });
       readyRef.current = true;
