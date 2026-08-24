@@ -59,6 +59,16 @@ function unconfigured(): Response {
   );
 }
 
+/**
+ * The hosted ORCA container drops a request with a bare 502/503/504 when the
+ * simulation fires a burst of concurrent /predict + /recommend calls. That is a
+ * transient upstream condition, not a dead backend, so retry it a bounded
+ * number of times with a short backoff before surfacing the failure.
+ */
+const RETRY_STATUSES = new Set([502, 503, 504]);
+const RETRY_ATTEMPTS = 4;
+const RETRY_BASE_MS = 500;
+
 async function forward(request: Request, splat: string): Promise<Response> {
   const base = upstreamBase();
   if (!base) return unconfigured();
@@ -71,23 +81,50 @@ async function forward(request: Request, splat: string): Promise<Response> {
   if (contentType) headers.set("content-type", contentType);
   headers.set("accept", "application/json");
 
+  const method = request.method.toUpperCase();
+  // Read once: the request body stream cannot be replayed across retries.
+  const payload = method === "GET" || method === "HEAD" ? null : await request.text();
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
 
   try {
-    const method = request.method.toUpperCase();
-    const upstream = await fetch(target, {
-      method,
-      headers,
-      body: method === "GET" || method === "HEAD" ? null : await request.text(),
-      signal: controller.signal,
-    });
+    let upstream: Response | null = null;
+    for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
+      upstream = await fetch(target, {
+        method,
+        headers,
+        body: payload,
+        signal: controller.signal,
+      });
+      if (!RETRY_STATUSES.has(upstream.status)) break;
+      if (attempt < RETRY_ATTEMPTS - 1) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_BASE_MS * 2 ** attempt));
+      }
+    }
 
-    const body = await upstream.text();
+    const body = await upstream!.text();
+
+    // An exhausted gateway failure is the same operating state as an
+    // unreachable upstream: return the 200 offline envelope the client already
+    // understands so the shipment stays labelled unscored instead of the
+    // browser surfacing a 502 runtime error and blanking the page.
+    if (RETRY_STATUSES.has(upstream!.status)) {
+      return Response.json(
+        {
+          orca_unavailable: true,
+          error: "orca_api_gateway_error",
+          detail: `ORCA upstream ${base} returned ${upstream!.status} after ${RETRY_ATTEMPTS} attempts — the intelligence layer is saturated or restarting. No substitute model value is applied.`,
+          upstream_kind: "remote",
+        },
+        { status: 200, headers: { "cache-control": "no-store" } },
+      );
+    }
+
     return new Response(body, {
-      status: upstream.status,
+      status: upstream!.status,
       headers: {
-        "content-type": upstream.headers.get("content-type") ?? "application/json",
+        "content-type": upstream!.headers.get("content-type") ?? "application/json",
         "cache-control": "no-store",
       },
     });
