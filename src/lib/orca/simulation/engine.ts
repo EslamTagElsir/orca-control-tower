@@ -575,7 +575,6 @@ export class SimulationEngine {
   private async score(shipment: SimShipment, request: ScoreRequest) {
     const port = this.port;
     if (!port) return;
-    const features = shipment.features;
     const previousRisk = shipment.model.risk;
     const previousTier =
       shipment.model.phase === "scored" && shipment.model.tier !== "UNSCORED"
@@ -583,9 +582,12 @@ export class SimulationEngine {
         : null;
 
     try {
-      const prediction = await port.predict(features);
+      const searched = request.reason === "initial";
+      const { prediction, networkCalls } = searched
+        ? await this.searchCandidates(shipment, port)
+        : { prediction: await port.predict(shipment.features), networkCalls: 1 };
       const metrics = { ...this.snapshot.metrics };
-      metrics.predictCalls += 1;
+      metrics.predictCalls += networkCalls;
       if (request.reason === "shock") metrics.rescores += 1;
 
       const tier = prediction.risk_tier ?? riskTier(prediction.probability_late);
@@ -605,10 +607,15 @@ export class SimulationEngine {
         recommendation: shipment.model.recommendation,
       };
 
+      const searchSuffix =
+        searched && shipment.candidateSearch.length > 1
+          ? ` · ${shipment.candidateSearch.length} candidate feature states scored, highest ORCA output kept`
+          : "";
       const detail =
         request.reason === "shock"
           ? `Re-scored after ${request.detail} · risk ${(previousRisk ?? 0).toFixed(3)} → ${prediction.probability_late.toFixed(3)} · tier ${tier}`
-          : `Scored by ORCA · risk ${prediction.probability_late.toFixed(3)} · tier ${tier} · ${prediction.model_version}`;
+          : `Scored by ORCA · risk ${prediction.probability_late.toFixed(3)} · tier ${tier} · ${prediction.model_version}${searchSuffix}`;
+
 
       const event = makeEvent({
         startedAtEpoch: this.snapshot.startedAtEpoch,
