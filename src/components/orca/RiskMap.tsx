@@ -97,6 +97,7 @@ export default function RiskMap({
       readyRef.current = true;
     });
     mapRef.current = map;
+    (window as unknown as { __orcaMap?: unknown }).__orcaMap = map;
 
     return () => {
       markers.forEach((m) => m.remove());
