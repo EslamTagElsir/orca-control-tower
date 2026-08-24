@@ -29,6 +29,21 @@ function upstreamBase(): string | null {
 }
 
 /**
+ * A loopback upstream resolves to the SERVER container, not the operator's
+ * workstation, so it can only ever work in a local dev sandbox. Detect it so
+ * the offline envelope explains the real cause instead of "fetch failed".
+ */
+function isLoopback(base: string): boolean {
+  try {
+    const host = new URL(base).hostname;
+    return host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "0.0.0.0";
+  } catch {
+    return false;
+  }
+}
+
+
+/**
  * Fixture mode is a normal operating state, not an HTTP failure, so these
  * responses are 200 with an explicit envelope. Returning 5xx made the browser
  * surface them as runtime errors.
