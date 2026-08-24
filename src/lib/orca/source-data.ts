@@ -61,7 +61,7 @@ export interface OrcaSourceRow {
 }
 
 /** Minimal RFC4180-ish CSV parser (quoted fields with embedded commas). */
-function parseCsv(text: string): string[][] {
+export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";

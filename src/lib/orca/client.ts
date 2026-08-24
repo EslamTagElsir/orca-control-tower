@@ -17,6 +17,9 @@
 
 import { queryOptions } from "@tanstack/react-query";
 
+import { outcomeKpis, scoreHoldout, type JourneyAnalytics } from "./analytics";
+import { holdoutJourneys } from "./holdout-data";
+
 import { fixtureOverview, fixtureScenarioRun, fixtureScenarios, fixtureShipment } from "./fixtures";
 import {
   composeOverview,
@@ -229,3 +232,50 @@ export const SCENARIO_INPUT_BOUNDS = {
 } as const;
 
 export const scenarioMutationKey = ["orca", "scenario", "run"] as const;
+
+/* ------------------------------------------------------------------ */
+/* Journey Performance Analytics (frozen holdout outcomes)             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Actual outcomes always come from bundled REAL holdout rows, so they are
+ * available offline. Prediction-vs-actual requires real /predict scores: when
+ * the backend is unreachable that half stays null with an explicit reason —
+ * fixture values are never dressed up as model quality.
+ */
+export async function getJourneyAnalytics(): Promise<Sourced<JourneyAnalytics>> {
+  const journeys = holdoutJourneys();
+  const kpis = outcomeKpis(journeys);
+  try {
+    const { scored, matrix } = await scoreHoldout(journeys);
+    return {
+      data: { journeys, kpis, scored, matrix, predictionUnavailableReason: null },
+      source: "live",
+    };
+  } catch (error) {
+    if (isUnreachable(error)) {
+      const reason = error instanceof Error ? error.message : "ORCA API unreachable";
+      return {
+        data: {
+          journeys,
+          kpis,
+          scored: null,
+          matrix: null,
+          predictionUnavailableReason: reason,
+        },
+        source: "fixture",
+        reason,
+      };
+    }
+    throw error;
+  }
+}
+
+export const journeyAnalyticsQuery = () =>
+  queryOptions({
+    queryKey: ["orca", connectionKey(), "journey-analytics"] as const,
+    queryFn: () => getJourneyAnalytics(),
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
+    retry: false,
+  });
