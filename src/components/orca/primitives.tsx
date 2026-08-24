@@ -32,7 +32,10 @@ export function PanelHeader({
       <div className="flex min-w-0 items-baseline gap-2">
         <h2 className="orca-label shrink-0 whitespace-nowrap">{title}</h2>
         {hint ? (
-          <span className="hidden min-w-0 truncate text-[11px] text-muted-foreground/70 lg:inline">
+          <span
+            title={hint}
+            className="hidden min-w-0 truncate text-[11px] text-muted-foreground/70 lg:inline"
+          >
             {hint}
           </span>
         ) : null}
