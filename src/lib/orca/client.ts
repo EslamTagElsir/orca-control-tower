@@ -17,8 +17,11 @@ import { queryOptions } from "@tanstack/react-query";
 import { fixtureOverview, fixtureScenarioRun, fixtureScenarios, fixtureShipment } from "./fixtures";
 import type {
   DataSource,
+  ExplainResponse,
   HealthResponse,
   OverviewResponse,
+  PredictResponse,
+  RecommendResponse,
   ScenarioOption,
   ScenarioRunResponse,
   ShipmentDetailResponse,
@@ -233,3 +236,51 @@ export const scenariosQuery = () =>
     staleTime: 5 * 60_000,
     retry: false,
   });
+
+/* ------------------------------------------------------------------ */
+/* Model endpoints (/predict, /explain, /recommend)                    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The FastAPI feature schema is broad and dynamic, so these wrappers take the
+ * raw feature map through unchanged.
+ *
+ * Deliberately NO fixture fallback: there is no legitimate fixture for a model
+ * inference, and inventing one would misrepresent ORCA output. When the
+ * backend is unreachable these throw `OrcaUnavailableError` so callers can
+ * surface an explicit "model endpoint unavailable" state.
+ */
+export interface ModelFeaturesRequest {
+  features: Record<string, unknown>;
+}
+
+export function predict(input: ModelFeaturesRequest): Promise<PredictResponse> {
+  return request<PredictResponse>("/predict", { method: "POST", body: JSON.stringify(input) });
+}
+
+export function explain(input: ModelFeaturesRequest): Promise<ExplainResponse> {
+  return request<ExplainResponse>("/explain", { method: "POST", body: JSON.stringify(input) });
+}
+
+export function recommend(input: ModelFeaturesRequest): Promise<RecommendResponse> {
+  return request<RecommendResponse>("/recommend", { method: "POST", body: JSON.stringify(input) });
+}
+
+/* ------------------------------------------------------------------ */
+/* Scenario economics assumptions                                      */
+/* ------------------------------------------------------------------ */
+
+/** Mirrors `DemoScenarioRequest` field defaults in the FastAPI schema. */
+export const SCENARIO_DEFAULTS = {
+  delay_cost_per_day: 450,
+  intervention_cost: 500,
+  efficacy_days: 5,
+} as const;
+
+export const SCENARIO_INPUT_BOUNDS = {
+  delay_cost_per_day: { min: 50, max: 1500, step: 50 },
+  intervention_cost: { min: 0, max: 5000, step: 100 },
+  efficacy_days: { min: 0, max: 20, step: 0.5 },
+} as const;
+
+export const scenarioMutationKey = ["orca", "scenario", "run"] as const;
