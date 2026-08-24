@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ControlTowerRouteImport } from './routes/control-tower'
 import { Route as ApiOrcaSplatRouteImport } from './routes/api/orca/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ControlTowerRoute = ControlTowerRouteImport.update({
+  id: '/control-tower',
+  path: '/control-tower',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOrcaSplatRoute = ApiOrcaSplatRouteImport.update({
@@ -25,27 +31,31 @@ const ApiOrcaSplatRoute = ApiOrcaSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/control-tower': typeof ControlTowerRoute
   '/api/orca/$': typeof ApiOrcaSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/control-tower': typeof ControlTowerRoute
   '/api/orca/$': typeof ApiOrcaSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/control-tower': typeof ControlTowerRoute
   '/api/orca/$': typeof ApiOrcaSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/orca/$'
+  fullPaths: '/' | '/control-tower' | '/api/orca/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/orca/$'
-  id: '__root__' | '/' | '/api/orca/$'
+  to: '/' | '/control-tower' | '/api/orca/$'
+  id: '__root__' | '/' | '/control-tower' | '/api/orca/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ControlTowerRoute: typeof ControlTowerRoute
   ApiOrcaSplatRoute: typeof ApiOrcaSplatRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/control-tower': {
+      id: '/control-tower'
+      path: '/control-tower'
+      fullPath: '/control-tower'
+      preLoaderRoute: typeof ControlTowerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/orca/$': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ControlTowerRoute: ControlTowerRoute,
   ApiOrcaSplatRoute: ApiOrcaSplatRoute,
 }
 export const routeTree = rootRouteImport
