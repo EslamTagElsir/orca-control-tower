@@ -196,6 +196,10 @@ function ControlTowerBody({
         remainingMs={demo.remainingMs}
         elapsedMs={demo.elapsedMs}
         summary={demo.summary}
+        runId={demo.runId}
+        mix={demo.mix}
+        whatIfs={demo.whatIfs}
+        castSize={demo.castSize}
         onStart={demo.start}
         onPause={demo.pause}
         onResume={demo.resume}
