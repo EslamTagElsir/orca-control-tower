@@ -13,7 +13,14 @@ import { createFileRoute } from "@tanstack/react-router";
  * Ports to Next.js as app/api/orca/[...path]/route.ts with the same env var.
  */
 
-const UPSTREAM_TIMEOUT_MS = 8000;
+/**
+ * Cold ORCA starts load the v2 model registry (CatBoost + 3 LightGBM quantile
+ * models) and score the demo portfolio on the first `/demo/overview` call,
+ * which measured ~9.6s in live testing before the per-process cache warms.
+ * The budget must clear that cold path or the very first page load falls back
+ * to fixture mode on an API that is actually healthy.
+ */
+const UPSTREAM_TIMEOUT_MS = 30000;
 
 function upstreamBase(): string | null {
   const raw = process.env["ORCA_API_INTERNAL_URL"] ?? process.env["ORCA_API_URL"] ?? null;
