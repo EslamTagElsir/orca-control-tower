@@ -297,9 +297,7 @@ export function LiveOpsDemo({
               label="At risk"
               value={summary.at_risk}
               hint={
-                fixtureMode
-                  ? "Fixture risk ≥ 0.30 — not ORCA output"
-                  : "Baseline model risk ≥ 0.30"
+                fixtureMode ? "Fixture risk ≥ 0.30 — not ORCA output" : "Baseline model risk ≥ 0.30"
               }
               tone="text-warn"
             />
