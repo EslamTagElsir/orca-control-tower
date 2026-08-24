@@ -33,19 +33,24 @@ My recommendation: build it here, but mirror your Next.js architecture exactly s
 
 Components, types, adapters, fixtures, charts and the whole service layer are plain React/TypeScript with zero framework coupling — that's the great majority of this work. Only the proxy route and route-file wrappers are framework-specific. If you'd rather I not build here at all and instead hand you the code for your own Next.js repo, say so and I'll change course.
 
-## Connection model
+## Connection model — two environments, one code path
 
-Same chain you specified, with the proxy on this side:
+You're right: `localhost:8000` inside Lovable's runtime is Lovable's own loopback, not your Windows machine. The proxy therefore reads its target purely from environment configuration, with nothing hardcoded for either environment.
 
 ```text
-Browser → /api/orca/*  (server proxy, this app)
-        → FastAPI (ORCA_API_INTERNAL_URL, default http://localhost:8000)
-        → ORCA intelligence layer
+Browser → /api/orca/*  (server-side proxy, this app)
+        → ORCA_API_INTERNAL_URL
+        → FastAPI → ORCA intelligence layer
 ```
 
-Components never see a FastAPI URL. They call `src/lib/orca/client.ts`, which only ever hits the relative `/api/orca/*` path. Moving the backend to a tunnelled HTTPS endpoint later is a single env-var change with no UI edits.
+- **Running locally (your machine):** `ORCA_API_INTERNAL_URL=http://localhost:8000` — the proxy runs on your box, so loopback resolves correctly and you get live ORCA data.
+- **Lovable Preview / published:** `ORCA_API_INTERNAL_URL=https://<tunnelled-or-deployed-orca-api>` (Cloudflare Tunnel, ngrok, or a deployed host). Set it as a secret and preview goes live with zero UI changes.
+- **Unset or unreachable (the default in Preview today):** the app operates in fixture mode. This is a normal, expected operating state — not an application error. No red error screens, no retry spam; just the labelled fixture banner and a note that no ORCA endpoint is configured for this environment.
 
-Because the proxy is server-side and same-origin, **no CORS is needed for the normal path**. I'll still include the minimal, env-configurable CORS snippet for FastAPI (`CORSMiddleware` with `allow_origins` read from an `ORCA_ALLOWED_ORIGINS` env var, no wildcard) so direct browser calls work if you ever want them — that is the only backend change proposed, and nothing in the model, registry, calibration, conformal, SHAP, decision engine or API contracts is touched.
+Components never see a FastAPI URL. They call `src/lib/orca/client.ts`, which only ever hits the relative `/api/orca/*` path.
+
+Because the proxy is server-side and same-origin, **no CORS is needed for the primary path**. I'll document (not apply) a restricted, env-configurable `CORSMiddleware` snippet reading an `ORCA_ALLOWED_ORIGINS` list, no wildcard, purely as an optional direct-browser dev convenience. Nothing in the models, registry, CatBoost/LightGBM logic, calibration, conformal prediction, SHAP, decision engine or API contracts is touched.
+
 
 A connection controller polls `/api/orca/health`. Three states, always visible in the top bar:
 
