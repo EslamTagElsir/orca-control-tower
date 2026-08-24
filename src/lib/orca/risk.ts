@@ -21,12 +21,12 @@ export const RISK_THRESHOLDS = {
   HIGH_MAX: 0.85,
 } as const;
 
-/** Presenter/demo exception queue cut-off from demo_service.overview — NOT a model tier. */
-export const PRIORITY_ATTENTION_THRESHOLD = 0.45;
+/** Presenter exception-queue cut-off — NOT a model tier. */
+export const PRIORITY_ATTENTION_THRESHOLD = 0.3;
 
 export const PRIORITY_ATTENTION_LABEL = "Priority Exceptions";
 export const PRIORITY_ATTENTION_SUBLABEL =
-  "Demo attention threshold risk ≥ 0.45 — not the CRITICAL model tier";
+  "Highest predicted late-risk shipments — queue ordering, not the CRITICAL model tier";
 
 export function riskTier(p: number): RiskTier {
   if (p <= RISK_THRESHOLDS.LOW_MAX) return "LOW_RISK";

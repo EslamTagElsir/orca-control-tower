@@ -21,7 +21,7 @@ function SimulatorPage() {
       {({ overview, source, reason }) => (
         <PageFrame
           title="What-If Simulator"
-          subtitle={`Counterfactual scenarios over ${num(overview.map_points.length)} scored shipments · POST /demo/scenario is authoritative for every value shown`}
+          subtitle={`Counterfactual scenarios over ${num(overview.map_points.length)} scored shipments · risk scored by real POST /predict, recommendation by POST /recommend`}
           source={source}
           reason={reason}
           actions={<EvidenceBadge label={overview.evidence.simulated} />}

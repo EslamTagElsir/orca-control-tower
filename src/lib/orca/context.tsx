@@ -71,9 +71,29 @@ export function useOrca(): OrcaContextValue {
   return ctx;
 }
 
-/** Shared overview query bound to the current seed / refresh preference. */
+/**
+ * Shared overview query bound to the current seed / refresh preference.
+ *
+ * Every consumer keeps its own hydration gate: lazily code-split routes hydrate
+ * after the shell, so a query resolved during shell hydration must still render
+ * as pending on a subtree's first client render. Otherwise SSR output and the
+ * first client render disagree.
+ */
 export function useOverview() {
   const { seed, autoRefresh, refreshMs } = useOrca();
   const hydrated = useHydrated();
-  return useQuery({ ...overviewQuery(seed, autoRefresh ? refreshMs : false), enabled: hydrated });
+  const query = useQuery({
+    ...overviewQuery(seed, autoRefresh ? refreshMs : false),
+    enabled: hydrated,
+  });
+  if (hydrated) return query;
+  return {
+    ...query,
+    data: undefined,
+    error: null,
+    isPending: true,
+    isError: false,
+    isSuccess: false,
+    isFetching: false,
+  } as typeof query;
 }

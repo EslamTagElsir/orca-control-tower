@@ -29,7 +29,7 @@ function DecisionEconomicsPage() {
           <Panel>
             <PanelHeader
               title="Portfolio context"
-              hint="Aggregate figures returned in /demo/overview kpis"
+              hint="Aggregated from real /predict + /recommend output over the bundled source rows"
               source={source}
             />
             <PanelBody className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -46,9 +46,9 @@ function DecisionEconomicsPage() {
                 </p>
               </div>
               <div className="rounded-md border border-hairline bg-surface-sunken px-3 py-2">
-                <p className="orca-label text-[10px]">Intervention candidates</p>
+                <p className="orca-label text-[10px]">Model positive</p>
                 <p className="orca-num mt-0.5 text-sm font-semibold">
-                  {overview.kpis.intervention_candidates}
+                  {overview.kpis.model_positive}
                 </p>
               </div>
               <div className="rounded-md border border-hairline bg-surface-sunken px-3 py-2">

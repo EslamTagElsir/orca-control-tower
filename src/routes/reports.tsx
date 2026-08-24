@@ -15,7 +15,7 @@ function ReportsPage() {
     <RouteShell
       title="Reports"
       subtitle="Exportable evidence packs with provenance preserved."
-      endpoints={["GET /api/orca/demo/overview", "GET /api/orca/health"]}
+      endpoints={["POST /predict · POST /recommend", "GET /health"]}
     />
   );
 }
