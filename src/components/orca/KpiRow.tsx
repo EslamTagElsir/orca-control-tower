@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DataSource, OrcaKpis } from "@/lib/orca/types";
 import { money, num, pct } from "@/lib/orca/format";
+import type { SimKpis } from "@/lib/orca/simulation/selectors";
 import { DerivedBadge, SourceBadge } from "./primitives";
 
 type Tone = "primary" | "warn" | "danger" | "success" | "model";
@@ -113,9 +114,76 @@ export function KpiRow({ kpis, source }: { kpis: OrcaKpis; source: DataSource })
         label="Average Risk"
         value={pct(kpis.average_risk)}
         definition={`Portfolio mean · exposure ${money(kpis.estimated_exposure)}`}
+        icon={Gauge}
+        tone="model"
+        source={source}
+      />
+    </div>
+  );
+}
+
+/**
+ * KPI strip for the Operational Digital Twin.
+ *
+ * Counts are run-scoped over the synthetic population; the risk-tier counts are
+ * ORCA /predict output. No monetary figure is shown here because the twin has
+ * no ORCA economics payload — Decision Economics owns that.
+ */
+export function SimKpiRow({ kpis, source }: { kpis: SimKpis; source: DataSource }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 2xl:grid-cols-6">
+      <KpiCard
+        label="Active Shipments"
+        value={num(kpis.active)}
+        definition="Synthetic shipments currently live in the twin"
+        icon={Truck}
+        tone="primary"
+        source={source}
+      />
+      <KpiCard
+        label="In Transit"
+        value={num(kpis.inTransit)}
+        definition="Moving along a synthetic route leg"
+        icon={Gauge}
+        tone="primary"
+        source={source}
+      />
+      <KpiCard
+        label="Open Exceptions"
+        value={num(kpis.openExceptions)}
+        definition="Synthetic operational exceptions awaiting recovery"
+        icon={AlertTriangle}
+        tone="warn"
+        source={source}
+      />
+      <KpiCard
+        label="At Risk (High + Critical)"
+        value={num(kpis.atRisk)}
+        definition="ORCA model tier above 0.60 predicted late-risk"
+        icon={ShieldAlert}
+        tone="danger"
+        source={source}
+      />
+      <KpiCard
+        label="Critical Tier"
+        value={num(kpis.critical)}
+        definition="ORCA model tier above 0.85 predicted late-risk"
+        icon={Target}
+        tone="danger"
+        source={source}
+      />
+      <KpiCard
+        label="Mean Model Risk"
+        value={kpis.averageRisk === null ? "—" : pct(kpis.averageRisk, 1)}
+        definition={
+          kpis.averageRisk === null
+            ? "No ORCA score yet for the active population"
+            : `Mean /predict probability over ${kpis.modelScored} scored shipments`
+        }
         icon={CircleDollarSign}
         tone="model"
         source={source}
+        derived
       />
     </div>
   );

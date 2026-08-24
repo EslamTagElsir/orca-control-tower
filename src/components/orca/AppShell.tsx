@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useOrca, useOverview } from "@/lib/orca/context";
 import { pct } from "@/lib/orca/format";
+import { SimulationBar } from "./SimulationBar";
 
 const NAV = [
   { to: "/control-tower", label: "Control Tower", icon: LayoutDashboard },
@@ -259,6 +260,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
           </div>
         </header>
+
+        <SimulationBar />
 
         <main className="min-w-0 flex-1">{children}</main>
 

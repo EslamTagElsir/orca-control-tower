@@ -2,8 +2,8 @@ import { Activity, AlertOctagon, Clock3, Cpu, MapPin, Scale } from "lucide-react
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { EventType, OrcaEvent, OrcaShipment } from "@/lib/orca/types";
-import { riskTier, TIER_CLASSES, TIER_LABEL } from "@/lib/orca/risk";
+import type { EventType, OrcaEvent, ShipmentRow } from "@/lib/orca/types";
+import { TIER_CLASSES, TIER_LABEL } from "@/lib/orca/risk";
 import { PanelEmpty } from "./primitives";
 
 const ICONS: Record<EventType, LucideIcon> = {
@@ -31,19 +31,19 @@ export function EventStream({
   onSelect,
 }: {
   events: StreamEvent[];
-  shipments: OrcaShipment[];
+  shipments: ShipmentRow[];
   onSelect: (id: string) => void;
 }) {
   if (events.length === 0) return <PanelEmpty message="No events in the current feed." />;
 
-  const riskById = new Map(shipments.map((s) => [s.id, s.risk]));
+  const rowById = new Map(shipments.map((s) => [s.id, s]));
 
   return (
     <ul className="max-h-[320px] space-y-0.5 overflow-y-auto pr-1">
       {events.map((event, index) => {
         const Icon = ICONS[event.event_type] ?? Activity;
-        const risk = riskById.get(event.shipment_id);
-        const tier = risk !== undefined ? riskTier(risk) : null;
+        const row = rowById.get(event.shipment_id);
+        const tier = row ? row.risk_tier : null;
         return (
           <li key={`${event.timestamp}-${event.shipment_id}-${index}`}>
             <button

@@ -10,6 +10,13 @@
 
 export type RiskTier = "LOW_RISK" | "WATCH" | "HIGH_RISK" | "CRITICAL";
 
+/**
+ * Presentation tier. `UNSCORED` is NOT a model tier: it means no ORCA /predict
+ * score is available (backend unreachable or score still in flight) and must
+ * render with neutral styling. Backend payload fields always use `RiskTier`.
+ */
+export type DisplayTier = RiskTier | "UNSCORED";
+
 export type DecisionAction = "NO_ACTION" | "MONITOR" | "INTERVENE";
 
 export type EventType = "POSITION" | "ETA" | "EXCEPTION" | "MODEL" | "DECISION";
@@ -210,3 +217,17 @@ export interface ScenarioRunResponse {
 export type DataSource = "live" | "fixture";
 
 export type ConnectionState = "live" | "connecting" | "offline";
+
+/**
+ * Presentation row shared by every shipment table / picker / map.
+ *
+ * Identical to `OrcaShipment` except the tier may be `UNSCORED`, so synthetic
+ * digital-twin shipments awaiting (or missing) a real /predict score can reuse
+ * the same components without ever borrowing a model tier they do not have.
+ * `OrcaShipment` is assignable to `ShipmentRow`.
+ */
+export type ShipmentRow = Omit<OrcaShipment, "risk_tier" | "decision"> & {
+  risk_tier: DisplayTier;
+  /** null when no ORCA /recommend action is available for this shipment yet. */
+  decision: DecisionAction | null;
+};

@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 
-import type { OrcaShipment, RiskDistribution, TopDestination } from "@/lib/orca/types";
+import type { RiskDistribution, ShipmentRow, TopDestination } from "@/lib/orca/types";
 import { TIER_CSS_VAR, TIER_LABEL, TIER_RANGE } from "@/lib/orca/risk";
 import { num, pct } from "@/lib/orca/format";
 import { PanelEmpty } from "./primitives";
@@ -36,7 +36,7 @@ const tooltipStyle = {
 
 /* ------------------------------------------------- Exception summary donut */
 
-export function ExceptionSummary({ shipments }: { shipments: OrcaShipment[] }) {
+export function ExceptionSummary({ shipments }: { shipments: ShipmentRow[] }) {
   const data = useMemo(() => {
     const counts = new Map<string, number>();
     for (const s of shipments) counts.set(s.issue, (counts.get(s.issue) ?? 0) + 1);
