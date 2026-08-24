@@ -98,7 +98,7 @@ export function ShipmentDetail({ shipmentId }: { shipmentId: string | null }) {
   const { seed } = useOrca();
   const hydrated = useHydrated();
   const base = shipmentQuery(shipmentId, seed);
-  const query = useQuery({ ...base, enabled: hydrated && base.enabled });
+  const query = useQuery({ ...base, enabled: hydrated && Boolean(shipmentId) });
 
   if (!shipmentId)
     return <PanelEmpty message="Select a shipment from the map, stream or exception queue." />;
