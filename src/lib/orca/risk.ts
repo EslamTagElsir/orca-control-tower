@@ -73,7 +73,7 @@ export const TIER_CSS_VAR: Record<DisplayTier, string> = {
  * properties or oklch() — currently MapLibre paint expressions. Keep in sync
  * with --risk-* in src/styles.css.
  */
-export const TIER_MAP_HEX: Record<RiskTier, string> = {
+export const TIER_MAP_HEX: Record<DisplayTier, string> = {
   LOW_RISK: "#1cb474",
   WATCH: "#ecab21",
   HIGH_RISK: "#f36c24",
