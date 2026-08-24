@@ -459,12 +459,13 @@ export class SimulationEngine {
 
   /* -------------------- spawning -------------------- */
 
-  private spawnShipment(simClockMs: number): SimShipment {
+  private spawnShipment(simClockMs: number, band?: TargetBand): SimShipment {
     this.sequence += 1;
     const shipment = this.source.next({
       simClockMs,
       sequence: this.sequence,
       runId: this.snapshot.runId,
+      targetBand: band ?? this.pickBand(),
     });
     this.enqueueScore({
       shipmentId: shipment.id,
@@ -475,6 +476,75 @@ export class SimulationEngine {
     shipment.lastScoreRequestAt = simClockMs - SIM_CONFIG.rescoreCooldownMs;
     return shipment;
   }
+
+  /**
+   * Chooses which candidate band the next shipment aims at, based on the tiers
+   * the MODEL has actually returned for the current population. This only
+   * selects an input recipe to try — it never writes a tier.
+   */
+  private pickBand(): TargetBand {
+    const scored = this.snapshot.active.filter((s) => s.model.phase === "scored");
+    if (scored.length >= 4) {
+      const elevated = scored.filter(
+        (s) => s.model.tier !== "LOW_RISK" && s.model.tier !== "UNSCORED",
+      ).length;
+      const share = elevated / scored.length;
+      if (share < 0.35) return "elevated";
+      if (share > 0.6) return "baseline";
+    }
+    return this.rng.chance(0.5) ? "elevated" : "baseline";
+  }
+
+  /**
+   * Bounded creation-time candidate search. Each candidate is a real /predict
+   * call on a bounded, in-domain pre-outcome feature state; the engine simply
+   * keeps the candidate the MODEL rated highest and stops as soon as the model
+   * leaves the LOW band. Identical feature rows reuse the verbatim cached
+   * /predict response instead of re-calling the backend.
+   */
+  private async searchCandidates(
+    shipment: SimShipment,
+    port: ModelPort,
+  ): Promise<{ prediction: PredictResponse; networkCalls: number }> {
+    const candidates =
+      shipment.candidates.length > 0
+        ? shipment.candidates
+        : [{ key: "as_planned", label: "As planned (unmodified template)", raw: shipment.raw }];
+
+    let best: { candidate: (typeof candidates)[number]; prediction: PredictResponse } | null = null;
+    let networkCalls = 0;
+    const trace: string[] = [];
+
+    for (const candidate of candidates) {
+      const cacheKey = `${shipment.templateId}|${candidate.key}`;
+      const cached = this.predictCache.get(cacheKey);
+      let prediction = cached;
+      if (!prediction) {
+        prediction = await port.predict(rowToFeatures(candidate.raw));
+        networkCalls += 1;
+        this.predictCache.set(cacheKey, prediction);
+      }
+      const tier = prediction.risk_tier ?? riskTier(prediction.probability_late);
+      trace.push(
+        `${candidate.label} → ORCA risk ${prediction.probability_late.toFixed(3)} · tier ${tier}${cached ? " (cached model output for an identical feature row)" : ""}`,
+      );
+      if (!best || prediction.probability_late > best.prediction.probability_late) {
+        best = { candidate, prediction };
+      }
+      if (shipment.targetBand === "baseline") break;
+      if (prediction.probability_late > 0.3) break;
+    }
+
+    const chosen = best!;
+    shipment.raw = chosen.candidate.raw;
+    shipment.features = rowToFeatures(chosen.candidate.raw);
+    shipment.appliedProfiles =
+      chosen.candidate.key === "as_planned" ? [] : [chosen.candidate.label];
+    shipment.candidateSearch = trace;
+    shipment.candidates = [];
+    return { prediction: chosen.prediction, networkCalls: Math.max(networkCalls, 0) };
+  }
+
 
   /* -------------------- model calls -------------------- */
 
