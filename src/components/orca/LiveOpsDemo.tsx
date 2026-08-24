@@ -106,7 +106,9 @@ export function LiveOpsDemo({
   runId,
   mix,
   whatIfs,
+  whatIfsPlanned,
   castSize,
+  fixtureMode,
   onStart,
   onPause,
   onResume,
@@ -120,7 +122,9 @@ export function LiveOpsDemo({
   runId: string | null;
   mix: { family: ScenarioFamily; count: number }[];
   whatIfs: LiveOpsWhatIf[];
+  whatIfsPlanned: number;
   castSize: number;
+  fixtureMode: boolean;
   onStart: () => void;
   onPause: () => void;
   onResume: () => void;
@@ -130,6 +134,7 @@ export function LiveOpsDemo({
   const reducedMotion = usePrefersReducedMotion();
   const active = phase === "running" || phase === "paused";
   const progressPct = Math.min(100, (elapsedMs / LIVE_OPS_DURATION_MS) * 100);
+  const evaluated = summary.scenarios_evaluated;
 
   return (
     <section
