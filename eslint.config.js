@@ -36,5 +36,18 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  {
+    // Modules that intentionally export hooks/helpers alongside components
+    // (shadcn primitives, ORCA context/route helpers). Fast-refresh granularity
+    // is not a correctness concern here.
+    files: [
+      "src/components/ui/**/*.{ts,tsx}",
+      "src/components/orca/RouteShell.tsx",
+      "src/lib/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
   eslintPluginPrettier,
 );
