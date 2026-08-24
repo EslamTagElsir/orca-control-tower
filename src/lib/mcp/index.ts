@@ -1,4 +1,4 @@
-import { defineMcp } from "@lovable.dev/mcp-js";
+import { defineMcp, type McpDefinitionInput } from "@lovable.dev/mcp-js";
 import listShipments from "./tools/list-shipments";
 import getShipment from "./tools/get-shipment";
 import riskTierTool from "./tools/risk-tier";
