@@ -167,6 +167,8 @@ export class SimulationEngine {
     this.queue = [];
     this.inFlight = 0;
     this.sequence = 0;
+    this.predictCache.clear();
+
 
     const startedAtEpoch = Date.now();
     this.snapshot = {
