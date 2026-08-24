@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { AlertTriangle, Database, FlaskConical, Cpu } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { DataSource, RiskTier } from "@/lib/orca/types";
+import type { DataSource, DisplayTier } from "@/lib/orca/types";
 import { TIER_CLASSES, TIER_LABEL, TIER_RANGE, DECISION_CLASSES } from "@/lib/orca/risk";
 import { pct } from "@/lib/orca/format";
 
@@ -120,13 +120,17 @@ export function RiskBadge({
   value,
   className,
 }: {
-  tier: RiskTier;
+  tier: DisplayTier;
   value?: number;
   className?: string;
 }) {
   return (
     <span
-      title={`${TIER_LABEL[tier]} — model tier ${TIER_RANGE[tier]}`}
+      title={
+        tier === "UNSCORED"
+          ? "No ORCA model score available — UNSCORED / MODEL OFFLINE"
+          : `${TIER_LABEL[tier]} — model tier ${TIER_RANGE[tier]}`
+      }
       className={cn(
         "orca-num inline-flex items-center gap-1.5 rounded-sm border px-1.5 py-0.5 text-[11px] font-semibold",
         TIER_CLASSES[tier],
@@ -139,7 +143,17 @@ export function RiskBadge({
   );
 }
 
-export function DecisionBadge({ decision }: { decision: string }) {
+export function DecisionBadge({ decision }: { decision: string | null }) {
+  if (!decision) {
+    return (
+      <span
+        title="No ORCA /recommend action available for this shipment yet"
+        className="inline-flex items-center rounded-sm border border-hairline bg-muted px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-muted-foreground"
+      >
+        NO ACTION CALL
+      </span>
+    );
+  }
   return (
     <span
       className={cn(

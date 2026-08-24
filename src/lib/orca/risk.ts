@@ -13,7 +13,7 @@
  * PRIORITY_ATTENTION_THRESHOLD and its label for that.
  */
 
-import type { RiskTier } from "./types";
+import type { DisplayTier, RiskTier } from "./types";
 
 export const RISK_THRESHOLDS = {
   LOW_MAX: 0.3,
@@ -35,36 +35,40 @@ export function riskTier(p: number): RiskTier {
   return "CRITICAL";
 }
 
-export const TIER_LABEL: Record<RiskTier, string> = {
+export const TIER_LABEL: Record<DisplayTier, string> = {
   LOW_RISK: "Low",
   WATCH: "Watch",
   HIGH_RISK: "High",
   CRITICAL: "Critical",
+  UNSCORED: "Unscored",
 };
 
-export const TIER_RANGE: Record<RiskTier, string> = {
+export const TIER_RANGE: Record<DisplayTier, string> = {
   LOW_RISK: "≤ 0.30",
   WATCH: "0.30 – 0.60",
   HIGH_RISK: "0.60 – 0.85",
   CRITICAL: "> 0.85",
+  UNSCORED: "no ORCA score available",
 };
 
-/** Tailwind classes keyed to semantic risk tokens. */
-export const TIER_CLASSES: Record<RiskTier, string> = {
+/** Tailwind classes keyed to semantic risk tokens. UNSCORED stays neutral. */
+export const TIER_CLASSES: Record<DisplayTier, string> = {
   LOW_RISK: "bg-risk-low/15 text-risk-low border-risk-low/30",
   WATCH: "bg-risk-watch/15 text-risk-watch border-risk-watch/30",
   HIGH_RISK: "bg-risk-high/15 text-risk-high border-risk-high/30",
   CRITICAL: "bg-risk-critical/20 text-risk-critical border-risk-critical/40",
+  UNSCORED: "bg-muted text-muted-foreground border-hairline",
 };
 
-export const TIER_CSS_VAR: Record<RiskTier, string> = {
+export const TIER_CSS_VAR: Record<DisplayTier, string> = {
   LOW_RISK: "var(--risk-low)",
   WATCH: "var(--risk-watch)",
   HIGH_RISK: "var(--risk-high)",
   CRITICAL: "var(--risk-critical)",
+  UNSCORED: "var(--muted-foreground)",
 };
 
-export function tierColor(tier: RiskTier): string {
+export function tierColor(tier: DisplayTier): string {
   return TIER_CSS_VAR[tier];
 }
 

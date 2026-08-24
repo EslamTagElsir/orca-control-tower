@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Eye, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { OrcaShipment, RiskTier } from "@/lib/orca/types";
+import type { RiskTier, ShipmentRow } from "@/lib/orca/types";
 import { days, hours, money, pct } from "@/lib/orca/format";
 import { TIER_LABEL } from "@/lib/orca/risk";
 import { DecisionBadge, PanelEmpty, RiskBadge } from "./primitives";
@@ -23,7 +23,7 @@ export function ExceptionsTable({
   onSelect,
   compact = false,
 }: {
-  shipments: OrcaShipment[];
+  shipments: ShipmentRow[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   compact?: boolean;

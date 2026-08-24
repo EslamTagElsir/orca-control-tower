@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { RefreshCw } from "lucide-react";
 
@@ -14,14 +14,24 @@ import {
   PanelHeader,
   PanelSkeleton,
 } from "@/components/orca/primitives";
-import { KpiRow } from "@/components/orca/KpiRow";
+import { KpiRow, SimKpiRow } from "@/components/orca/KpiRow";
 import { ExceptionSummary, RiskDistributionChart, TopRiskyLanes } from "@/components/orca/Charts";
-import { EventStream, type StreamEvent } from "@/components/orca/EventStream";
+import { EventStream } from "@/components/orca/EventStream";
 import { ExceptionsTable } from "@/components/orca/ExceptionsTable";
 import { ShipmentDetail } from "@/components/orca/ShipmentDetail";
-import { LiveOpsDemo } from "@/components/orca/LiveOpsDemo";
-import { useLiveOperationsDemo } from "@/hooks/use-live-operations-demo";
-import type { OverviewResponse, DataSource, OrcaShipment } from "@/lib/orca/types";
+import { SimShipmentDetail } from "@/components/orca/SimShipmentDetail";
+import { useSimulation } from "@/lib/orca/simulation/context";
+import {
+  byRiskDesc,
+  simKpis,
+  simRiskDistribution,
+  simRoutes,
+  simRows,
+  simStreamEvents,
+  simTopDestinations,
+} from "@/lib/orca/simulation/selectors";
+import { SIM_PROVENANCE } from "@/lib/orca/simulation/types";
+import type { OverviewResponse, DataSource } from "@/lib/orca/types";
 
 const RiskMap = lazy(() => import("@/components/orca/RiskMap"));
 
@@ -52,7 +62,155 @@ function MapFallback() {
 }
 
 function ControlTower() {
+  const { isActive } = useSimulation();
+  return isActive ? <SimulationTower /> : <PortfolioTower />;
+}
+
+/* ------------------------------------------------------------------ */
+/* Operational Digital Twin view                                       */
+/* ------------------------------------------------------------------ */
+
+function SimulationTower() {
   const { selectedShipmentId, setSelectedShipmentId } = useOrca();
+  const { snapshot } = useSimulation();
+
+  const rows = useMemo(() => byRiskDesc(simRows(snapshot)), [snapshot]);
+  const routes = useMemo(() => simRoutes(snapshot), [snapshot]);
+  const events = useMemo(() => simStreamEvents(snapshot), [snapshot]);
+  const kpis = useMemo(() => simKpis(snapshot), [snapshot]);
+  const distribution = useMemo(() => simRiskDistribution(snapshot), [snapshot]);
+  const destinations = useMemo(() => simTopDestinations(snapshot), [snapshot]);
+
+  const source: DataSource = snapshot.modelOnline === false ? "fixture" : "live";
+  const focusId = selectedShipmentId ?? rows[0]?.id ?? null;
+
+  return (
+    <div className="space-y-3 p-3 lg:p-4">
+      {snapshot.modelOnline === false ? (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-2 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger"
+        >
+          <span className="font-semibold tracking-wide">{SIM_PROVENANCE.unscored}</span>
+          <span className="text-danger/80">
+            ORCA /predict is unreachable
+            {snapshot.modelOfflineReason ? ` (${snapshot.modelOfflineReason})` : ""}. Operational
+            motion continues, but no risk value, tier or recommendation is shown — nothing is
+            substituted.
+          </span>
+        </div>
+      ) : null}
+
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold tracking-tight">Control Tower</h1>
+          <p className="text-xs text-muted-foreground">
+            Operational Digital Twin · {num(kpis.active)} synthetic shipments generated from real
+            ORCA feature templates, scored live by /predict
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <EvidenceBadge label={SIM_PROVENANCE.twin} />
+          <EvidenceBadge label={SIM_PROVENANCE.model} />
+        </div>
+      </header>
+
+      <SimKpiRow kpis={kpis} source={source} />
+
+      <div className="grid gap-3 xl:grid-cols-3">
+        <Panel className="xl:col-span-2">
+          <PanelHeader
+            title="Global Risk Heat Map"
+            hint={`${routes.length} synthetic routes · marker colour is the ORCA model tier`}
+            source={source}
+          />
+          <div className="h-[380px] w-full">
+            <ClientOnly fallback={<MapFallback />}>
+              <Suspense fallback={<MapFallback />}>
+                <RiskMap
+                  points={rows}
+                  routes={routes}
+                  selectedId={focusId}
+                  onSelect={setSelectedShipmentId}
+                />
+              </Suspense>
+            </ClientOnly>
+          </div>
+        </Panel>
+
+        <Panel>
+          <PanelHeader
+            title="Live Event Stream"
+            hint="Newest first · synthetic operations, model events labelled"
+            source={source}
+          />
+          <PanelBody className="p-2">
+            <EventStream events={events} shipments={rows} onSelect={setSelectedShipmentId} />
+          </PanelBody>
+        </Panel>
+      </div>
+
+      <div className="grid gap-3 xl:grid-cols-3">
+        <Panel>
+          <PanelHeader title="Exception Distribution" hint="By synthetic issue" source={source} />
+          <PanelBody>
+            <ExceptionSummary shipments={rows} />
+          </PanelBody>
+        </Panel>
+
+        <Panel>
+          <PanelHeader
+            title="Risk Tier Distribution"
+            hint={
+              distribution.unscored > 0
+                ? `${distribution.unscored} awaiting an ORCA score`
+                : "Backend model tiers"
+            }
+            source={source}
+          />
+          <PanelBody>
+            <RiskDistributionChart distribution={distribution} />
+          </PanelBody>
+        </Panel>
+
+        <Panel>
+          <PanelHeader
+            title="Top Risky Lanes"
+            hint="Mean model risk by destination"
+            source={source}
+          />
+          <PanelBody>
+            <TopRiskyLanes destinations={destinations} />
+          </PanelBody>
+        </Panel>
+      </div>
+
+      <div className="grid gap-3 xl:grid-cols-3">
+        <Panel className="xl:col-span-2">
+          <PanelHeader
+            title="Priority Exceptions"
+            hint={PRIORITY_ATTENTION_SUBLABEL}
+            source={source}
+          />
+          <ExceptionsTable shipments={rows} selectedId={focusId} onSelect={setSelectedShipmentId} />
+        </Panel>
+
+        <Panel>
+          <PanelHeader title="Shipment Intelligence" hint="Explainability" source={source} />
+          <PanelBody className="overflow-y-auto">
+            <SimShipmentDetail shipmentId={focusId} />
+          </PanelBody>
+        </Panel>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Portfolio view (simulation idle)                                    */
+/* ------------------------------------------------------------------ */
+
+function PortfolioTower() {
   const query = useOverview();
 
   if (query.isPending) {
@@ -90,7 +248,7 @@ function ControlTower() {
   const { data: overview, source, reason } = query.data;
 
   return (
-    <ControlTowerBody
+    <PortfolioBody
       overview={overview}
       source={source}
       reason={reason}
@@ -100,11 +258,7 @@ function ControlTower() {
   );
 }
 
-/**
- * Loaded Control Tower. Split out so the live-operations hook sits above any
- * early return and keeps a stable hook order.
- */
-function ControlTowerBody({
+function PortfolioBody({
   overview,
   source,
   reason,
@@ -118,32 +272,6 @@ function ControlTowerBody({
   onRefresh: () => void;
 }) {
   const { selectedShipmentId, setSelectedShipmentId } = useOrca();
-  const demo = useLiveOperationsDemo(overview.map_points);
-
-  /**
-   * Operational overlay only: status, progress and ETA variance may move with
-   * the demo. Risk, tier, severity, decision and economics are model output and
-   * are copied through untouched.
-   */
-  const applyOps = (s: OrcaShipment): OrcaShipment => {
-    const ops = demo.stateById.get(s.id);
-    if (!ops) return s;
-    return {
-      ...s,
-      status: `${ops.status} (SYNTHETIC LIVE OPERATIONS)`,
-      progress_pct: ops.progress_pct,
-      eta_variance_hours: ops.eta_variance_hours,
-    };
-  };
-
-  const mapPoints = demo.phase === "idle" ? overview.map_points : overview.map_points.map(applyOps);
-  const priorityExceptions =
-    demo.phase === "idle"
-      ? overview.priority_exceptions
-      : overview.priority_exceptions.map(applyOps);
-  const streamEvents: StreamEvent[] =
-    demo.events.length > 0 ? [...[...demo.events].reverse(), ...overview.events] : overview.events;
-
   const focusId = selectedShipmentId ?? overview.priority_exceptions[0]?.id ?? null;
 
   return (
@@ -191,35 +319,21 @@ function ControlTowerBody({
 
       <KpiRow kpis={overview.kpis} source={source} />
 
-      <LiveOpsDemo
-        phase={demo.phase}
-        remainingMs={demo.remainingMs}
-        elapsedMs={demo.elapsedMs}
-        summary={demo.summary}
-        runId={demo.runId}
-        mix={demo.mix}
-        whatIfs={demo.whatIfs}
-        whatIfsPlanned={demo.whatIfsPlanned}
-        castSize={demo.castSize}
-        fixtureMode={source === "fixture"}
-        onStart={demo.start}
-        onPause={demo.pause}
-        onResume={demo.resume}
-        onStop={demo.stop}
-        onRestart={demo.restart}
-      />
-
       <div className="grid gap-3 xl:grid-cols-3">
         <Panel className="xl:col-span-2">
           <PanelHeader
             title="Global Risk Heat Map"
-            hint={`${mapPoints.length} shipments · country placement is a synthetic demo overlay`}
+            hint={`${overview.map_points.length} shipments · country placement is a synthetic demo overlay`}
             source={source}
           />
           <div className="h-[380px] w-full">
             <ClientOnly fallback={<MapFallback />}>
               <Suspense fallback={<MapFallback />}>
-                <RiskMap points={mapPoints} selectedId={focusId} onSelect={setSelectedShipmentId} />
+                <RiskMap
+                  points={overview.map_points}
+                  selectedId={focusId}
+                  onSelect={setSelectedShipmentId}
+                />
               </Suspense>
             </ClientOnly>
           </div>
@@ -229,8 +343,8 @@ function ControlTowerBody({
           <PanelHeader title="Live Event Stream" hint="Newest first" source={source} />
           <PanelBody className="p-2">
             <EventStream
-              events={streamEvents}
-              shipments={mapPoints}
+              events={overview.events}
+              shipments={overview.map_points}
               onSelect={setSelectedShipmentId}
             />
           </PanelBody>
@@ -241,7 +355,7 @@ function ControlTowerBody({
         <Panel>
           <PanelHeader title="Exception Distribution" hint="By ORCA issue label" source={source} />
           <PanelBody>
-            <ExceptionSummary shipments={mapPoints} />
+            <ExceptionSummary shipments={overview.map_points} />
           </PanelBody>
         </Panel>
 
@@ -274,7 +388,7 @@ function ControlTowerBody({
             }
           />
           <ExceptionsTable
-            shipments={priorityExceptions}
+            shipments={overview.priority_exceptions}
             selectedId={focusId}
             onSelect={setSelectedShipmentId}
           />

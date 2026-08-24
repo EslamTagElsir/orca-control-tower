@@ -382,7 +382,16 @@ interface ScenarioDefinition extends ScenarioOption {
   mutate: Mutation;
 }
 
-function scaleField(raw: Record<string, string>, field: string, factor: number, cap?: number) {
+/**
+ * Bounded scale of one numeric pre-outcome feature.
+ * Exported so the simulation layer reuses the exact same safe recipes.
+ */
+export function scaleField(
+  raw: Record<string, string>,
+  field: string,
+  factor: number,
+  cap?: number,
+) {
   const current = Number(raw[field]);
   if (!Number.isFinite(current)) return;
   const next = cap === undefined ? current * factor : Math.min(current * factor, cap);
@@ -443,7 +452,11 @@ export function scenarioOptions(): ScenarioOption[] {
   }));
 }
 
-function auditTrail(before: Record<string, string>, after: Record<string, string>): string[] {
+/** Human-readable before → after list for changed pre-outcome features. */
+export function auditTrail(
+  before: Record<string, string>,
+  after: Record<string, string>,
+): string[] {
   const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
   const audit: string[] = [];
   for (const key of keys) {
@@ -460,21 +473,46 @@ function auditTrail(before: Record<string, string>, after: Record<string, string
   return audit.sort();
 }
 
+/** Scenario mutation recipe by key — reused by the digital-twin event engine. */
+export function scenarioMutation(
+  key: string,
+): (raw: Record<string, string>) => Record<string, string> {
+  return (SCENARIO_DEFINITIONS.find((s) => s.key === key) ?? SCENARIO_DEFINITIONS[0]!).mutate;
+}
+
 export interface WhatIfInput {
   shipment_id: string;
   scenario_key: string;
   delay_cost_per_day: number;
   intervention_cost: number;
   efficacy_days: number;
+  /**
+   * Optional baseline override: the CURRENT pre-outcome feature state of a
+   * synthetic digital-twin shipment. When omitted the bundled real source row
+   * for `shipment_id` is used (the original behaviour).
+   */
+  baseline_raw?: Record<string, string>;
+  /** Display id for the baseline override (synthetic operational id). */
+  baseline_id?: string;
 }
 
 /**
  * Frontend WHAT-IF adapter — there is no /demo/scenario endpoint.
  * Baseline and scenario risk both come from real /predict calls; the
  * recommendation comes from a real /recommend call on the mutated features.
+ *
+ * Pure: it never mutates the baseline it was handed, so running a what-if
+ * against a live simulation shipment cannot change that shipment.
  */
 export async function runWhatIf(input: WhatIfInput): Promise<ScenarioRunResponse> {
-  const row = sourceRow(input.shipment_id) ?? sourceRows()[0];
+  const override = input.baseline_raw;
+  const row = override
+    ? {
+        id: input.baseline_id ?? input.shipment_id,
+        raw: { ...override },
+        features: rowToFeatures(override),
+      }
+    : (sourceRow(input.shipment_id) ?? sourceRows()[0]);
   if (!row) throw new Error("No bundled ORCA source rows available.");
 
   const definition =

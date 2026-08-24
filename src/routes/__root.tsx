@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { OrcaProvider } from "@/lib/orca/context";
+import { SimulationProvider } from "@/lib/orca/simulation/context";
 import { AppShell } from "@/components/orca/AppShell";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
 
@@ -119,10 +120,13 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <OrcaProvider>
-        <AppShell>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-        </AppShell>
+        {/* ONE global Operational Digital Twin run for every route. */}
+        <SimulationProvider>
+          <AppShell>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+          </AppShell>
+        </SimulationProvider>
       </OrcaProvider>
     </QueryClientProvider>
   );

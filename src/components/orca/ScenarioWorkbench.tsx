@@ -16,7 +16,7 @@ import {
 import { useOrca } from "@/lib/orca/context";
 import { days, money, moneyExact, pct, pp } from "@/lib/orca/format";
 import { TIER_RANGE } from "@/lib/orca/risk";
-import type { OrcaShipment, ScenarioRunResponse } from "@/lib/orca/types";
+import type { ScenarioRunResponse, ShipmentRow } from "@/lib/orca/types";
 import {
   DecisionBadge,
   EvidenceBadge,
@@ -135,9 +135,18 @@ export function ScenarioDisclaimer({ text }: { text: string }) {
 export function ScenarioWorkbench({
   shipments,
   variant = "simulator",
+  baselineRaw,
+  baselineLabel,
 }: {
-  shipments: OrcaShipment[];
+  shipments: ShipmentRow[];
   variant?: "simulator" | "economics";
+  /**
+   * Optional baseline feature override. When the Operational Digital Twin is
+   * running, the what-if must start from the shipment's CURRENT simulated
+   * feature state, not the original template row.
+   */
+  baselineRaw?: (id: string) => Record<string, string> | undefined;
+  baselineLabel?: string;
 }) {
   const { seed, selectedShipmentId, setSelectedShipmentId } = useOrca();
   const hydrated = useHydrated();
@@ -168,11 +177,13 @@ export function ScenarioWorkbench({
 
   function run() {
     if (!shipmentId || !scenarioKey) return;
+    const override = baselineRaw?.(shipmentId);
     mutation.mutate({
       shipment_id: shipmentId,
       scenario_key: scenarioKey,
       ...assumptions,
       ...(seed === undefined ? {} : { seed }),
+      ...(override ? { baseline_raw: override, baseline_id: shipmentId } : {}),
     });
   }
 
@@ -196,6 +207,11 @@ export function ScenarioWorkbench({
               selectedId={shipmentId}
               onSelect={setSelectedShipmentId}
             />
+            {baselineLabel ? (
+              <p className="rounded-md border border-hairline bg-surface-sunken px-2 py-1 text-[10px] text-muted-foreground">
+                {baselineLabel}
+              </p>
+            ) : null}
             {selectedShipment ? (
               <p className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[10px] text-muted-foreground">
                 <RiskBadge tier={selectedShipment.risk_tier} value={selectedShipment.risk} />

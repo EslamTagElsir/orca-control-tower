@@ -3,7 +3,7 @@ import { Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { pct } from "@/lib/orca/format";
-import type { OrcaShipment } from "@/lib/orca/types";
+import type { ShipmentRow } from "@/lib/orca/types";
 import { PanelEmpty, RiskBadge } from "./primitives";
 
 /**
@@ -16,7 +16,7 @@ export function ShipmentPicker({
   onSelect,
   className,
 }: {
-  shipments: OrcaShipment[];
+  shipments: ShipmentRow[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   className?: string;
@@ -98,7 +98,7 @@ export function ShipmentSelect({
   onSelect,
   id,
 }: {
-  shipments: OrcaShipment[];
+  shipments: ShipmentRow[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   id?: string;
