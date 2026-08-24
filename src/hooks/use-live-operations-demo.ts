@@ -32,12 +32,13 @@ import {
   FAMILY_LABEL,
   LIVE_OPS_DURATION_SEC,
   LIVE_OPS_PROVENANCE,
+  MAX_TIMELINE_EVENTS,
   type LiveOpsRunPlan,
   type ScenarioFamily,
   type ScheduleEntry,
 } from "@/lib/orca/live-ops-plan";
 
-export { LIVE_OPS_PROVENANCE, FAMILY_LABEL };
+export { LIVE_OPS_PROVENANCE, FAMILY_LABEL, MAX_TIMELINE_EVENTS };
 export type { ScenarioFamily, LiveOpsRunPlan };
 
 export const LIVE_OPS_DURATION_MS = LIVE_OPS_DURATION_SEC * 1000;
