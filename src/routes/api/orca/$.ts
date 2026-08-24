@@ -111,7 +111,6 @@ async function forward(request: Request, splat: string): Promise<Response> {
         "cache-control": "no-store",
       },
     });
-
   } catch (error) {
     const raw = error instanceof Error ? error.message : "Unknown upstream error";
     const detail = isLoopback(base)
