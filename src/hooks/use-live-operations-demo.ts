@@ -359,12 +359,29 @@ export function useLiveOperationsDemo(shipments: OrcaShipment[]) {
         detail: `What-if "${w.scenarioLabel}": baseline ${(w.baselineRisk * 100).toFixed(1)}% → scenario ${(w.scenarioRisk * 100).toFixed(1)}% (${w.deltaPp >= 0 ? "+" : ""}${w.deltaPp.toFixed(1)} pp)`,
         provenance: `${SCENARIO_INPUT_LABEL} → ${SCENARIO_RESULT_LABEL}`,
       }));
-    return [...events, ...modelEvents].sort((a, b) => a.at - b.at);
+    const merged = [...events, ...modelEvents].sort((a, b) => a.at - b.at);
+    // Hard cap: the plan reserves slots for what-if results, but never report
+    // more than MAX_TIMELINE_EVENTS. Model events are always retained.
+    if (merged.length <= MAX_TIMELINE_EVENTS) return merged;
+    let over = merged.length - MAX_TIMELINE_EVENTS;
+    const capped: LiveOpsEvent[] = [];
+    for (const e of merged) {
+      const droppable =
+        over > 0 &&
+        e.family !== "MODEL_SCENARIO" &&
+        (e.family === "IN_TRANSIT" || e.family === "ETA_SLIP" || e.family === "FINAL_MILE");
+      if (droppable) {
+        over -= 1;
+        continue;
+      }
+      capped.push(e);
+    }
+    return capped.slice(0, MAX_TIMELINE_EVENTS);
   }, [events, whatIfs, elapsedMs, clock.startedAt]);
 
   const summary = useMemo(
-    () => summariseLiveOps(shipments, stateById, timeline.length, whatIfs),
-    [shipments, stateById, timeline.length, whatIfs],
+    () => summariseLiveOps(shipments, plan?.castIds ?? [], stateById, timeline.length, whatIfs),
+    [shipments, plan, stateById, timeline.length, whatIfs],
   );
 
   const start = useCallback(() => {
