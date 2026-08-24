@@ -37,12 +37,6 @@ function runShort(runId: string): string {
 }
 
 /**
- * Real-signal template weight: templates whose REAL historical delay signals
- * are already at the top of the observed distribution have the most model
- * headroom, so an `elevated` candidate search starts from one of them. This
- * only biases which real row is used as a template — it never sets a risk value.
- */
-/**
  * Real-signal template weight for the ELEVATED band. Empirically, the ORCA
  * model rates "From RDC" + Air lanes highest even before any candidate
  * escalation, so an elevated search that starts there has the most model
