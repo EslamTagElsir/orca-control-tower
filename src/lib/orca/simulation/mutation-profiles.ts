@@ -133,63 +133,83 @@ export function pickShockProfile(rng: Rng): MutationProfile {
 }
 
 /* ------------------------------------------------------------------ */
-/* Creation-time bias profiles                                         */
+/* Creation-time candidate ladder                                      */
 /* ------------------------------------------------------------------ */
 
 /**
- * Applied once when a synthetic shipment is generated so the active population
- * spans the model's output range instead of clustering on one tier. This biases
- * the INPUT features only — the resulting tier is whatever /predict returns, and
- * the engine never retries to force a target tier.
+ * Observed extremes of the REAL frozen holdout export (measured, not invented).
+ * Candidate recipes only move a planning / historical-signal column to a value
+ * that actually occurs somewhere in the real data, so every scored candidate
+ * stays inside the model's training domain.
  */
-export interface BiasProfile {
+export const OBSERVED_DOMAIN = {
+  countryDelayRateMax: 0.23218390804597702,
+  siteDelayRateMax: 0.2247191011235955,
+  vendorDelayRateMax: 0.24339360222531292,
+  countryVolumeMin: 64,
+  vendorVolumeMin: 0,
+  scheduledTransitDaysMax: 177,
+} as const;
+
+/** Which part of the model's output range a candidate ladder is aiming at. */
+export type TargetBand = "baseline" | "elevated";
+
+/**
+ * A creation-time candidate feature state. The engine scores candidates with
+ * REAL /predict calls and keeps the one the model actually rated highest for an
+ * `elevated` target. No recipe here decides a risk value or a tier.
+ */
+export interface CandidateProfile {
   key: string;
   label: string;
   mutate: (raw: Record<string, string>) => Record<string, string>;
 }
 
-export const BIAS_PROFILES: BiasProfile[] = [
+export const CANDIDATE_PROFILES: CandidateProfile[] = [
   { key: "as_planned", label: "As planned (unmodified template)", mutate: (raw) => ({ ...raw }) },
   {
-    key: "mild_pressure",
-    label: "Mild lane pressure",
-    mutate: (raw) => {
-      const next = { ...raw };
-      scaleField(next, "country_hist_delay_rate", 1.25, clampRate);
-      scaleField(next, "Scheduled_Transit_Days", 1.1);
-      return next;
-    },
+    key: "elevated_lane",
+    label: "Destination lane at observed worst historical delay rate",
+    mutate: (raw) => ({
+      ...raw,
+      country_hist_delay_rate: String(OBSERVED_DOMAIN.countryDelayRateMax),
+    }),
   },
   {
-    key: "vendor_watch",
-    label: "Vendor under watch",
-    mutate: (raw) => {
-      const next = { ...raw };
-      scaleField(next, "vendor_hist_delay_rate", 1.9, clampRate);
-      const median = Number(next["vendor_hist_delay_median"]);
-      if (Number.isFinite(median)) next["vendor_hist_delay_median"] = String(median + 9);
-      return next;
-    },
+    key: "lane_and_site",
+    label: "Destination lane + origin site at observed worst historical delay rate",
+    mutate: (raw) => ({
+      ...raw,
+      country_hist_delay_rate: String(OBSERVED_DOMAIN.countryDelayRateMax),
+      site_hist_delay_rate: String(OBSERVED_DOMAIN.siteDelayRateMax),
+    }),
   },
   {
-    key: "constrained_lane",
-    label: "Constrained lane",
-    mutate: (raw) => {
-      const next = { ...raw };
-      scaleField(next, "site_hist_delay_rate", 2, clampRate);
-      scaleField(next, "country_hist_delay_rate", 2.1, clampRate);
-      scaleField(next, "Scheduled_Transit_Days", 1.5);
-      scaleField(next, "Forecast_Horizon_Days", 1.35);
-      return next;
-    },
+    key: "full_signal_stack",
+    label: "Lane + site + vendor worst observed delay signals, thinnest observed lane volume",
+    mutate: (raw) => ({
+      ...raw,
+      country_hist_delay_rate: String(OBSERVED_DOMAIN.countryDelayRateMax),
+      site_hist_delay_rate: String(OBSERVED_DOMAIN.siteDelayRateMax),
+      vendor_hist_delay_rate: String(OBSERVED_DOMAIN.vendorDelayRateMax),
+      country_hist_volume: String(OBSERVED_DOMAIN.countryVolumeMin),
+    }),
   },
 ];
 
-export function pickBiasProfile(rng: Rng): BiasProfile {
-  return rng.weighted([
-    { item: BIAS_PROFILES[0]!, weight: 38 },
-    { item: BIAS_PROFILES[1]!, weight: 24 },
-    { item: BIAS_PROFILES[2]!, weight: 20 },
-    { item: BIAS_PROFILES[3]!, weight: 18 },
-  ]);
+export function candidateProfile(key: string): CandidateProfile {
+  return CANDIDATE_PROFILES.find((p) => p.key === key) ?? CANDIDATE_PROFILES[0]!;
 }
+
+/**
+ * Ordered candidate ladder for a target band.
+ *  - `baseline`: one candidate, the unmodified real template row.
+ *  - `elevated`: up to three escalating bounded candidates. The engine scores
+ *    them in order and stops as soon as the MODEL returns a higher band, so the
+ *    resulting tier is always whatever /predict said.
+ */
+export function candidateLadder(band: TargetBand): CandidateProfile[] {
+  if (band === "baseline") return [CANDIDATE_PROFILES[0]!];
+  return [CANDIDATE_PROFILES[1]!, CANDIDATE_PROFILES[2]!, CANDIDATE_PROFILES[3]!];
+}
+
