@@ -72,8 +72,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     payload = null;
   }
 
+  const record = (payload ?? {}) as Record<string, unknown>;
+
+  // The proxy reports "no live ORCA backend" as a 200 envelope so the browser
+  // does not treat an expected fixture-mode state as an HTTP failure.
+  if (record["orca_unavailable"] === true) {
+    throw new OrcaUnavailableError(
+      typeof record["detail"] === "string" ? record["detail"] : "ORCA API unreachable",
+      0,
+    );
+  }
+
   if (!response.ok) {
-    const record = (payload ?? {}) as Record<string, unknown>;
     const detail =
       typeof record["detail"] === "string"
         ? record["detail"]
