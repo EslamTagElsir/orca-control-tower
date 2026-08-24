@@ -132,9 +132,11 @@ export default function RiskMap({
             },
           }));
       });
+      console.log("[dbg] routes", (routes ?? []).length, "features", features.length);
       source.setData({ type: "FeatureCollection", features } as never);
     };
 
+    console.log("[dbg] effect ready=", readyRef.current, "routes=", (routes ?? []).length);
     if (readyRef.current) apply();
     else map.once("load", apply);
   }, [routes, selectedId]);
