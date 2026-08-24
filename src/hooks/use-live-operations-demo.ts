@@ -145,29 +145,36 @@ export function projectLiveOps(
   return { events, stateById };
 }
 
+/**
+ * Run-scoped summary. Every metric is computed over the run cast only
+ * (`castIds`), never the wider scored portfolio. Baseline risk (`s.risk`) is
+ * read-only model/fixture output — synthetic ops never alter it.
+ */
 export function summariseLiveOps(
   shipments: OrcaShipment[],
+  castIds: string[],
   stateById: Map<string, LiveOpsShipmentState>,
   eventCount: number,
   whatIfs: LiveOpsWhatIf[],
 ): LiveOpsSummary {
+  const castSet = new Set(castIds);
+  const cast = shipments.filter((s) => castSet.has(s.id));
   let delivered = 0;
-  let inTransit = 0;
   let open = 0;
-  for (const s of shipments) {
+  for (const s of cast) {
     const st = stateById.get(s.id);
     if (!st) continue;
     if (st.delivered) delivered += 1;
-    else inTransit += 1;
-    if (st.exception_open && !st.delivered) open += 1;
+    else if (st.exception_open) open += 1;
   }
   const deltas = whatIfs.map((w) => Math.abs(w.deltaPp));
   return {
-    active: shipments.length,
-    in_transit: inTransit,
-    at_risk: shipments.filter((s) => s.risk >= 0.3).length,
+    active: cast.length,
+    // Delivered + In Transit always reconciles with the run cast size.
+    in_transit: Math.max(0, cast.length - delivered),
+    at_risk: cast.filter((s) => s.risk >= 0.3).length,
     delivered,
-    critical: shipments.filter((s) => s.risk > 0.85).length,
+    critical: cast.filter((s) => s.risk > 0.85).length,
     events_processed: eventCount,
     open_exceptions: open,
     scenarios_evaluated: whatIfs.length,
