@@ -143,11 +143,15 @@ export function createAutomaticGeneratorSource(rng: Rng): ShipmentSource {
         nextMilestone: "Dispatch from origin",
         latestEvent: null,
 
-        raw: biased,
-        features: rowToFeatures(biased),
+        raw: first.raw,
+        features: rowToFeatures(first.raw),
         featureAudit: [],
-        appliedProfiles: bias.key === "as_planned" ? [] : [bias.label],
+        appliedProfiles: first.key === "as_planned" ? [] : [first.label],
+        targetBand: band,
+        candidates,
+        candidateSearch: [],
         model: { ...UNSCORED_MODEL },
+
         plannedShocks,
         plannedPings: [rng.float(0.4, 0.52), rng.float(0.6, 0.72)],
         firedPings: [],
