@@ -93,11 +93,15 @@ async function forward(request: Request, splat: string): Promise<Response> {
       },
     });
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "Unknown upstream error";
+    const raw = error instanceof Error ? error.message : "Unknown upstream error";
+    const detail = isLoopback(base)
+      ? `Configured ORCA upstream ${base} is a loopback address, which resolves to the app server (not your workstation) and has no ORCA service listening (${raw}). Set ORCA_API_INTERNAL_URL to a publicly reachable ORCA base URL, or switch Settings to Direct Browser mode for a local FastAPI with CORS enabled.`
+      : `ORCA upstream ${base} is unreachable (${raw}).`;
     return Response.json(
-      { orca_unavailable: true, error: "orca_api_unreachable", detail },
+      { orca_unavailable: true, error: "orca_api_unreachable", detail, upstream_kind: isLoopback(base) ? "loopback" : "remote" },
       { status: 200, headers: { "cache-control": "no-store" } },
     );
+
   } finally {
     clearTimeout(timer);
   }
