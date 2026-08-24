@@ -89,7 +89,7 @@ Midnight navy background, layered blue-gray surfaces, hairline borders, compact 
 
 ## Technical notes
 
-- TanStack Start + TanStack Query. One centralised `src/lib/orca/` service layer: typed client, response adapters, zod-checked shapes, fixture module, connection controller. No fetch calls inside components.
+- React 19 + TypeScript + TanStack Query, on TanStack Start (see framework constraint above). One centralised `src/lib/orca/` service layer — framework-free, portable to Next.js as-is: typed client, response adapters, zod-checked shapes, fixture module, connection controller. No fetch calls inside components, no FastAPI URLs outside the proxy handler.
 - Query keys per endpoint with sensible stale times; auto-refresh interval configurable in Settings; no duplicate calls across panels.
 - Charts: lightweight SVG/Recharts; map lazy-loaded client-side only (SSR-safe dynamic import).
 - Provenance is a first-class component (`EvidenceBadge`) reading the API's own provenance strings.
