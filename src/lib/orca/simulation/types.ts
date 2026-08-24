@@ -345,5 +345,12 @@ export interface ShipmentSource {
   readonly kind: "automatic" | "portfolio" | "csv" | "external";
   readonly label: string;
   /** Produce the next shipment for this run. */
-  next(context: { simClockMs: number; sequence: number; runId: string }): SimShipment;
+  next(context: {
+    simClockMs: number;
+    sequence: number;
+    runId: string;
+    /** Requested creation-time candidate band; the tier still comes from /predict. */
+    targetBand?: TargetBand;
+  }): SimShipment;
+
 }
