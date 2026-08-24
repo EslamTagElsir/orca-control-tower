@@ -16,9 +16,12 @@ import {
 } from "@/components/orca/primitives";
 import { KpiRow } from "@/components/orca/KpiRow";
 import { ExceptionSummary, RiskDistributionChart, TopRiskyLanes } from "@/components/orca/Charts";
-import { EventStream } from "@/components/orca/EventStream";
+import { EventStream, type StreamEvent } from "@/components/orca/EventStream";
 import { ExceptionsTable } from "@/components/orca/ExceptionsTable";
 import { ShipmentDetail } from "@/components/orca/ShipmentDetail";
+import { LiveOpsDemo } from "@/components/orca/LiveOpsDemo";
+import { useLiveOperationsDemo } from "@/hooks/use-live-operations-demo";
+import type { OverviewResponse, DataSource, OrcaShipment } from "@/lib/orca/types";
 
 const RiskMap = lazy(() => import("@/components/orca/RiskMap"));
 
@@ -85,6 +88,62 @@ function ControlTower() {
   }
 
   const { data: overview, source, reason } = query.data;
+
+  return (
+    <ControlTowerBody
+      overview={overview}
+      source={source}
+      reason={reason}
+      isFetching={query.isFetching}
+      onRefresh={() => void query.refetch()}
+    />
+  );
+}
+
+/**
+ * Loaded Control Tower. Split out so the live-operations hook sits above any
+ * early return and keeps a stable hook order.
+ */
+function ControlTowerBody({
+  overview,
+  source,
+  reason,
+  isFetching,
+  onRefresh,
+}: {
+  overview: OverviewResponse;
+  source: DataSource;
+  reason?: string | undefined;
+  isFetching: boolean;
+  onRefresh: () => void;
+}) {
+  const { selectedShipmentId, setSelectedShipmentId } = useOrca();
+  const demo = useLiveOperationsDemo(overview.map_points);
+
+  /**
+   * Operational overlay only: status, progress and ETA variance may move with
+   * the demo. Risk, tier, severity, decision and economics are model output and
+   * are copied through untouched.
+   */
+  const applyOps = (s: OrcaShipment): OrcaShipment => {
+    const ops = demo.stateById.get(s.id);
+    if (!ops) return s;
+    return {
+      ...s,
+      status: `${ops.status} (SYNTHETIC LIVE OPERATIONS)`,
+      progress_pct: ops.progress_pct,
+      eta_variance_hours: ops.eta_variance_hours,
+    };
+  };
+
+  const mapPoints = demo.phase === "idle" ? overview.map_points : overview.map_points.map(applyOps);
+  const priorityExceptions =
+    demo.phase === "idle"
+      ? overview.priority_exceptions
+      : overview.priority_exceptions.map(applyOps);
+  const streamEvents: StreamEvent[] =
+    demo.events.length > 0 ? [...[...demo.events].reverse(), ...overview.events] : overview.events;
+
   const focusId = selectedShipmentId ?? overview.priority_exceptions[0]?.id ?? null;
 
   return (
@@ -121,13 +180,10 @@ function ControlTower() {
               <EvidenceBadge key={label} label={label} />
             ))}
           <button
-            onClick={() => query.refetch()}
+            onClick={onRefresh}
             className="inline-flex items-center gap-1.5 rounded-md border border-hairline bg-surface px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
-            <RefreshCw
-              className={query.isFetching ? "size-3.5 animate-spin" : "size-3.5"}
-              aria-hidden
-            />
+            <RefreshCw className={isFetching ? "size-3.5 animate-spin" : "size-3.5"} aria-hidden />
             Refresh
           </button>
         </div>
@@ -135,21 +191,29 @@ function ControlTower() {
 
       <KpiRow kpis={overview.kpis} source={source} />
 
+      <LiveOpsDemo
+        phase={demo.phase}
+        remainingMs={demo.remainingMs}
+        elapsedMs={demo.elapsedMs}
+        summary={demo.summary}
+        onStart={demo.start}
+        onPause={demo.pause}
+        onResume={demo.resume}
+        onStop={demo.stop}
+        onRestart={demo.restart}
+      />
+
       <div className="grid gap-3 xl:grid-cols-3">
         <Panel className="xl:col-span-2">
           <PanelHeader
             title="Global Risk Heat Map"
-            hint={`${overview.map_points.length} shipments · country placement is a synthetic demo overlay`}
+            hint={`${mapPoints.length} shipments · country placement is a synthetic demo overlay`}
             source={source}
           />
           <div className="h-[380px] w-full">
             <ClientOnly fallback={<MapFallback />}>
               <Suspense fallback={<MapFallback />}>
-                <RiskMap
-                  points={overview.map_points}
-                  selectedId={focusId}
-                  onSelect={setSelectedShipmentId}
-                />
+                <RiskMap points={mapPoints} selectedId={focusId} onSelect={setSelectedShipmentId} />
               </Suspense>
             </ClientOnly>
           </div>
@@ -159,8 +223,8 @@ function ControlTower() {
           <PanelHeader title="Live Event Stream" hint="Newest first" source={source} />
           <PanelBody className="p-2">
             <EventStream
-              events={overview.events}
-              shipments={overview.map_points}
+              events={streamEvents}
+              shipments={mapPoints}
               onSelect={setSelectedShipmentId}
             />
           </PanelBody>
@@ -171,7 +235,7 @@ function ControlTower() {
         <Panel>
           <PanelHeader title="Exception Distribution" hint="By ORCA issue label" source={source} />
           <PanelBody>
-            <ExceptionSummary shipments={overview.map_points} />
+            <ExceptionSummary shipments={mapPoints} />
           </PanelBody>
         </Panel>
 
@@ -204,7 +268,7 @@ function ControlTower() {
             }
           />
           <ExceptionsTable
-            shipments={overview.priority_exceptions}
+            shipments={priorityExceptions}
             selectedId={focusId}
             onSelect={setSelectedShipmentId}
           />

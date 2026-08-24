@@ -22,12 +22,15 @@ const TYPE_TONE: Record<EventType, string> = {
   DECISION: "text-primary",
 };
 
+/** Presentation-only extension: synthetic live-operations events carry a label. */
+export type StreamEvent = OrcaEvent & { ops_label?: string };
+
 export function EventStream({
   events,
   shipments,
   onSelect,
 }: {
-  events: OrcaEvent[];
+  events: StreamEvent[];
   shipments: OrcaShipment[];
   onSelect: (id: string) => void;
 }) {
@@ -58,8 +61,9 @@ export function EventStream({
                 <span className="block truncate text-xs text-foreground/90">{event.detail}</span>
                 <span className="mt-0.5 flex items-center gap-1.5">
                   <span className="orca-num text-[10px] text-muted-foreground">
-                    {event.event_type} · {event.shipment_id}
+                    {event.ops_label ?? event.event_type} · {event.shipment_id}
                   </span>
+
                   <span className="truncate text-[10px] text-muted-foreground/60">
                     {event.provenance}
                   </span>
