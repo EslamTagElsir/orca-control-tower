@@ -11,7 +11,10 @@ import {
 
 import { predict, recommend } from "../adapter";
 import { SimulationEngine, idleSnapshot, type ModelPort } from "./engine";
+import type { HumanDecisionKind, OperatorAction, ReasonCode } from "./intervention-policy";
+import { createLearningPersistencePort } from "./persistence";
 import type { SimSpeed, SimulationSnapshot } from "./types";
+
 
 /**
  * ONE global Operational Digital Twin run, shared by every page.

@@ -26,20 +26,32 @@ import {
   stageDetail,
   stageFamily,
 } from "./event-engine";
+import {
+  defaultActionFor,
+  effectSpec,
+  interventionEffect,
+  INTERVENTION_POLICY_VERSION,
+  type HumanDecisionKind,
+  type OperatorAction,
+  type ReasonCode,
+} from "./intervention-policy";
 import type { TargetBand } from "./mutation-profiles";
 import { createAutomaticGeneratorSource } from "./shipment-generator";
 import { advance } from "./route-engine";
+import { auditTrail } from "../adapter";
 import {
   DEFAULT_SIM_SPEED,
   SIM_PROVENANCE,
   UNSCORED_MODEL,
   type ShipmentSource,
+  type SimEpisode,
   type SimEvent,
   type SimMetrics,
   type SimShipment,
   type SimSpeed,
   type SimulationSnapshot,
 } from "./types";
+
 
 /* ------------------------------------------------------------------ */
 /* Tunables                                                            */
@@ -58,6 +70,7 @@ export const SIM_CONFIG = {
   /** Bounded history. */
   maxEvents: 160,
   maxDelivered: 14,
+  maxEpisodes: 60,
   /** Model-call guards. */
   maxConcurrentModelCalls: 3,
   rescoreCooldownMs: 45_000,
@@ -76,7 +89,91 @@ export interface ModelPort {
   recommend(features: FeatureMap): Promise<RecommendResponse>;
 }
 
-type ScoreReason = "initial" | "shock";
+/* ------------------------------------------------------------------ */
+/* Persistence port                                                    */
+/* ------------------------------------------------------------------ */
+
+export interface RunRef {
+  runId: string;
+  seed: number;
+  speed: number;
+}
+
+export interface PersistedShipment {
+  shipmentId: string;
+  templateId: string;
+  origin: string;
+  destination: string;
+  route: string;
+  mode: string;
+  vendor: string | null;
+  productGroup: string | null;
+  createdSimMs: number;
+  initialFeatures: FeatureMap;
+}
+
+export interface EpisodeOpenPayload {
+  shipmentId: string;
+  triggerEventId: string | null;
+  simClockMs: number;
+  inferenceKind: "INITIAL" | "RESCORE" | "POST_INTERVENTION";
+  features: FeatureMap;
+  prediction: PredictResponse;
+  recommendation: RecommendResponse;
+  state: {
+    shipmentStatus: string;
+    progress: number;
+    position: [number, number];
+    etaVarianceHours: number;
+    exceptionOpen: boolean;
+    exceptionFamily: string | null;
+  };
+}
+
+export interface DecisionPayload {
+  episodeDbId: string;
+  shipmentId: string;
+  decision: HumanDecisionKind;
+  recommendedAction: string;
+  chosenAction: OperatorAction;
+  reasonCode: ReasonCode;
+  note: string | null;
+  actorLabel: string;
+  decisionLatencyMs: number;
+  intervention: {
+    action: string;
+    effectSpec: Record<string, unknown>;
+    appliedSimMs: number;
+    policyVersion: string;
+  } | null;
+}
+
+export interface OutcomePayload {
+  shipmentId: string;
+  deliveredSimMs: number;
+  deliveredOnTime: boolean;
+  simulatedDelayHours: number;
+  finalEtaVarianceHours: number;
+  finalFeatures: FeatureMap;
+  interventionCount: number;
+}
+
+/**
+ * Append-only audit sink for the running twin. Implementations are expected to
+ * be fire-and-forget and MUST never throw into the engine: a storage outage
+ * degrades the audit trail, never the simulation.
+ */
+export interface PersistencePort {
+  runStarted(run: RunRef): void;
+  runEnded(runId: string, status: "PAUSED" | "STOPPED"): void;
+  shipmentsCreated(run: RunRef, shipments: PersistedShipment[]): void;
+  eventsAppended(run: RunRef, events: SimEvent[]): void;
+  episodeOpened(run: RunRef, payload: EpisodeOpenPayload): Promise<string | null>;
+  decisionRecorded(run: RunRef, payload: DecisionPayload): void;
+  outcomeRecorded(run: RunRef, payload: OutcomePayload): void;
+}
+
+type ScoreReason = "initial" | "shock" | "intervention";
 
 interface ScoreRequest {
   shipmentId: string;
@@ -94,6 +191,9 @@ const EMPTY_METRICS: SimMetrics = {
   recommendCalls: 0,
   rescores: 0,
   scoreFailures: 0,
+  episodesOpened: 0,
+  decisionsRecorded: 0,
+  interventionsApplied: 0,
 };
 
 export function idleSnapshot(): SimulationSnapshot {
@@ -108,12 +208,14 @@ export function idleSnapshot(): SimulationSnapshot {
     active: [],
     recentlyDelivered: [],
     events: [],
+    episodes: [],
     metrics: { ...EMPTY_METRICS },
     nextSpawnAtMs: 0,
     modelOnline: null,
     modelOfflineReason: null,
   };
 }
+
 
 /* ------------------------------------------------------------------ */
 /* Engine                                                              */
@@ -125,13 +227,16 @@ export class SimulationEngine {
   private rng: Rng = makeRng(1);
   private source: ShipmentSource = createAutomaticGeneratorSource(makeRng(1));
   private port: ModelPort | null = null;
+  private persistence: PersistencePort | null = null;
   private queue: ScoreRequest[] = [];
   private inFlight = 0;
   private sequence = 0;
+  private episodeSequence = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastTickAt = 0;
   /** Verbatim /predict responses keyed by templateId|candidateKey (identical feature rows). */
   private predictCache = new Map<string, PredictResponse>();
+
 
   /* -------------------- store contract -------------------- */
 
@@ -156,6 +261,26 @@ export class SimulationEngine {
     this.port = port;
   }
 
+  /** Optional append-only audit sink. Failures never affect the run. */
+  setPersistencePort(port: PersistencePort) {
+    this.persistence = port;
+  }
+
+  private get runRef(): RunRef {
+    return { runId: this.snapshot.runId, seed: this.snapshot.seed, speed: this.snapshot.speed };
+  }
+
+  /** Fire-and-forget event persistence — never throws into the engine. */
+  private audit(events: SimEvent[]) {
+    if (!this.persistence || events.length === 0 || !this.snapshot.runId) return;
+    try {
+      this.persistence.eventsAppended(this.runRef, events);
+    } catch {
+      // Audit sink unavailable — the run continues.
+    }
+  }
+
+
   /* -------------------- lifecycle -------------------- */
 
   start(seed = newSeed()) {
@@ -165,7 +290,10 @@ export class SimulationEngine {
     this.queue = [];
     this.inFlight = 0;
     this.sequence = 0;
+    this.episodeSequence = 0;
+    this.pendingShipments = [];
     this.predictCache.clear();
+
 
     const startedAtEpoch = Date.now();
     this.snapshot = {
@@ -211,6 +339,13 @@ export class SimulationEngine {
       metrics: { ...this.snapshot.metrics, generated: active.length },
       nextSpawnAtMs: this.rng.float(SIM_CONFIG.spawnMinMs, SIM_CONFIG.spawnMaxMs),
     };
+    try {
+      this.persistence?.runStarted(this.runRef);
+    } catch {
+      // Audit sink unavailable — the run continues.
+    }
+    this.flushShipments();
+    this.audit(this.snapshot.events);
     this.commit();
     this.startClock();
     this.pump();
@@ -220,7 +355,13 @@ export class SimulationEngine {
     if (this.snapshot.status !== "running") return;
     this.stopClock();
     this.commit({ status: "paused" });
+    try {
+      this.persistence?.runEnded(this.snapshot.runId, "PAUSED");
+    } catch {
+      // Audit sink unavailable.
+    }
   }
+
 
   resume() {
     if (this.snapshot.status !== "paused") return;
@@ -232,8 +373,16 @@ export class SimulationEngine {
   stop() {
     this.stopClock();
     this.queue = [];
+    const runId = this.snapshot.runId;
     this.snapshot = { ...idleSnapshot(), version: this.snapshot.version + 1 };
     for (const l of this.listeners) l();
+    if (runId) {
+      try {
+        this.persistence?.runEnded(runId, "STOPPED");
+      } catch {
+        // Audit sink unavailable.
+      }
+    }
   }
 
   newRun() {
@@ -252,10 +401,27 @@ export class SimulationEngine {
     this.sequence = snapshot.metrics.generated;
     this.queue = [];
     this.inFlight = 0;
-    this.snapshot = { ...snapshot, version: this.snapshot.version + 1 };
+    this.pendingShipments = [];
+    // Older persisted snapshots predate the learning system; normalise them so
+    // the episode surfaces never read undefined.
+    const episodes = Array.isArray(snapshot.episodes) ? snapshot.episodes : [];
+    this.episodeSequence = episodes.length;
+    this.snapshot = {
+      ...snapshot,
+      episodes,
+      metrics: { ...EMPTY_METRICS, ...snapshot.metrics },
+      active: snapshot.active.map((s) => ({
+        ...s,
+        awaitingDecision: s.awaitingDecision ?? false,
+        episodeId: s.episodeId ?? null,
+        interventionCount: s.interventionCount ?? 0,
+      })),
+      version: this.snapshot.version + 1,
+    };
     for (const l of this.listeners) l();
     if (snapshot.status === "running") this.startClock();
   }
+
 
   /** Stops the clock without dropping subscribers or the run snapshot. */
   dispose() {
@@ -297,8 +463,16 @@ export class SimulationEngine {
     const delivered: SimShipment[] = [];
 
     for (const shipment of snap.active) {
+      // HUMAN DECISION GATE: a shipment with an open Decision Episode holds in
+      // place until an operator resolves it. No movement, no new events.
+      if (shipment.awaitingDecision) {
+        active.push(shipment);
+        continue;
+      }
+
       const before = shipment.status;
       const result = advance(shipment, simDelta);
+
 
       for (const status of result.transitions) {
         if (status === "DELIVERED") continue;
@@ -408,6 +582,8 @@ export class SimulationEngine {
           }),
         );
         delivered.push(shipment);
+        this.recordOutcome(shipment, simClockMs);
+
       } else {
         active.push(shipment);
       }
@@ -461,10 +637,28 @@ export class SimulationEngine {
       nextSpawnAtMs,
     };
     for (const l of this.listeners) l();
+    this.flushShipments();
+    this.audit(newEvents);
     this.pump();
   }
 
   /* -------------------- spawning -------------------- */
+
+  private pendingShipments: PersistedShipment[] = [];
+
+  private flushShipments() {
+    if (!this.persistence || this.pendingShipments.length === 0 || !this.snapshot.runId) {
+      this.pendingShipments = [];
+      return;
+    }
+    const batch = this.pendingShipments;
+    this.pendingShipments = [];
+    try {
+      this.persistence.shipmentsCreated(this.runRef, batch);
+    } catch {
+      // Audit sink unavailable — the run continues.
+    }
+  }
 
   private spawnShipment(simClockMs: number, band?: TargetBand): SimShipment {
     this.sequence += 1;
@@ -481,8 +675,38 @@ export class SimulationEngine {
       detail: "initial score",
     });
     shipment.lastScoreRequestAt = simClockMs - SIM_CONFIG.rescoreCooldownMs;
+    this.pendingShipments.push({
+      shipmentId: shipment.id,
+      templateId: shipment.templateId,
+      origin: shipment.origin,
+      destination: shipment.destination,
+      route: shipment.route,
+      mode: shipment.mode,
+      vendor: shipment.vendor || null,
+      productGroup: shipment.productGroup || null,
+      createdSimMs: Math.max(0, Math.round(simClockMs)),
+      initialFeatures: shipment.features,
+    });
     return shipment;
   }
+
+  private recordOutcome(shipment: SimShipment, simClockMs: number) {
+    if (!this.persistence || !this.snapshot.runId) return;
+    try {
+      this.persistence.outcomeRecorded(this.runRef, {
+        shipmentId: shipment.id,
+        deliveredSimMs: Math.max(0, Math.round(simClockMs)),
+        deliveredOnTime: shipment.etaVarianceHours <= 0,
+        simulatedDelayHours: Math.max(0, shipment.etaVarianceHours),
+        finalEtaVarianceHours: shipment.etaVarianceHours,
+        finalFeatures: shipment.features,
+        interventionCount: shipment.interventionCount,
+      });
+    } catch {
+      // Audit sink unavailable — the run continues.
+    }
+  }
+
 
   /**
    * Chooses which candidate band the next shipment aims at, based on the tiers
@@ -618,15 +842,17 @@ export class SimulationEngine {
       const detail =
         request.reason === "shock"
           ? `Re-scored after ${request.detail} · risk ${(previousRisk ?? 0).toFixed(3)} → ${prediction.probability_late.toFixed(3)} · tier ${tier}`
-          : `Scored by ORCA · risk ${prediction.probability_late.toFixed(3)} · tier ${tier} · ${prediction.model_version}${searchSuffix}`;
+          : request.reason === "intervention"
+            ? `Re-scored after ${request.detail} · risk ${(previousRisk ?? 0).toFixed(3)} → ${prediction.probability_late.toFixed(3)} · tier ${tier}`
+            : `Scored by ORCA · risk ${prediction.probability_late.toFixed(3)} · tier ${tier} · ${prediction.model_version}${searchSuffix}`;
 
       const event = makeEvent({
         startedAtEpoch: this.snapshot.startedAtEpoch,
         simClockMs: this.snapshot.simClockMs,
         shipmentId: shipment.id,
-        family: request.reason === "shock" ? "MODEL_RESCORE" : "MODEL_SCORE",
+        family: request.reason === "initial" ? "MODEL_SCORE" : "MODEL_RESCORE",
         detail,
-        provenance: request.reason === "shock" ? SIM_PROVENANCE.shockResult : SIM_PROVENANCE.model,
+        provenance: request.reason === "initial" ? SIM_PROVENANCE.model : SIM_PROVENANCE.shockResult,
         riskBefore: previousRisk,
         riskAfter: prediction.probability_late,
         ...(request.audit.length > 0
@@ -645,11 +871,22 @@ export class SimulationEngine {
         modelOfflineReason: null,
       };
       for (const l of this.listeners) l();
+      this.audit([event]);
 
       // /recommend only for meaningful high-risk state changes.
       const needsRecommendation =
         prediction.classification_decision || tier === "HIGH_RISK" || tier === "CRITICAL";
-      if (needsRecommendation) await this.fetchRecommendation(shipment, port);
+      if (needsRecommendation) {
+        await this.fetchRecommendation(shipment, port, {
+          prediction,
+          triggerEventId: event.id,
+          // A post-intervention re-score never re-opens a gate: the operator has
+          // already answered for this shipment state.
+          allowEpisode: request.reason !== "intervention",
+          inferenceKind: request.reason === "initial" ? "INITIAL" : "RESCORE",
+        });
+      }
+
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       shipment.model = {
@@ -683,7 +920,16 @@ export class SimulationEngine {
     }
   }
 
-  private async fetchRecommendation(shipment: SimShipment, port: ModelPort) {
+  private async fetchRecommendation(
+    shipment: SimShipment,
+    port: ModelPort,
+    options: {
+      prediction: PredictResponse;
+      triggerEventId: string | null;
+      allowEpisode: boolean;
+      inferenceKind: "INITIAL" | "RESCORE" | "POST_INTERVENTION";
+    },
+  ) {
     try {
       const response = await port.recommend(shipment.features);
       const action = (
@@ -718,11 +964,279 @@ export class SimulationEngine {
         },
       };
       for (const l of this.listeners) l();
+      this.audit([event]);
+
+      // Human-in-the-loop gate. The SIMULATION always requires a decision for a
+      // recommendation the operator must answer; `backendApprovalRequired`
+      // preserves the backend's own verbatim flag alongside it.
+      const needsDecision = options.allowEpisode && response.recommendation !== "NO_ACTION";
+      if (needsDecision && !shipment.awaitingDecision) {
+        this.openEpisode(shipment, response, options);
+      }
     } catch {
       // A failed /recommend never fabricates an action — the field stays null.
     }
   }
+
+  /* -------------------- decision episodes -------------------- */
+
+  private openEpisode(
+    shipment: SimShipment,
+    response: RecommendResponse,
+    options: {
+      prediction: PredictResponse;
+      triggerEventId: string | null;
+      inferenceKind: "INITIAL" | "RESCORE" | "POST_INTERVENTION";
+    },
+  ) {
+    this.episodeSequence += 1;
+    const localId = `${this.snapshot.runId || "run"}-EP-${String(this.episodeSequence).padStart(4, "0")}`;
+    const episode: SimEpisode = {
+      id: localId,
+      dbId: null,
+      runId: this.snapshot.runId,
+      shipmentId: shipment.id,
+      route: shipment.route,
+      triggerEventId: options.triggerEventId,
+      openedSimMs: this.snapshot.simClockMs,
+      openedAtEpoch: Date.now(),
+      recommendedAction: response.recommendation,
+      reasons: response.decision_reason,
+      backendApprovalRequired: response.human_approval_required,
+      riskAtOpen: shipment.model.risk,
+      tierAtOpen: shipment.model.tier,
+      severityAtOpen: shipment.model.severity_p50,
+      modelVersion: shipment.model.model_version,
+      status: "PENDING",
+      decision: null,
+      interventionAudit: [],
+    };
+
+    shipment.awaitingDecision = true;
+    shipment.episodeId = localId;
+    shipment.latestEvent = `Awaiting human decision · ORCA recommends ${response.recommendation}`;
+
+    const gateEvent = makeEvent({
+      startedAtEpoch: this.snapshot.startedAtEpoch,
+      simClockMs: this.snapshot.simClockMs,
+      shipmentId: shipment.id,
+      family: "RECOMMENDATION",
+      detail: `Decision episode opened · shipment held pending human decision on ${response.recommendation}`,
+      provenance: SIM_PROVENANCE.ops,
+    });
+
+    this.snapshot = {
+      ...this.snapshot,
+      version: this.snapshot.version + 1,
+      episodes: [episode, ...this.snapshot.episodes].slice(0, SIM_CONFIG.maxEpisodes),
+      events: [gateEvent, ...this.snapshot.events].slice(0, SIM_CONFIG.maxEvents),
+      metrics: {
+        ...this.snapshot.metrics,
+        episodesOpened: this.snapshot.metrics.episodesOpened + 1,
+      },
+    };
+    for (const l of this.listeners) l();
+    this.audit([gateEvent]);
+
+    // Persist the snapshot → inference → recommendation → episode chain and
+    // attach the returned database id. A storage failure leaves dbId null; the
+    // gate still works in-memory.
+    const persistence = this.persistence;
+    if (!persistence) return;
+    const run = this.runRef;
+    void (async () => {
+      try {
+        const dbId = await persistence.episodeOpened(run, {
+          shipmentId: shipment.id,
+          triggerEventId: options.triggerEventId,
+          simClockMs: Math.max(0, Math.round(episode.openedSimMs)),
+          inferenceKind: options.inferenceKind,
+          features: shipment.features,
+          prediction: options.prediction,
+          recommendation: response,
+          state: {
+            shipmentStatus: shipment.status,
+            progress: shipment.progress,
+            position: shipment.position,
+            etaVarianceHours: shipment.etaVarianceHours,
+            exceptionOpen: shipment.exceptionOpen,
+            exceptionFamily: shipment.exceptionFamily,
+          },
+        });
+        if (!dbId) return;
+        this.snapshot = {
+          ...this.snapshot,
+          version: this.snapshot.version + 1,
+          episodes: this.snapshot.episodes.map((e) => (e.id === localId ? { ...e, dbId } : e)),
+        };
+        for (const l of this.listeners) l();
+      } catch {
+        // Audit sink unavailable — the episode stays local-only.
+      }
+    })();
+  }
+
+  /**
+   * Records a real human decision against an open episode, applies the bounded
+   * intervention effect and requeues a real ORCA /predict re-score.
+   */
+  submitDecision(input: {
+    episodeId: string;
+    decision: HumanDecisionKind;
+    chosenAction: OperatorAction;
+    reasonCode: ReasonCode;
+    note?: string | null;
+    actorLabel?: string;
+  }): { ok: boolean; reason?: string } {
+    const episode = this.snapshot.episodes.find((e) => e.id === input.episodeId);
+    if (!episode) return { ok: false, reason: "Episode not found in this run." };
+    if (episode.status === "RESOLVED") return { ok: false, reason: "Episode already resolved." };
+    const shipment = this.findShipment(episode.shipmentId);
+    if (!shipment) return { ok: false, reason: "Shipment is no longer active." };
+
+    const chosen =
+      input.decision === "APPROVE"
+        ? defaultActionFor(episode.recommendedAction)
+        : input.decision === "REJECT"
+          ? "NO_ACTION"
+          : input.decision === "DEFER"
+            ? "MONITOR"
+            : input.chosenAction;
+
+    const effect = interventionEffect(chosen);
+    const simClockMs = this.snapshot.simClockMs;
+    const latencyMs = Math.max(0, Date.now() - episode.openedAtEpoch);
+    const actorLabel = input.actorLabel?.trim() || "OP";
+    const note = input.note?.trim() ? input.note.trim() : null;
+
+    // Bounded pre-outcome feature edit + synthetic operational effect.
+    let audit: string[] = [];
+    if (effect.mutatesFeatures) {
+      const beforeRaw = shipment.raw;
+      const nextRaw = effect.mutate(beforeRaw);
+      audit = auditTrail(beforeRaw, nextRaw);
+      shipment.raw = nextRaw;
+      shipment.features = rowToFeatures(nextRaw);
+      shipment.featureAudit = [...shipment.featureAudit, ...audit];
+    }
+    if (effect.etaRecoveryHours > 0) {
+      shipment.etaVarianceHours = Math.max(
+        0,
+        shipment.etaVarianceHours - effect.etaRecoveryHours,
+      );
+    }
+    if (effect.holdReleaseRatio > 0 && shipment.holdMs > 0) {
+      shipment.holdMs = Math.round(shipment.holdMs * (1 - effect.holdReleaseRatio));
+      if (shipment.holdMs <= 0) {
+        shipment.holdMs = 0;
+        shipment.exceptionOpen = false;
+        shipment.exceptionFamily = null;
+      }
+    }
+
+    const applied = chosen !== "NO_ACTION" && chosen !== "MONITOR" && chosen !== "HUMAN_REVIEW";
+    if (applied) shipment.interventionCount += 1;
+
+    // Release the gate — the shipment resumes moving.
+    shipment.awaitingDecision = false;
+    shipment.episodeId = null;
+    shipment.latestEvent = `Human decision ${input.decision} · ${chosen}`;
+
+    const decisionEvent = makeEvent({
+      startedAtEpoch: this.snapshot.startedAtEpoch,
+      simClockMs,
+      shipmentId: shipment.id,
+      family: "RECOMMENDATION",
+      detail: `Human decision ${input.decision} by ${actorLabel} · ORCA recommended ${episode.recommendedAction} · chosen ${chosen} · ${input.reasonCode}`,
+      provenance: "HUMAN DECISION ON SYNTHETIC SIMULATION",
+    });
+    const interventionEvent = applied
+      ? makeEvent({
+          startedAtEpoch: this.snapshot.startedAtEpoch,
+          simClockMs,
+          shipmentId: shipment.id,
+          family: "RECOVERY",
+          detail: `Intervention applied · ${effect.label} · ${effect.description}`,
+          provenance: SIM_PROVENANCE.shockInput,
+          ...(audit.length > 0 ? { featureAudit: audit } : {}),
+        })
+      : null;
+    const events = interventionEvent ? [interventionEvent, decisionEvent] : [decisionEvent];
+
+    const resolved = {
+      ...episode,
+      status: "RESOLVED" as const,
+      interventionAudit: audit,
+      decision: {
+        kind: input.decision,
+        recommendedAction: episode.recommendedAction,
+        chosenAction: chosen,
+        reasonCode: input.reasonCode,
+        note,
+        actorLabel,
+        decidedSimMs: simClockMs,
+        latencyMs,
+      },
+    };
+
+    this.snapshot = {
+      ...this.snapshot,
+      version: this.snapshot.version + 1,
+      episodes: this.snapshot.episodes.map((e) => (e.id === episode.id ? resolved : e)),
+      events: [...events.reverse(), ...this.snapshot.events].slice(0, SIM_CONFIG.maxEvents),
+      metrics: {
+        ...this.snapshot.metrics,
+        decisionsRecorded: this.snapshot.metrics.decisionsRecorded + 1,
+        interventionsApplied:
+          this.snapshot.metrics.interventionsApplied + (applied ? 1 : 0),
+      },
+    };
+    for (const l of this.listeners) l();
+    this.audit(events);
+
+    // Persist the human decision (+ intervention) once the episode has a db id.
+    if (this.persistence && episode.dbId) {
+      try {
+        this.persistence.decisionRecorded(this.runRef, {
+          episodeDbId: episode.dbId,
+          shipmentId: shipment.id,
+          decision: input.decision,
+          recommendedAction: episode.recommendedAction,
+          chosenAction: chosen,
+          reasonCode: input.reasonCode,
+          note,
+          actorLabel,
+          decisionLatencyMs: latencyMs,
+          intervention: applied
+            ? {
+                action: chosen,
+                effectSpec: effectSpec(effect),
+                appliedSimMs: Math.max(0, Math.round(simClockMs)),
+                policyVersion: INTERVENTION_POLICY_VERSION,
+              }
+            : null,
+        });
+      } catch {
+        // Audit sink unavailable — the run continues.
+      }
+    }
+
+    // Every intervention is followed by a REAL ORCA /predict re-score.
+    if (applied) {
+      shipment.lastScoreRequestAt = simClockMs;
+      this.enqueueScore({
+        shipmentId: shipment.id,
+        reason: "intervention",
+        audit,
+        detail: `human intervention ${chosen}`,
+      });
+      this.pump();
+    }
+
+    return { ok: true };
+  }
 }
+
 
 /** Elapsed simulated time as Dd HH:MM. */
 export function formatSimElapsed(simClockMs: number): string {

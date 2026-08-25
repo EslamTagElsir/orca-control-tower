@@ -17,7 +17,9 @@
 
 import type { FeatureMap } from "../source-data";
 import type { DecisionAction, DisplayTier, EventType, RiskTier } from "../types";
+import type { HumanDecisionKind, OperatorAction, ReasonCode } from "./intervention-policy";
 import type { TargetBand } from "./mutation-profiles";
+
 
 /* ------------------------------------------------------------------ */
 /* Provenance vocabulary                                               */
@@ -36,7 +38,10 @@ export const SIM_PROVENANCE = {
   shockResult: "MODEL OUTPUT ON SIMULATED SCENARIO",
   /** Backend unreachable. */
   unscored: "UNSCORED / MODEL OFFLINE",
+  /** A real operator decision recorded against the synthetic simulation. */
+  humanDecision: "HUMAN DECISION ON SYNTHETIC SIMULATION",
 } as const;
+
 
 /* ------------------------------------------------------------------ */
 /* Lifecycle                                                           */
@@ -81,7 +86,11 @@ export type SimEventFamily =
   | "MODEL_SCORE"
   | "MODEL_RESCORE"
   | "MODEL_OFFLINE"
-  | "RECOMMENDATION";
+  | "RECOMMENDATION"
+  | "DECISION_REQUIRED"
+  | "HUMAN_DECISION"
+  | "INTERVENTION";
+
 
 export const FAMILY_LABEL: Record<SimEventFamily, string> = {
   SPAWN: "Shipment created",
@@ -102,6 +111,10 @@ export const FAMILY_LABEL: Record<SimEventFamily, string> = {
   MODEL_RESCORE: "Model re-score",
   MODEL_OFFLINE: "Model offline",
   RECOMMENDATION: "Recommendation",
+  DECISION_REQUIRED: "Human decision required",
+  HUMAN_DECISION: "Human decision",
+  INTERVENTION: "Intervention applied",
+
 };
 
 export const FAMILY_EVENT_TYPE: Record<SimEventFamily, EventType> = {
@@ -123,6 +136,10 @@ export const FAMILY_EVENT_TYPE: Record<SimEventFamily, EventType> = {
   MODEL_RESCORE: "MODEL",
   MODEL_OFFLINE: "MODEL",
   RECOMMENDATION: "DECISION",
+  DECISION_REQUIRED: "DECISION",
+  HUMAN_DECISION: "DECISION",
+  INTERVENTION: "DECISION",
+
 };
 
 /** Families that represent an operational exception being opened. */
@@ -265,7 +282,68 @@ export interface SimShipment {
   eventCount: number;
   /** Sim-clock ms of the last score REQUEST — used for the re-score cooldown. */
   lastScoreRequestAt: number;
+
+  /**
+   * True while an open Decision Episode is waiting for a human decision. The
+   * shipment holds in place (no operational progress) until it is resolved.
+   */
+  awaitingDecision: boolean;
+  /** Local id of the shipment's currently open episode, if any. */
+  episodeId: string | null;
+  /** Number of human interventions applied to this shipment. */
+  interventionCount: number;
 }
+
+/* ------------------------------------------------------------------ */
+/* Decision episodes                                                   */
+/* ------------------------------------------------------------------ */
+
+export type SimEpisodeStatus = "PENDING" | "RESOLVED";
+
+/** A human decision recorded against an episode. */
+export interface SimHumanDecision {
+  kind: HumanDecisionKind;
+  /** Verbatim ORCA /recommend output the operator responded to. */
+  recommendedAction: string;
+  chosenAction: OperatorAction;
+  reasonCode: ReasonCode;
+  note: string | null;
+  actorLabel: string;
+  decidedSimMs: number;
+  /** Wall-clock ms between the episode opening and the decision. */
+  latencyMs: number;
+}
+
+/**
+ * A Decision Episode: the auditable unit that binds a model inference and its
+ * recommendation to the human decision that answered it.
+ */
+export interface SimEpisode {
+  /** Local (in-run) id. */
+  id: string;
+  /** Persisted database id once the write resolves; null while in flight. */
+  dbId: string | null;
+  runId: string;
+  shipmentId: string;
+  route: string;
+  triggerEventId: string | null;
+  openedSimMs: number;
+  openedAtEpoch: number;
+  /** Verbatim /recommend output. */
+  recommendedAction: string;
+  reasons: string[];
+  backendApprovalRequired: boolean;
+  /** Verbatim /predict state at the moment the episode opened. */
+  riskAtOpen: number | null;
+  tierAtOpen: DisplayTier;
+  severityAtOpen: number | null;
+  modelVersion: string | null;
+  status: SimEpisodeStatus;
+  decision: SimHumanDecision | null;
+  /** Feature audit of the applied intervention, if any. */
+  interventionAudit: string[];
+}
+
 
 /* ------------------------------------------------------------------ */
 /* Events                                                              */
@@ -306,6 +384,9 @@ export interface SimMetrics {
   recommendCalls: number;
   rescores: number;
   scoreFailures: number;
+  episodesOpened: number;
+  decisionsRecorded: number;
+  interventionsApplied: number;
 }
 
 export interface SimulationSnapshot {
@@ -323,11 +404,14 @@ export interface SimulationSnapshot {
   recentlyDelivered: SimShipment[];
   /** Bounded global event stream, newest first. */
   events: SimEvent[];
+  /** Decision episodes for this run, newest first (pending and resolved). */
+  episodes: SimEpisode[];
   metrics: SimMetrics;
   nextSpawnAtMs: number;
   /** null until the first model call resolves. */
   modelOnline: boolean | null;
   modelOfflineReason: string | null;
+
 }
 
 /* ------------------------------------------------------------------ */

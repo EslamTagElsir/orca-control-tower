@@ -170,6 +170,10 @@ export function createAutomaticGeneratorSource(rng: Rng): ShipmentSource {
         firedPings: [],
         eventCount: 0,
         lastScoreRequestAt: -Infinity,
+        awaitingDecision: false,
+        episodeId: null,
+        interventionCount: 0,
+
       };
       shipment.nextMilestone = nextMilestoneFor(shipment);
       return shipment;
