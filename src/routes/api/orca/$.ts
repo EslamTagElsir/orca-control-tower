@@ -43,7 +43,7 @@ function unconfigured(): Response {
       orca_unavailable: true,
       error: "orca_api_not_configured",
       detail:
-        "No ORCA_API_INTERNAL_URL is configured for this environment. The client will operate on labelled offline fixture data.",
+        "No ORCA backend is configured for this environment. The client will operate on labelled offline fixture data.",
     },
     { status: 200, headers: { "cache-control": "no-store" } },
   );
@@ -103,7 +103,7 @@ async function forward(request: Request, splat: string): Promise<Response> {
         {
           orca_unavailable: true,
           error: "orca_api_gateway_error",
-          detail: `ORCA upstream ${base} returned ${upstream!.status} after ${RETRY_ATTEMPTS} attempts — the intelligence layer is saturated or restarting. No substitute model value is applied.`,
+          detail: `The ORCA intelligence service returned ${upstream!.status} after ${RETRY_ATTEMPTS} attempts. It may be saturated or restarting. No substitute model value is applied.`,
           upstream_kind: "remote",
         },
         { status: 200, headers: { "cache-control": "no-store" } },
@@ -120,8 +120,8 @@ async function forward(request: Request, splat: string): Promise<Response> {
   } catch (error) {
     const raw = error instanceof Error ? error.message : "Unknown upstream error";
     const detail = isLoopback(base)
-      ? `Configured ORCA upstream ${base} is a loopback address, which resolves to the app server (not your workstation) and has no ORCA service listening (${raw}). Set ORCA_API_INTERNAL_URL to a publicly reachable ORCA base URL, or switch Settings to Direct Browser mode for a local FastAPI with CORS enabled.`
-      : `ORCA upstream ${base} is unreachable (${raw}).`;
+      ? `The configured ORCA backend resolves to a loopback address that is not reachable from this app server (${raw}). Use a publicly reachable backend URL for hosted deployments, or Direct Browser mode for local development.`
+      : `The ORCA intelligence service is unreachable (${raw}).`;
     return Response.json(
       {
         orca_unavailable: true,
