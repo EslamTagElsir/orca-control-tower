@@ -1,23 +1,62 @@
+<div align="center">
+
 # ORCA Control Tower
 
 **Supply Chain Decision Intelligence — Sense → Predict → Explain → Simulate → Decide**
 
-[Live App](https://orca-control-tower.lovable.app) · [Repository](https://github.com/EslamTagElsir/orca-control-tower) · Built with [Lovable](https://lovable.dev) / [React](https://react.dev) / [TypeScript](https://www.typescriptlang.org)
+<div align="center">
+
+![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-latest-646CFF?logo=vite&logoColor=white)
+![TanStack Start](https://img.shields.io/badge/TanStack%20Start-latest-FF4154?logo=tanstack&logoColor=white)
+![FastAPI Backend](https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi&logoColor=white)
+![MapLibre](https://img.shields.io/badge/MapLibre%20GL-latest-4264FB?logo=maplibre&logoColor=white)
+![Lovable](https://img.shields.io/badge/Built%20with-Lovable-FF6A00?logo=lovable&logoColor=white)
+
+</div>
+
+**[Live App](https://orca-control-tower.lovable.app)** · **[GitHub Repository](https://github.com/EslamTagElsir/orca-control-tower)** · **[Lovable Editor](https://lovable.dev/projects/5f9c9dc3-04f6-409f-8f74-c04ca6fc140c)**
 
 > **Note:** The repository source may be ahead of the currently published Lovable deployment.
 
-ORCA Control Tower is an enterprise-style supply-chain decision intelligence frontend. It connects to an existing FastAPI/ML intelligence layer and visualizes network risk, shipment-level predictions, explanations, recommendations, and what-if scenarios. The frontend does not reimplement the models; it orchestrates, explains, and helps operators act on model output.
+</div>
+
+## Table of Contents
+
+- [What ORCA Does](#what-orca-does)
+- [Product Areas](#product-areas)
+- [Architecture](#architecture)
+- [Backend API](#backend-api)
+- [Data Provenance & Trust](#data-provenance--trust)
+- [Digital Twin / Simulation](#digital-twin--simulation)
+- [Tech Stack](#tech-stack)
+- [Local Development](#local-development)
+- [Available Scripts](#available-scripts)
+- [Design Principles](#design-principles)
+- [Research / Demo Scope](#research--demo-scope)
+- [Repository Scope](#repository-scope)
+- [License](#license)
 
 ## What ORCA Does
 
-- **Network / portfolio monitoring** — See the full shipment portfolio, lanes, and active exceptions in one operational view.
-- **Model-backed late-risk prediction** — Score journeys with the ORCA late-risk classifier and calibrated probability outputs.
-- **Severity estimates with uncertainty** — Quantile severity forecasts with conformal/CQR uncertainty intervals.
-- **SHAP explainability** — Understand why a shipment scored the way it did with local feature contributions.
-- **Recommendations / decision support** — Get actionable recommendations from the ORCA decision engine.
-- **What-if scenarios** — Simulate alternative plans and compare economic outcomes before committing.
-- **Completed-journey analytics** — Evaluate prediction quality against historical holdout outcomes.
-- **Synthetic operational digital twin** — A demo/simulation layer that generates realistic operational stories and scores them with live `/predict` calls; clearly separated from real production data.
+ORCA Control Tower is an enterprise-style supply-chain decision intelligence **frontend application layer**. It connects to a separate FastAPI/ML intelligence service and visualizes network risk, shipment-level predictions, explanations, recommendations, and what-if scenarios. The frontend does not reimplement the models; it orchestrates, explains, and helps operators act on model output.
+
+The ORCA workflow follows five stages:
+
+```
+Sense → Predict → Explain → Simulate → Decide
+```
+
+| Stage | What happens in ORCA |
+|-------|----------------------|
+| **Sense** | Monitor the shipment portfolio, lanes, and live operational events. |
+| **Predict** | Score journeys with the ORCA late-risk classifier via `/predict`. |
+| **Explain** | Understand why a shipment scored the way it did with SHAP local explanations via `/explain`. |
+| **Simulate** | Run alternative plans and synthetic scenarios through the model. |
+| **Decide** | Compare economics and receive decision recommendations via `/recommend`. |
+
+This repository contains only the frontend application layer. The FastAPI/ML backend is a separate service in the deployed architecture.
 
 ## Product Areas
 
@@ -37,7 +76,7 @@ ORCA Control Tower is an enterprise-style supply-chain decision intelligence fro
 
 ```mermaid
 flowchart LR
-    Browser["Browser<br/>React + TypeScript<br/>TanStack Start / React Router"]
+    Browser["Browser<br/>React + TypeScript<br/>TanStack Start"]
     Proxy["Same-origin server proxy<br/>/api/orca/*"]
     FastAPI["FastAPI intelligence service"]
     ML["ORCA ML + Decision Intelligence"]
@@ -82,13 +121,13 @@ ORCA deliberately avoids presenting simulated or demo values as production facts
 
 ## Digital Twin / Simulation
 
-The operational simulation is a synthetic demonstration layer. Synthetic events generate plausible operational situations; risk shown after scoring comes from real `/predict` calls. The simulation never directly assigns model risk. When the model is unavailable, shipments remain **UNSCORED** and neutral.
+The operational simulation is a **synthetic** demonstration layer. Synthetic events generate plausible operational situations; risk shown after scoring comes from real `/predict` calls. The simulation never directly assigns model risk. When the model is unavailable, shipments remain **UNSCORED** and neutral.
 
 ## Tech Stack
 
 - React 19
 - TypeScript
-- TanStack Start / React Router
+- TanStack Start
 - Vite
 - Tailwind CSS
 - MapLibre GL
