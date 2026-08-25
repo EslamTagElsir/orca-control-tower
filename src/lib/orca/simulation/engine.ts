@@ -842,15 +842,17 @@ export class SimulationEngine {
       const detail =
         request.reason === "shock"
           ? `Re-scored after ${request.detail} · risk ${(previousRisk ?? 0).toFixed(3)} → ${prediction.probability_late.toFixed(3)} · tier ${tier}`
-          : `Scored by ORCA · risk ${prediction.probability_late.toFixed(3)} · tier ${tier} · ${prediction.model_version}${searchSuffix}`;
+          : request.reason === "intervention"
+            ? `Re-scored after ${request.detail} · risk ${(previousRisk ?? 0).toFixed(3)} → ${prediction.probability_late.toFixed(3)} · tier ${tier}`
+            : `Scored by ORCA · risk ${prediction.probability_late.toFixed(3)} · tier ${tier} · ${prediction.model_version}${searchSuffix}`;
 
       const event = makeEvent({
         startedAtEpoch: this.snapshot.startedAtEpoch,
         simClockMs: this.snapshot.simClockMs,
         shipmentId: shipment.id,
-        family: request.reason === "shock" ? "MODEL_RESCORE" : "MODEL_SCORE",
+        family: request.reason === "initial" ? "MODEL_SCORE" : "MODEL_RESCORE",
         detail,
-        provenance: request.reason === "shock" ? SIM_PROVENANCE.shockResult : SIM_PROVENANCE.model,
+        provenance: request.reason === "initial" ? SIM_PROVENANCE.model : SIM_PROVENANCE.shockResult,
         riskBefore: previousRisk,
         riskAfter: prediction.probability_late,
         ...(request.audit.length > 0
@@ -869,11 +871,22 @@ export class SimulationEngine {
         modelOfflineReason: null,
       };
       for (const l of this.listeners) l();
+      this.audit([event]);
 
       // /recommend only for meaningful high-risk state changes.
       const needsRecommendation =
         prediction.classification_decision || tier === "HIGH_RISK" || tier === "CRITICAL";
-      if (needsRecommendation) await this.fetchRecommendation(shipment, port);
+      if (needsRecommendation) {
+        await this.fetchRecommendation(shipment, port, {
+          prediction,
+          triggerEventId: event.id,
+          // A post-intervention re-score never re-opens a gate: the operator has
+          // already answered for this shipment state.
+          allowEpisode: request.reason !== "intervention",
+          inferenceKind: request.reason === "initial" ? "INITIAL" : "RESCORE",
+        });
+      }
+
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       shipment.model = {
