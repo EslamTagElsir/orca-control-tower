@@ -920,7 +920,16 @@ export class SimulationEngine {
     }
   }
 
-  private async fetchRecommendation(shipment: SimShipment, port: ModelPort) {
+  private async fetchRecommendation(
+    shipment: SimShipment,
+    port: ModelPort,
+    options: {
+      prediction: PredictResponse;
+      triggerEventId: string | null;
+      allowEpisode: boolean;
+      inferenceKind: "INITIAL" | "RESCORE" | "POST_INTERVENTION";
+    },
+  ) {
     try {
       const response = await port.recommend(shipment.features);
       const action = (
@@ -955,11 +964,279 @@ export class SimulationEngine {
         },
       };
       for (const l of this.listeners) l();
+      this.audit([event]);
+
+      // Human-in-the-loop gate. The SIMULATION always requires a decision for a
+      // recommendation the operator must answer; `backendApprovalRequired`
+      // preserves the backend's own verbatim flag alongside it.
+      const needsDecision = options.allowEpisode && response.recommendation !== "NO_ACTION";
+      if (needsDecision && !shipment.awaitingDecision) {
+        this.openEpisode(shipment, response, options);
+      }
     } catch {
       // A failed /recommend never fabricates an action — the field stays null.
     }
   }
+
+  /* -------------------- decision episodes -------------------- */
+
+  private openEpisode(
+    shipment: SimShipment,
+    response: RecommendResponse,
+    options: {
+      prediction: PredictResponse;
+      triggerEventId: string | null;
+      inferenceKind: "INITIAL" | "RESCORE" | "POST_INTERVENTION";
+    },
+  ) {
+    this.episodeSequence += 1;
+    const localId = `${this.snapshot.runId || "run"}-EP-${String(this.episodeSequence).padStart(4, "0")}`;
+    const episode: SimEpisode = {
+      id: localId,
+      dbId: null,
+      runId: this.snapshot.runId,
+      shipmentId: shipment.id,
+      route: shipment.route,
+      triggerEventId: options.triggerEventId,
+      openedSimMs: this.snapshot.simClockMs,
+      openedAtEpoch: Date.now(),
+      recommendedAction: response.recommendation,
+      reasons: response.decision_reason,
+      backendApprovalRequired: response.human_approval_required,
+      riskAtOpen: shipment.model.risk,
+      tierAtOpen: shipment.model.tier,
+      severityAtOpen: shipment.model.severity_p50,
+      modelVersion: shipment.model.model_version,
+      status: "PENDING",
+      decision: null,
+      interventionAudit: [],
+    };
+
+    shipment.awaitingDecision = true;
+    shipment.episodeId = localId;
+    shipment.latestEvent = `Awaiting human decision · ORCA recommends ${response.recommendation}`;
+
+    const gateEvent = makeEvent({
+      startedAtEpoch: this.snapshot.startedAtEpoch,
+      simClockMs: this.snapshot.simClockMs,
+      shipmentId: shipment.id,
+      family: "RECOMMENDATION",
+      detail: `Decision episode opened · shipment held pending human decision on ${response.recommendation}`,
+      provenance: SIM_PROVENANCE.ops,
+    });
+
+    this.snapshot = {
+      ...this.snapshot,
+      version: this.snapshot.version + 1,
+      episodes: [episode, ...this.snapshot.episodes].slice(0, SIM_CONFIG.maxEpisodes),
+      events: [gateEvent, ...this.snapshot.events].slice(0, SIM_CONFIG.maxEvents),
+      metrics: {
+        ...this.snapshot.metrics,
+        episodesOpened: this.snapshot.metrics.episodesOpened + 1,
+      },
+    };
+    for (const l of this.listeners) l();
+    this.audit([gateEvent]);
+
+    // Persist the snapshot → inference → recommendation → episode chain and
+    // attach the returned database id. A storage failure leaves dbId null; the
+    // gate still works in-memory.
+    const persistence = this.persistence;
+    if (!persistence) return;
+    const run = this.runRef;
+    void (async () => {
+      try {
+        const dbId = await persistence.episodeOpened(run, {
+          shipmentId: shipment.id,
+          triggerEventId: options.triggerEventId,
+          simClockMs: Math.max(0, Math.round(episode.openedSimMs)),
+          inferenceKind: options.inferenceKind,
+          features: shipment.features,
+          prediction: options.prediction,
+          recommendation: response,
+          state: {
+            shipmentStatus: shipment.status,
+            progress: shipment.progress,
+            position: shipment.position,
+            etaVarianceHours: shipment.etaVarianceHours,
+            exceptionOpen: shipment.exceptionOpen,
+            exceptionFamily: shipment.exceptionFamily,
+          },
+        });
+        if (!dbId) return;
+        this.snapshot = {
+          ...this.snapshot,
+          version: this.snapshot.version + 1,
+          episodes: this.snapshot.episodes.map((e) => (e.id === localId ? { ...e, dbId } : e)),
+        };
+        for (const l of this.listeners) l();
+      } catch {
+        // Audit sink unavailable — the episode stays local-only.
+      }
+    })();
+  }
+
+  /**
+   * Records a real human decision against an open episode, applies the bounded
+   * intervention effect and requeues a real ORCA /predict re-score.
+   */
+  submitDecision(input: {
+    episodeId: string;
+    decision: HumanDecisionKind;
+    chosenAction: OperatorAction;
+    reasonCode: ReasonCode;
+    note?: string | null;
+    actorLabel?: string;
+  }): { ok: boolean; reason?: string } {
+    const episode = this.snapshot.episodes.find((e) => e.id === input.episodeId);
+    if (!episode) return { ok: false, reason: "Episode not found in this run." };
+    if (episode.status === "RESOLVED") return { ok: false, reason: "Episode already resolved." };
+    const shipment = this.findShipment(episode.shipmentId);
+    if (!shipment) return { ok: false, reason: "Shipment is no longer active." };
+
+    const chosen =
+      input.decision === "APPROVE"
+        ? defaultActionFor(episode.recommendedAction)
+        : input.decision === "REJECT"
+          ? "NO_ACTION"
+          : input.decision === "DEFER"
+            ? "MONITOR"
+            : input.chosenAction;
+
+    const effect = interventionEffect(chosen);
+    const simClockMs = this.snapshot.simClockMs;
+    const latencyMs = Math.max(0, Date.now() - episode.openedAtEpoch);
+    const actorLabel = input.actorLabel?.trim() || "OP";
+    const note = input.note?.trim() ? input.note.trim() : null;
+
+    // Bounded pre-outcome feature edit + synthetic operational effect.
+    let audit: string[] = [];
+    if (effect.mutatesFeatures) {
+      const beforeRaw = shipment.raw;
+      const nextRaw = effect.mutate(beforeRaw);
+      audit = auditTrail(beforeRaw, nextRaw);
+      shipment.raw = nextRaw;
+      shipment.features = rowToFeatures(nextRaw);
+      shipment.featureAudit = [...shipment.featureAudit, ...audit];
+    }
+    if (effect.etaRecoveryHours > 0) {
+      shipment.etaVarianceHours = Math.max(
+        0,
+        shipment.etaVarianceHours - effect.etaRecoveryHours,
+      );
+    }
+    if (effect.holdReleaseRatio > 0 && shipment.holdMs > 0) {
+      shipment.holdMs = Math.round(shipment.holdMs * (1 - effect.holdReleaseRatio));
+      if (shipment.holdMs <= 0) {
+        shipment.holdMs = 0;
+        shipment.exceptionOpen = false;
+        shipment.exceptionFamily = null;
+      }
+    }
+
+    const applied = chosen !== "NO_ACTION" && chosen !== "MONITOR" && chosen !== "HUMAN_REVIEW";
+    if (applied) shipment.interventionCount += 1;
+
+    // Release the gate — the shipment resumes moving.
+    shipment.awaitingDecision = false;
+    shipment.episodeId = null;
+    shipment.latestEvent = `Human decision ${input.decision} · ${chosen}`;
+
+    const decisionEvent = makeEvent({
+      startedAtEpoch: this.snapshot.startedAtEpoch,
+      simClockMs,
+      shipmentId: shipment.id,
+      family: "RECOMMENDATION",
+      detail: `Human decision ${input.decision} by ${actorLabel} · ORCA recommended ${episode.recommendedAction} · chosen ${chosen} · ${input.reasonCode}`,
+      provenance: "HUMAN DECISION ON SYNTHETIC SIMULATION",
+    });
+    const interventionEvent = applied
+      ? makeEvent({
+          startedAtEpoch: this.snapshot.startedAtEpoch,
+          simClockMs,
+          shipmentId: shipment.id,
+          family: "RECOVERY",
+          detail: `Intervention applied · ${effect.label} · ${effect.description}`,
+          provenance: SIM_PROVENANCE.shockInput,
+          ...(audit.length > 0 ? { featureAudit: audit } : {}),
+        })
+      : null;
+    const events = interventionEvent ? [interventionEvent, decisionEvent] : [decisionEvent];
+
+    const resolved = {
+      ...episode,
+      status: "RESOLVED" as const,
+      interventionAudit: audit,
+      decision: {
+        kind: input.decision,
+        recommendedAction: episode.recommendedAction,
+        chosenAction: chosen,
+        reasonCode: input.reasonCode,
+        note,
+        actorLabel,
+        decidedSimMs: simClockMs,
+        latencyMs,
+      },
+    };
+
+    this.snapshot = {
+      ...this.snapshot,
+      version: this.snapshot.version + 1,
+      episodes: this.snapshot.episodes.map((e) => (e.id === episode.id ? resolved : e)),
+      events: [...events.reverse(), ...this.snapshot.events].slice(0, SIM_CONFIG.maxEvents),
+      metrics: {
+        ...this.snapshot.metrics,
+        decisionsRecorded: this.snapshot.metrics.decisionsRecorded + 1,
+        interventionsApplied:
+          this.snapshot.metrics.interventionsApplied + (applied ? 1 : 0),
+      },
+    };
+    for (const l of this.listeners) l();
+    this.audit(events);
+
+    // Persist the human decision (+ intervention) once the episode has a db id.
+    if (this.persistence && episode.dbId) {
+      try {
+        this.persistence.decisionRecorded(this.runRef, {
+          episodeDbId: episode.dbId,
+          shipmentId: shipment.id,
+          decision: input.decision,
+          recommendedAction: episode.recommendedAction,
+          chosenAction: chosen,
+          reasonCode: input.reasonCode,
+          note,
+          actorLabel,
+          decisionLatencyMs: latencyMs,
+          intervention: applied
+            ? {
+                action: chosen,
+                effectSpec: effectSpec(effect),
+                appliedSimMs: Math.max(0, Math.round(simClockMs)),
+                policyVersion: INTERVENTION_POLICY_VERSION,
+              }
+            : null,
+        });
+      } catch {
+        // Audit sink unavailable — the run continues.
+      }
+    }
+
+    // Every intervention is followed by a REAL ORCA /predict re-score.
+    if (applied) {
+      shipment.lastScoreRequestAt = simClockMs;
+      this.enqueueScore({
+        shipmentId: shipment.id,
+        reason: "intervention",
+        audit,
+        detail: `human intervention ${chosen}`,
+      });
+      this.pump();
+    }
+
+    return { ok: true };
+  }
 }
+
 
 /** Elapsed simulated time as Dd HH:MM. */
 export function formatSimElapsed(simClockMs: number): string {
