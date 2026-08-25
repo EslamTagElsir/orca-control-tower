@@ -1,0 +1,96 @@
+name: ORCA Runtime Check
+
+on:
+  push:
+    branches:
+      - chore/runtime-check-monorepo
+    paths:
+      - .github/workflows/runtime-check.yml
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check backend and frontend proxy
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, urllib.request
+
+          backend = 'https://orca-backend-production-2a11.up.railway.app'
+          frontend = 'https://orca-control-tower.lovable.app/api/orca'
+
+          def req(url, method='GET', payload=None):
+              data = None if payload is None else json.dumps(payload).encode()
+              r = urllib.request.Request(url, data=data, method=method, headers={'Content-Type':'application/json','Accept':'application/json'})
+              with urllib.request.urlopen(r, timeout=60) as resp:
+                  body = json.loads(resp.read().decode())
+                  return resp.status, body
+
+          for label, url in [('backend_health', backend + '/health'), ('proxy_health', frontend + '/health')]:
+              status, body = req(url)
+              print(label, status, json.dumps(body, sort_keys=True))
+              assert status == 200
+              assert body.get('status') == 'ok'
+              assert body.get('model_version')
+
+          # Minimal valid feature payload based on bundled public demo schema/template values.
+          features = {
+            'Unit Price': 0.3784364357202451,
+            'vendor_hist_volume': 181.0,
+            'country_hist_delay_rate': 0.10810810810810811,
+            'Country': 'South Africa',
+            'T_pred_quarter': 2,
+            'vendor_hist_delay_median': 0.0,
+            'Brand': 'Generic',
+            'weight_is_numeric': 0,
+            'Fulfill Via': 'Direct Drop',
+            'freight_is_numeric': 0,
+            'Molecule/Test Type': 'Tenofovir Disoproxil Fumarate',
+            'vendor_hist_delay_rate': 0.0,
+            'Manufacturing Site': 'Mylan (formerly Matrix) Nashik',
+            'First Line Designation': 'No',
+            'is_rdc_fulfillment': 0,
+            'po_sent_is_date': 1,
+            'Dosage Form': 'Tablet',
+            'Forecast_Horizon_Days': 1,
+            'PQ_to_PO_Days': 242.0,
+            'T_pred_year': 2015,
+            'T_pred_month': 5,
+            'Dosage': '300mg',
+            'Unit of Measure (Per Pack)': '30',
+            'Shipment Mode': 'Truck',
+            'pq_first_sent_is_date': 1,
+            'site_hist_delay_rate': 0.16157556270096463,
+            'country_hist_delay_median': 0.0,
+            'Line Item Value': 3.7483269127573564,
+            'Product Group': 'ARV',
+            'Pack Price': 2.695977619867941,
+            'is_pre_pq_process': 0,
+            'Line Item Insurance (USD)': 0.039220713153281295,
+            'Sub Classification': 'Adult',
+            'Scheduled_Transit_Days': 1,
+            'T_pred_dayofweek': 0,
+            'country_hist_volume': 1036.0,
+            'Vendor INCO Term': 'DDP',
+            'Vendor': 'PHARMACY DIRECT',
+            'Line Item Quantity': 1.3862943611198906
+          }
+          payload = {'features': features}
+
+          status, pred = req(frontend + '/predict', 'POST', payload)
+          print('predict', status, json.dumps({k: pred.get(k) for k in ['probability_late','risk_tier','severity_p50','model_version']}, sort_keys=True))
+          assert status == 200 and pred.get('model_version')
+
+          status, expl = req(frontend + '/explain', 'POST', payload)
+          print('explain', status, json.dumps({k: expl.get(k) for k in ['probability_late','top_predictive_drivers','evidence_label']}, sort_keys=True))
+          assert status == 200
+
+          status, rec = req(frontend + '/recommend', 'POST', payload)
+          print('recommend', status, json.dumps({k: rec.get(k) for k in ['recommendation','robustness','human_approval_required','evidence_label']}, sort_keys=True))
+          assert status == 200
+          PY
