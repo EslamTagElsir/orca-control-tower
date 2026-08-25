@@ -76,7 +76,7 @@ async function forward(request: Request, splat: string): Promise<Response> {
   if (contentType) headers.set("content-type", contentType);
   headers.set("accept", "application/json");
 
-  const payload = method === "GET" || method === "HEAD" ? null : await request.text();
+  const payload = method === "GET" ? null : await request.text();
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
