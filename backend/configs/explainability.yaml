@@ -1,0 +1,14 @@
+explainability:
+  method: "shap"
+  target: "Delay_Flag"
+  formulation: "tree_explainer"
+  stability_folds: 5
+  export_local_samples: true
+  forbidden_features:
+    - "ID"
+    - "T_pred"
+    - "Delivered to Client Date"
+    - "Delivery Recorded Date"
+    - "Delay_Days"
+    - "Delay_Flag"
+    - "is_temporal_anomaly"

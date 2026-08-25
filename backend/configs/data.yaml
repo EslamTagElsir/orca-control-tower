@@ -1,0 +1,73 @@
+# Data Ingestion & Source Configurations (Read-Only Source Anchors)
+datasets:
+  scms:
+    name: "SCMS Supply Chain Dataset"
+    raw_path: "data/raw/SCMS_Delivery_History_Dataset.csv"
+    encoding: "utf-8"
+    delimiter: ","
+    is_read_only: true
+    primary_key: "ID"
+    expected_rows: 10324
+    expected_columns: 33
+    expected_sha256: "918b992dd3e8d4b64d2a727b2c4ea607603d0c58f19484e73f7b78528c6a8673"
+    date_columns:
+      - "PQ First Sent to Client Date"
+      - "PO Sent to Vendor Date"
+      - "Scheduled Delivery Date"
+      - "Delivered to Client Date"
+      - "Delivery Recorded Date"
+    date_formats:
+      delivery_milestones: "%d-%b-%y"
+      procurement_milestones: "%m/%d/%y"
+    sentinel_coercions:
+      po_sent_date:
+        - "N/A - From RDC"
+        - "Date Not Captured"
+      pq_first_sent_date:
+        - "Pre-PQ Process"
+        - "Date Not Captured"
+    numeric_composite_columns:
+      - "Weight (Kilograms)"
+      - "Freight Cost (USD)"
+    target_column_binary: "Delay_Flag"
+    target_column_continuous: "Delay_Days"
+    bronze_artifact: "artifacts/data/bronze_scms.parquet"
+
+  olist:
+    name: "Olist Brazilian E-Commerce Dataset"
+    raw_dir: "data/external/olist"
+    encoding: "utf-8"
+    delimiter: ","
+    is_read_only: true
+    included_in_demo_archive: false
+    evidence_status: "NOT VALIDATED"
+    primary_key: "order_id"
+    tables:
+      - "olist_orders_dataset.csv"
+      - "olist_order_items_dataset.csv"
+      - "olist_order_payments_dataset.csv"
+      - "olist_order_reviews_dataset.csv"
+      - "olist_customers_dataset.csv"
+      - "olist_sellers_dataset.csv"
+      - "olist_products_dataset.csv"
+      - "olist_geolocation_dataset.csv"
+      - "product_category_name_translation.csv"
+
+  dataco:
+    name: "DataCo Global Supply Chain Dataset"
+    raw_path: "data/external/dataco/DataCoSupplyChainDataset.csv"
+    encoding: "latin1"
+    delimiter: ","
+    is_read_only: true
+    included_in_demo_archive: false
+    evidence_status: "NOT VALIDATED"
+    primary_key: "Order Item Id"
+    date_columns:
+      - "order date (DateOrders)"
+      - "Shipping date (DateOrders)"
+
+storage:
+  bronze_format: "parquet"
+  silver_format: "parquet"
+  gold_format: "parquet"
+  compression: "snappy"

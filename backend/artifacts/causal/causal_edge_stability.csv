@@ -1,0 +1,11 @@
+source,target,fold_count,stability_class
+Country,Line Item Quantity,5,Stable
+Country,Shipment Mode,5,Stable
+Fulfill Via,Delay_Days,5,Stable
+Fulfill Via,Line Item Quantity,5,Stable
+Fulfill Via,Shipment Mode,5,Stable
+Line Item Quantity,Shipment Mode,5,Stable
+Line Item Value,Line Item Quantity,5,Stable
+Product Group,Line Item Quantity,5,Stable
+Product Group,Shipment Mode,5,Stable
+Line Item Value,Delay_Days,1,Unstable

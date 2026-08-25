@@ -1,0 +1,46 @@
+# Adaptive Conformal Recalibration Configuration (E7 Design Freeze)
+# Governs Static, Rolling, and Drift-Triggered Conformal Recalibration Strategies
+
+conformal:
+  alpha: 0.10                      # Target miscoverage rate (1 - alpha = 0.90 nominal coverage)
+  finite_sample_correction: true   # Adjusts quantile level to (1 - alpha) * (1 + 1/n)
+  quantile_method: "higher"        # Conservative standard conformal quantile interpolation
+
+temporal_governance:
+  embargo_days: 90                 # Label maturity embargo gap (no future label leakage)
+  calibration_window_days: 180     # Sliding buffer window of matured historical shipments
+  min_calibration_samples: 50      # Hard minimum sample size for stable quantile estimation
+  evaluation_step_days: 30         # Periodic evaluation / monitoring cadence in streaming mode
+  holdout_duration_days: 365       # Final holdout duration strictly quarantined for evaluation
+
+strategies:
+  static:
+    enabled: true
+    description: "Frozen Baseline Control (Q fixed at initial development calibration fold, never recalibrates)"
+    initial_q: null                # Computed from initial calibration fold (or baseline artifact)
+
+  rolling:
+    enabled: true
+    description: "Periodic / Scheduled sliding window recalibration"
+    recalibration_cadence_days: 90 # Re-estimates Q every 90 days using matured calibration window
+
+  drift_triggered:
+    enabled: true
+    description: "Dynamic adaptive recalibration triggered by E6.5 DriftTriggerPolicy"
+    monitoring_interval_days: 30   # Evaluates drift triggers every 30 days
+    t_max_stale_days: 180          # Stale calibration timeout in days
+    v_max_stale_shipments: 1500    # Stale calibration volume in shipments
+    t_cooldown_days: 30            # Minimum cooldown between consecutive recalibrations
+    n_cooldown_shipments: 50       # Minimum shipment volume cooldown
+    k_persistence: 2               # Consecutive windows required for moderate warning escalation
+    psi_warning: 0.10              # Feature PSI warning threshold
+    psi_critical: 0.25             # Tier 1 SHAP feature veto threshold
+    weighted_score_yellow: 0.60    # Weighted feature shift warning threshold
+    weighted_score_red: 1.20       # Weighted feature shift critical threshold
+    coverage_error_red: 0.08       # Coverage drop triggering critical uncertainty alarm (Cov < 82%)
+    binomial_pval_red: 0.01        # Exact binomial test p-value threshold for undercoverage
+    nonconformity_w1_red: 3.0      # Nonconformity score Wasserstein distance threshold (days)
+
+efficiency_metrics:
+  track_latency: true              # Measure microsecond/millisecond recalibration execution overhead
+  baseline_reference_days: 365     # Annualization baseline for recalibration frequency calculation

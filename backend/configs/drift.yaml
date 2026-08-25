@@ -1,0 +1,148 @@
+# Chronological Drift Detection Configuration (E6.5)
+# Governs multi-dimensional drift detection, feature criticality tiers,
+# statistical thresholds, and trigger policies.
+
+version: 1.0.0
+dataset: "scms"
+
+# Feature Criticality Tiers (derived from Stage 5 SHAP Stability Rankings)
+tiers:
+  tier_1:
+    - "Vendor INCO Term"
+    - "Vendor"
+    - "vendor_hist_volume"
+    - "Country"
+    - "country_hist_delay_rate"
+    - "vendor_hist_delay_rate"
+    - "country_hist_volume"
+    - "Scheduled_Transit_Days"
+    - "Forecast_Horizon_Days"
+    - "Line Item Insurance (USD)"
+    - "Line Item Quantity"
+  tier_2:
+    - "Line Item Value"
+    - "country_hist_delay_median"
+    - "PQ_to_PO_Days"
+    - "site_hist_delay_rate"
+    - "Unit Price"
+    - "is_rdc_fulfillment"
+    - "Pack Price"
+    - "Shipment Mode"
+    - "Unit of Measure (Per Pack)"
+    - "T_pred_month"
+  tier_3:
+    - "freight_is_numeric"
+    - "First Line Designation"
+    - "Sub Classification"
+    - "T_pred_dayofweek"
+    - "Dosage Form"
+    - "vendor_hist_delay_median"
+    - "Product Group"
+    - "Molecule/Test Type"
+    - "T_pred_quarter"
+    - "T_pred_year"
+    - "weight_is_numeric"
+    - "po_sent_is_date"
+    - "Dosage"
+    - "Fulfill Via"
+    - "Brand"
+    - "Manufacturing Site"
+    - "is_pre_pq_process"
+    - "pq_first_sent_is_date"
+
+features:
+  numerical:
+    - "Unit Price"
+    - "vendor_hist_volume"
+    - "country_hist_delay_rate"
+    - "T_pred_quarter"
+    - "vendor_hist_delay_median"
+    - "weight_is_numeric"
+    - "freight_is_numeric"
+    - "vendor_hist_delay_rate"
+    - "is_rdc_fulfillment"
+    - "po_sent_is_date"
+    - "Forecast_Horizon_Days"
+    - "PQ_to_PO_Days"
+    - "T_pred_year"
+    - "T_pred_month"
+    - "Unit of Measure (Per Pack)"
+    - "pq_first_sent_is_date"
+    - "site_hist_delay_rate"
+    - "country_hist_delay_median"
+    - "Line Item Value"
+    - "Pack Price"
+    - "is_pre_pq_process"
+    - "Line Item Insurance (USD)"
+    - "Scheduled_Transit_Days"
+    - "T_pred_dayofweek"
+    - "country_hist_volume"
+    - "Line Item Quantity"
+  categorical:
+    - "Country"
+    - "Brand"
+    - "Fulfill Via"
+    - "Molecule/Test Type"
+    - "Manufacturing Site"
+    - "First Line Designation"
+    - "Dosage Form"
+    - "Dosage"
+    - "Shipment Mode"
+    - "Product Group"
+    - "Sub Classification"
+    - "Vendor INCO Term"
+    - "Vendor"
+
+thresholds:
+  feature_drift:
+    psi_warning: 0.10
+    psi_critical: 0.25
+    wasserstein_norm_warning: 0.15
+    wasserstein_norm_critical: 0.30
+    js_distance_warning: 0.10
+    js_distance_critical: 0.20
+    ks_fdr_alpha: 0.05
+    chi2_alpha: 0.05
+    chi2_min_expected_count: 5
+    laplace_epsilon: 0.0001
+  prediction_drift:
+    prob_psi_warning: 0.10
+    prob_psi_critical: 0.20
+    prob_wasserstein_warning: 0.05
+    prob_wasserstein_critical: 0.10
+    regression_psi_warning: 0.10
+    regression_psi_critical: 0.25
+    regression_wasserstein_norm_warning: 0.15
+    regression_wasserstein_norm_critical: 0.30
+  target_drift:
+    prevalence_delta_warning: 0.03
+    prevalence_delta_critical: 0.07
+    z_test_pvalue_warning: 0.05
+    z_test_pvalue_critical: 0.01
+    delay_days_wasserstein_norm_warning: 0.15
+    delay_days_wasserstein_norm_critical: 0.30
+    extreme_delay_threshold_days: 14
+  uncertainty_drift:
+    nominal_coverage: 0.90
+    coverage_error_warning: 0.04
+    coverage_error_critical: 0.08
+    binomial_pvalue_warning: 0.05
+    binomial_pvalue_critical: 0.01
+    nonconformity_wasserstein_warning_days: 1.5
+    nonconformity_wasserstein_critical_days: 3.0
+    interval_width_expansion_warning: 1.25
+
+policy:
+  n_min: 50
+  t_max_days: 180
+  v_max_shipments: 1500
+  t_cooldown_days: 30
+  n_cooldown_shipments: 50
+  k_persistence: 2
+  weighted_score_yellow: 0.60
+  weighted_score_red: 1.20
+
+windowing:
+  default_window_days: 180
+  gap_days: 90
+  maturation_embargo_days: 60

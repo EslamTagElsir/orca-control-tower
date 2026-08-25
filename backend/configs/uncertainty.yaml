@@ -1,0 +1,33 @@
+﻿# Uncertainty Configuration
+
+intervals:
+  - name: "80%"
+    alpha: 0.20
+    q_low: 0.10
+    q_high: 0.90
+  - name: "90%"
+    alpha: 0.10
+    q_low: 0.05
+    q_high: 0.95
+  - name: "95%"
+    alpha: 0.05
+    q_low: 0.025
+    q_high: 0.975
+
+severity_categories:
+  no_delay:
+    description: "Expected on time or early"
+    condition: "max(Delay_Days, 0) == 0"
+  low_severity:
+    description: "Minor operational delay"
+    condition: "0 < max(Delay_Days, 0) <= 7"
+  moderate_severity:
+    description: "Requires planning adjustment"
+    condition: "7 < max(Delay_Days, 0) <= 14"
+  high_severity:
+    description: "Severe delay requiring intervention"
+    condition: "max(Delay_Days, 0) > 14"
+
+conformal_settings:
+  method: "CQR" # Conformalized Quantile Regression
+  calibration_split: "temporal_inner_val"

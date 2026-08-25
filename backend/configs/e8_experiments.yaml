@@ -1,0 +1,91 @@
+# =============================================================================
+# USAID SCMS Supply Chain Delay Intelligence
+# Experiment E8: Cost-Sensitive Learning & Expanding-Window Backtester Configuration
+# =============================================================================
+
+version: "1.0"
+description: "Configuration for Phase 2 Experiment E8: Cost-Sensitive Learning Models and Development Backtester"
+
+dataset:
+  features_path: "artifacts/data/scms_modeling_features.parquet"
+  cost_scenarios_path: "configs/cost_scenarios.yaml"
+  evaluation_config_path: "configs/evaluation.yaml"
+  feature_schema_path: "artifacts/model_registry/v1/feature_schema.json"
+
+temporal:
+  n_folds: 5
+  gap_days: 90
+  inner_val_ratio: 0.20
+  inner_gap_days: 30
+  holdout_duration_days: 365
+  min_train_days: 730
+
+catboost:
+  iterations: 300
+  learning_rate: 0.05
+  depth: 6
+  random_seed: 42
+  verbose: 0
+
+calibration:
+  enabled: true
+  method: "isotonic"
+  out_of_bounds: "clip"
+
+weighting:
+  epsilon: 10.0
+  normalize: true
+
+threshold_tuning:
+  f1_min: 0.05
+  f1_max: 0.95
+  f1_step: 0.01
+  cost_min: 0.05
+  cost_max: 0.95
+  cost_step: 0.01
+  gamma_min: 0.20
+  gamma_max: 2.00
+  gamma_step: 0.05
+
+scenarios:
+  - "low"
+  - "base"
+  - "high"
+
+strategies:
+  E8-A_tau0.5:
+    class_name: "StandardCatBoostStrategy"
+    description: "Standard CatBoost (Logloss) with Isotonic Calibration and Fixed Threshold tau = 0.50"
+    threshold_mode: "fixed"
+    fixed_threshold: 0.50
+    calibrate: true
+
+  E8-A_f1:
+    class_name: "StandardCatBoostStrategy"
+    description: "Standard CatBoost (Logloss) with Isotonic Calibration and Inner-CV F1-Optimal Threshold"
+    threshold_mode: "f1_optimal"
+    calibrate: true
+
+  E8-B_cost_weighted:
+    class_name: "CostWeightedCatBoostStrategy"
+    description: "Cost-Sensitive CatBoost trained with Instance-Dependent Sample Weights and Inner-CV Cost-Optimal Threshold"
+    threshold_mode: "cost_optimal"
+    epsilon: 10.0
+    normalize: true
+
+  E8-C_bayes_threshold:
+    class_name: "CostThresholdCatBoostStrategy"
+    description: "Standard CatBoost with Calibrated Probabilities and Theoretical Instance Bayes Optimal Threshold (gamma = 1.0)"
+    use_gamma_tuning: false
+    gamma: 1.0
+    calibrate: true
+
+  E8-C_tuned_gamma:
+    class_name: "CostThresholdCatBoostStrategy"
+    description: "Standard CatBoost with Calibrated Probabilities and Inner-CV Tuned Bayes Multiplier gamma*"
+    use_gamma_tuning: true
+    calibrate: true
+
+artifacts:
+  results_parquet: "artifacts/results/e8_dev_backtest_results.parquet"
+  metrics_json: "artifacts/results/e8_dev_metrics.json"

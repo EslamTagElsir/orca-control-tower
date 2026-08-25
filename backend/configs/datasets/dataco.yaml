@@ -1,0 +1,18 @@
+dataset:
+  name: "DataCo"
+  domain: "External Logistics / E-commerce"
+  raw_path: "data/external/dataco/DataCoSupplyChainDataset.csv"
+  included_in_demo_archive: false
+  evidence_status: "NOT VALIDATED"
+  prediction_contract:
+    entity: "Order Item"
+    prediction_timestamp: "order date (DateOrders)"
+    outcome_timestamp: "shipping date (DateOrders)"
+    delay_definition: "Days for shipping (real) > Days for shipment (scheduled)"
+    eligibility_rules:
+      - "Delivery Status != 'Canceled'"
+  forbidden_features:
+    - "Days for shipping (real)"
+    - "Delivery Status"
+    - "Late_delivery_risk"
+    - "shipping date (DateOrders)"

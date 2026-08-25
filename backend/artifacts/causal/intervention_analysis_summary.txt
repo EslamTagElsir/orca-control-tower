@@ -1,0 +1,4 @@
+﻿Treatment: Air Shipment (vs Other)
+Outcome: Delay_Days
+Estimated Effect: -3.54
+Interpretation: Air shipments are associated with 3.54 fewer days of delay compared to other modes, adjusting for origin, destination, and product characteristics. This relationship is found to be stable across temporal folds and represents a plausible actionable intervention path.

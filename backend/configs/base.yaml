@@ -1,0 +1,29 @@
+# Global Base Configuration
+project:
+  name: "delay-intelligence"
+  version: "0.1.0"
+  description: "Supply Chain Delay Intelligence: Multi-Task Predictive, Conformal Uncertainty, and Prescriptive Causal System"
+  seed: 42
+  environment: "local"
+
+paths:
+  root_dir: "."
+  artifacts_dir: "artifacts"
+  data_artifacts: "artifacts/data"
+  models_dir: "artifacts/models"
+  uncertainty_dir: "artifacts/uncertainty"
+  causal_dir: "artifacts/causal"
+  metrics_dir: "artifacts/metrics"
+  reports_dir: "artifacts/reports"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+  log_to_file: false
+  log_file: "artifacts/reports/pipeline.log"
+
+compute:
+  n_jobs: -1
+  use_gpu: false
+  batch_size: 256

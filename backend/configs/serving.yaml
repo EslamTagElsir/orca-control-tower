@@ -1,0 +1,17 @@
+# Serving API and Dashboard Configuration
+api:
+  host: "127.0.0.1"
+  port: 8000
+  reload: false
+  workers: 1
+  cors_origins:
+    - "http://localhost:3000"
+    - "http://localhost:8501"
+  title: "Supply Chain Delay Intelligence REST API"
+  version: "0.1.0"
+
+dashboard:
+  host: "127.0.0.1"
+  port: 8501
+  theme: "light"
+  title: "Supply Chain Delay Intelligence Control Tower"
