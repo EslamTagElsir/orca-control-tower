@@ -26,20 +26,32 @@ import {
   stageDetail,
   stageFamily,
 } from "./event-engine";
+import {
+  defaultActionFor,
+  effectSpec,
+  interventionEffect,
+  INTERVENTION_POLICY_VERSION,
+  type HumanDecisionKind,
+  type OperatorAction,
+  type ReasonCode,
+} from "./intervention-policy";
 import type { TargetBand } from "./mutation-profiles";
 import { createAutomaticGeneratorSource } from "./shipment-generator";
 import { advance } from "./route-engine";
+import { auditTrail } from "../adapter";
 import {
   DEFAULT_SIM_SPEED,
   SIM_PROVENANCE,
   UNSCORED_MODEL,
   type ShipmentSource,
+  type SimEpisode,
   type SimEvent,
   type SimMetrics,
   type SimShipment,
   type SimSpeed,
   type SimulationSnapshot,
 } from "./types";
+
 
 /* ------------------------------------------------------------------ */
 /* Tunables                                                            */
@@ -58,6 +70,7 @@ export const SIM_CONFIG = {
   /** Bounded history. */
   maxEvents: 160,
   maxDelivered: 14,
+  maxEpisodes: 60,
   /** Model-call guards. */
   maxConcurrentModelCalls: 3,
   rescoreCooldownMs: 45_000,
@@ -76,7 +89,91 @@ export interface ModelPort {
   recommend(features: FeatureMap): Promise<RecommendResponse>;
 }
 
-type ScoreReason = "initial" | "shock";
+/* ------------------------------------------------------------------ */
+/* Persistence port                                                    */
+/* ------------------------------------------------------------------ */
+
+export interface RunRef {
+  runId: string;
+  seed: number;
+  speed: number;
+}
+
+export interface PersistedShipment {
+  shipmentId: string;
+  templateId: string;
+  origin: string;
+  destination: string;
+  route: string;
+  mode: string;
+  vendor: string | null;
+  productGroup: string | null;
+  createdSimMs: number;
+  initialFeatures: FeatureMap;
+}
+
+export interface EpisodeOpenPayload {
+  shipmentId: string;
+  triggerEventId: string | null;
+  simClockMs: number;
+  inferenceKind: "INITIAL" | "RESCORE" | "POST_INTERVENTION";
+  features: FeatureMap;
+  prediction: PredictResponse;
+  recommendation: RecommendResponse;
+  state: {
+    shipmentStatus: string;
+    progress: number;
+    position: [number, number];
+    etaVarianceHours: number;
+    exceptionOpen: boolean;
+    exceptionFamily: string | null;
+  };
+}
+
+export interface DecisionPayload {
+  episodeDbId: string;
+  shipmentId: string;
+  decision: HumanDecisionKind;
+  recommendedAction: string;
+  chosenAction: OperatorAction;
+  reasonCode: ReasonCode;
+  note: string | null;
+  actorLabel: string;
+  decisionLatencyMs: number;
+  intervention: {
+    action: string;
+    effectSpec: Record<string, unknown>;
+    appliedSimMs: number;
+    policyVersion: string;
+  } | null;
+}
+
+export interface OutcomePayload {
+  shipmentId: string;
+  deliveredSimMs: number;
+  deliveredOnTime: boolean;
+  simulatedDelayHours: number;
+  finalEtaVarianceHours: number;
+  finalFeatures: FeatureMap;
+  interventionCount: number;
+}
+
+/**
+ * Append-only audit sink for the running twin. Implementations are expected to
+ * be fire-and-forget and MUST never throw into the engine: a storage outage
+ * degrades the audit trail, never the simulation.
+ */
+export interface PersistencePort {
+  runStarted(run: RunRef): void;
+  runEnded(runId: string, status: "PAUSED" | "STOPPED"): void;
+  shipmentsCreated(run: RunRef, shipments: PersistedShipment[]): void;
+  eventsAppended(run: RunRef, events: SimEvent[]): void;
+  episodeOpened(run: RunRef, payload: EpisodeOpenPayload): Promise<string | null>;
+  decisionRecorded(run: RunRef, payload: DecisionPayload): void;
+  outcomeRecorded(run: RunRef, payload: OutcomePayload): void;
+}
+
+type ScoreReason = "initial" | "shock" | "intervention";
 
 interface ScoreRequest {
   shipmentId: string;
@@ -94,6 +191,9 @@ const EMPTY_METRICS: SimMetrics = {
   recommendCalls: 0,
   rescores: 0,
   scoreFailures: 0,
+  episodesOpened: 0,
+  decisionsRecorded: 0,
+  interventionsApplied: 0,
 };
 
 export function idleSnapshot(): SimulationSnapshot {
@@ -108,12 +208,14 @@ export function idleSnapshot(): SimulationSnapshot {
     active: [],
     recentlyDelivered: [],
     events: [],
+    episodes: [],
     metrics: { ...EMPTY_METRICS },
     nextSpawnAtMs: 0,
     modelOnline: null,
     modelOfflineReason: null,
   };
 }
+
 
 /* ------------------------------------------------------------------ */
 /* Engine                                                              */
@@ -125,13 +227,16 @@ export class SimulationEngine {
   private rng: Rng = makeRng(1);
   private source: ShipmentSource = createAutomaticGeneratorSource(makeRng(1));
   private port: ModelPort | null = null;
+  private persistence: PersistencePort | null = null;
   private queue: ScoreRequest[] = [];
   private inFlight = 0;
   private sequence = 0;
+  private episodeSequence = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastTickAt = 0;
   /** Verbatim /predict responses keyed by templateId|candidateKey (identical feature rows). */
   private predictCache = new Map<string, PredictResponse>();
+
 
   /* -------------------- store contract -------------------- */
 
@@ -156,6 +261,26 @@ export class SimulationEngine {
     this.port = port;
   }
 
+  /** Optional append-only audit sink. Failures never affect the run. */
+  setPersistencePort(port: PersistencePort) {
+    this.persistence = port;
+  }
+
+  private get runRef(): RunRef {
+    return { runId: this.snapshot.runId, seed: this.snapshot.seed, speed: this.snapshot.speed };
+  }
+
+  /** Fire-and-forget event persistence — never throws into the engine. */
+  private audit(events: SimEvent[]) {
+    if (!this.persistence || events.length === 0 || !this.snapshot.runId) return;
+    try {
+      this.persistence.eventsAppended(this.runRef, events);
+    } catch {
+      // Audit sink unavailable — the run continues.
+    }
+  }
+
+
   /* -------------------- lifecycle -------------------- */
 
   start(seed = newSeed()) {
@@ -165,7 +290,10 @@ export class SimulationEngine {
     this.queue = [];
     this.inFlight = 0;
     this.sequence = 0;
+    this.episodeSequence = 0;
+    this.pendingShipments = [];
     this.predictCache.clear();
+
 
     const startedAtEpoch = Date.now();
     this.snapshot = {
@@ -211,6 +339,13 @@ export class SimulationEngine {
       metrics: { ...this.snapshot.metrics, generated: active.length },
       nextSpawnAtMs: this.rng.float(SIM_CONFIG.spawnMinMs, SIM_CONFIG.spawnMaxMs),
     };
+    try {
+      this.persistence?.runStarted(this.runRef);
+    } catch {
+      // Audit sink unavailable — the run continues.
+    }
+    this.flushShipments();
+    this.audit(this.snapshot.events);
     this.commit();
     this.startClock();
     this.pump();
@@ -220,7 +355,13 @@ export class SimulationEngine {
     if (this.snapshot.status !== "running") return;
     this.stopClock();
     this.commit({ status: "paused" });
+    try {
+      this.persistence?.runEnded(this.snapshot.runId, "PAUSED");
+    } catch {
+      // Audit sink unavailable.
+    }
   }
+
 
   resume() {
     if (this.snapshot.status !== "paused") return;
@@ -232,8 +373,16 @@ export class SimulationEngine {
   stop() {
     this.stopClock();
     this.queue = [];
+    const runId = this.snapshot.runId;
     this.snapshot = { ...idleSnapshot(), version: this.snapshot.version + 1 };
     for (const l of this.listeners) l();
+    if (runId) {
+      try {
+        this.persistence?.runEnded(runId, "STOPPED");
+      } catch {
+        // Audit sink unavailable.
+      }
+    }
   }
 
   newRun() {
@@ -252,10 +401,27 @@ export class SimulationEngine {
     this.sequence = snapshot.metrics.generated;
     this.queue = [];
     this.inFlight = 0;
-    this.snapshot = { ...snapshot, version: this.snapshot.version + 1 };
+    this.pendingShipments = [];
+    // Older persisted snapshots predate the learning system; normalise them so
+    // the episode surfaces never read undefined.
+    const episodes = Array.isArray(snapshot.episodes) ? snapshot.episodes : [];
+    this.episodeSequence = episodes.length;
+    this.snapshot = {
+      ...snapshot,
+      episodes,
+      metrics: { ...EMPTY_METRICS, ...snapshot.metrics },
+      active: snapshot.active.map((s) => ({
+        ...s,
+        awaitingDecision: s.awaitingDecision ?? false,
+        episodeId: s.episodeId ?? null,
+        interventionCount: s.interventionCount ?? 0,
+      })),
+      version: this.snapshot.version + 1,
+    };
     for (const l of this.listeners) l();
     if (snapshot.status === "running") this.startClock();
   }
+
 
   /** Stops the clock without dropping subscribers or the run snapshot. */
   dispose() {
@@ -297,8 +463,16 @@ export class SimulationEngine {
     const delivered: SimShipment[] = [];
 
     for (const shipment of snap.active) {
+      // HUMAN DECISION GATE: a shipment with an open Decision Episode holds in
+      // place until an operator resolves it. No movement, no new events.
+      if (shipment.awaitingDecision) {
+        active.push(shipment);
+        continue;
+      }
+
       const before = shipment.status;
       const result = advance(shipment, simDelta);
+
 
       for (const status of result.transitions) {
         if (status === "DELIVERED") continue;
@@ -408,6 +582,8 @@ export class SimulationEngine {
           }),
         );
         delivered.push(shipment);
+        this.recordOutcome(shipment, simClockMs);
+
       } else {
         active.push(shipment);
       }
@@ -461,10 +637,28 @@ export class SimulationEngine {
       nextSpawnAtMs,
     };
     for (const l of this.listeners) l();
+    this.flushShipments();
+    this.audit(newEvents);
     this.pump();
   }
 
   /* -------------------- spawning -------------------- */
+
+  private pendingShipments: PersistedShipment[] = [];
+
+  private flushShipments() {
+    if (!this.persistence || this.pendingShipments.length === 0 || !this.snapshot.runId) {
+      this.pendingShipments = [];
+      return;
+    }
+    const batch = this.pendingShipments;
+    this.pendingShipments = [];
+    try {
+      this.persistence.shipmentsCreated(this.runRef, batch);
+    } catch {
+      // Audit sink unavailable — the run continues.
+    }
+  }
 
   private spawnShipment(simClockMs: number, band?: TargetBand): SimShipment {
     this.sequence += 1;
@@ -481,8 +675,38 @@ export class SimulationEngine {
       detail: "initial score",
     });
     shipment.lastScoreRequestAt = simClockMs - SIM_CONFIG.rescoreCooldownMs;
+    this.pendingShipments.push({
+      shipmentId: shipment.id,
+      templateId: shipment.templateId,
+      origin: shipment.origin,
+      destination: shipment.destination,
+      route: shipment.route,
+      mode: shipment.mode,
+      vendor: shipment.vendor || null,
+      productGroup: shipment.productGroup || null,
+      createdSimMs: Math.max(0, Math.round(simClockMs)),
+      initialFeatures: shipment.features,
+    });
     return shipment;
   }
+
+  private recordOutcome(shipment: SimShipment, simClockMs: number) {
+    if (!this.persistence || !this.snapshot.runId) return;
+    try {
+      this.persistence.outcomeRecorded(this.runRef, {
+        shipmentId: shipment.id,
+        deliveredSimMs: Math.max(0, Math.round(simClockMs)),
+        deliveredOnTime: shipment.etaVarianceHours <= 0,
+        simulatedDelayHours: Math.max(0, shipment.etaVarianceHours),
+        finalEtaVarianceHours: shipment.etaVarianceHours,
+        finalFeatures: shipment.features,
+        interventionCount: shipment.interventionCount,
+      });
+    } catch {
+      // Audit sink unavailable — the run continues.
+    }
+  }
+
 
   /**
    * Chooses which candidate band the next shipment aims at, based on the tiers
