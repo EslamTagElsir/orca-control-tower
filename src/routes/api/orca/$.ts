@@ -3,24 +3,24 @@ import { createFileRoute } from "@tanstack/react-router";
 /**
  * Server-side proxy to the ORCA FastAPI intelligence layer.
  *
- * Browser → /api/orca/*  →  ORCA_API_INTERNAL_URL  →  FastAPI
+ * Browser → /api/orca/* → ORCA_API_INTERNAL_URL → FastAPI
  *
- * Because this hop is server-side and same-origin, no CORS configuration is
- * required on the FastAPI side for the primary path. The upstream base URL is
- * read from the environment INSIDE the handler (edge runtimes inject env per
- * request), and is never exposed to the client.
- *
- * Ports to Next.js as app/api/orca/[...path]/route.ts with the same env var.
+ * The public proxy is intentionally allow-listed to the four backend contracts
+ * used by this application. Adding a new upstream route requires an explicit
+ * code change here rather than automatically exposing future FastAPI endpoints.
  */
 
-/**
- * Cold ORCA starts load the v2 model registry (CatBoost + 3 LightGBM quantile
- * models) and score the demo portfolio on the first `/demo/overview` call,
- * which measured ~9.6s in live testing before the per-process cache warms.
- * The budget must clear that cold path or the very first page load falls back
- * to fixture mode on an API that is actually healthy.
- */
 const UPSTREAM_TIMEOUT_MS = 30000;
+const RETRY_STATUSES = new Set([502, 503, 504]);
+const RETRY_ATTEMPTS = 4;
+const RETRY_BASE_MS = 500;
+
+const ALLOWED_ENDPOINTS = new Map<string, "GET" | "POST">([
+  ["health", "GET"],
+  ["predict", "POST"],
+  ["explain", "POST"],
+  ["recommend", "POST"],
+]);
 
 function upstreamBase(): string | null {
   const raw = process.env["ORCA_API_INTERNAL_URL"] ?? process.env["ORCA_API_URL"] ?? null;
@@ -28,11 +28,6 @@ function upstreamBase(): string | null {
   return raw.replace(/\/+$/, "");
 }
 
-/**
- * A loopback upstream resolves to the SERVER container, not the operator's
- * workstation, so it can only ever work in a local dev sandbox. Detect it so
- * the offline envelope explains the real cause instead of "fetch failed".
- */
 function isLoopback(base: string): boolean {
   try {
     const host = new URL(base).hostname;
@@ -42,11 +37,6 @@ function isLoopback(base: string): boolean {
   }
 }
 
-/**
- * Fixture mode is a normal operating state, not an HTTP failure, so these
- * responses are 200 with an explicit envelope. Returning 5xx made the browser
- * surface them as runtime errors.
- */
 function unconfigured(): Response {
   return Response.json(
     {
@@ -59,30 +49,33 @@ function unconfigured(): Response {
   );
 }
 
-/**
- * The hosted ORCA container drops a request with a bare 502/503/504 when the
- * simulation fires a burst of concurrent /predict + /recommend calls. That is a
- * transient upstream condition, not a dead backend, so retry it a bounded
- * number of times with a short backoff before surfacing the failure.
- */
-const RETRY_STATUSES = new Set([502, 503, 504]);
-const RETRY_ATTEMPTS = 4;
-const RETRY_BASE_MS = 500;
+function forbiddenRoute(path: string, method: string): Response {
+  return Response.json(
+    {
+      error: "orca_proxy_route_not_allowed",
+      detail: `The ORCA frontend proxy does not expose ${method} /${path}.`,
+    },
+    { status: 404, headers: { "cache-control": "no-store" } },
+  );
+}
 
 async function forward(request: Request, splat: string): Promise<Response> {
+  const path = splat.replace(/^\/+|\/+$/g, "");
+  const method = request.method.toUpperCase();
+  const allowedMethod = ALLOWED_ENDPOINTS.get(path);
+  if (!allowedMethod || method !== allowedMethod) return forbiddenRoute(path, method);
+
   const base = upstreamBase();
   if (!base) return unconfigured();
 
   const incoming = new URL(request.url);
-  const target = `${base}/${splat}${incoming.search}`;
+  const target = `${base}/${path}${incoming.search}`;
 
   const headers = new Headers();
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("content-type", contentType);
   headers.set("accept", "application/json");
 
-  const method = request.method.toUpperCase();
-  // Read once: the request body stream cannot be replayed across retries.
   const payload = method === "GET" || method === "HEAD" ? null : await request.text();
 
   const controller = new AbortController();
@@ -105,10 +98,6 @@ async function forward(request: Request, splat: string): Promise<Response> {
 
     const body = await upstream!.text();
 
-    // An exhausted gateway failure is the same operating state as an
-    // unreachable upstream: return the 200 offline envelope the client already
-    // understands so the shipment stays labelled unscored instead of the
-    // browser surfacing a 502 runtime error and blanking the page.
     if (RETRY_STATUSES.has(upstream!.status)) {
       return Response.json(
         {
@@ -152,8 +141,6 @@ export const Route = createFileRoute("/api/orca/$")({
     handlers: {
       GET: async ({ request, params }) => forward(request, params._splat ?? ""),
       POST: async ({ request, params }) => forward(request, params._splat ?? ""),
-      PUT: async ({ request, params }) => forward(request, params._splat ?? ""),
-      DELETE: async ({ request, params }) => forward(request, params._splat ?? ""),
     },
   },
 });
