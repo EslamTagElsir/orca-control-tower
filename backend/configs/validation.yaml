@@ -1,0 +1,71 @@
+# Data Quality & Validation Configuration
+thresholds:
+  max_null_percentage_critical: 0.05
+  max_null_percentage_standard: 0.40
+  outlier_zscore_limit: 5.0
+  quarantine_on_failure: true
+
+scms_validation:
+  expected_row_count: 10324
+  expected_column_count: 33
+  primary_key: "ID"
+  critical_columns:
+    - "ID"
+    - "Project Code"
+    - "Country"
+    - "Scheduled Delivery Date"
+    - "Delivered to Client Date"
+    - "Delivery Recorded Date"
+    - "Line Item Quantity"
+    - "Line Item Value"
+  numeric_bounds:
+    "Line Item Quantity":
+      min: 1
+      max: 10000000
+    "Unit of Measure (Per Pack)":
+      min: 1
+      max: 10000
+    "Unit Price":
+      min: 0.0
+      max: 100000.0
+    "Pack Price":
+      min: 0.0
+      max: 100000.0
+    "Line Item Value":
+      min: 0.0
+      max: 100000000.0
+    "Line Item Insurance (USD)":
+      min: 0.0
+      max: 1000000.0
+  allowed_categories:
+    "Shipment Mode":
+      - "Air"
+      - "Truck"
+      - "Ocean"
+      - "Air Charter"
+    "Fulfill Via":
+      - "From RDC"
+      - "Direct Drop"
+    "First Line Designation":
+      - "Yes"
+      - "No"
+    "Product Group":
+      - "ARV"
+      - "HRDT"
+      - "ANTM"
+      - "ACT"
+      - "MRDT"
+    "Managed By":
+      - "PMO - US"
+      - "South Africa Field Office"
+      - "Haiti Field Office"
+      - "Ethiopia Field Office"
+
+leakage_audit:
+  forbidden_features_at_pred_time:
+    - "Delivered to Client Date"
+    - "Delivery Recorded Date"
+    - "Actual_Transit_Days"
+    - "Delivery_Status_Post"
+    - "Post_Delivery_Review"
+  pred_horizon_anchor: "PO Sent to Vendor Date"

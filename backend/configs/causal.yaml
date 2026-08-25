@@ -1,0 +1,17 @@
+causal:
+  discovery_algorithm: "pc"
+  indep_test: "fisherz"
+  alpha: 0.05
+  ontology_tiers:
+    0: ["Fulfill Via", "Country", "Product Group"]
+    1: ["Line Item Quantity", "Line Item Value"]
+    2: ["Shipment Mode"]
+    3: ["Delay_Days"]
+  forbidden_directions:
+    - "Outcome -> Pre-outcome feature"
+    - "Post-outcome event -> Prediction-time feature"
+    - "Target -> Upstream process variable"
+  stability_folds: 5
+  stability_thresholds:
+    stable: 4
+    moderately_stable: 2

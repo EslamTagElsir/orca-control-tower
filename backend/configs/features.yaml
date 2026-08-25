@@ -1,0 +1,138 @@
+﻿# Feature Engineering Configuration
+# Defines feature groups, historical aggregates, transformations, and exclusions.
+
+version: 1.0.0
+dataset: "scms"
+
+feature_groups:
+  static_master:
+    - name: "Country"
+      type: "categorical"
+    - name: "Vendor"
+      type: "categorical"
+    - name: "Manufacturing Site"
+      type: "categorical"
+    - name: "Product Group"
+      type: "categorical"
+    - name: "Sub Classification"
+      type: "categorical"
+    - name: "Molecule/Test Type"
+      type: "categorical"
+    - name: "Brand"
+      type: "categorical"
+    - name: "Dosage"
+      type: "categorical"
+    - name: "Dosage Form"
+      type: "categorical"
+    - name: "First Line Designation"
+      type: "categorical"
+
+  transaction:
+    - name: "Line Item Quantity"
+      type: "numeric"
+      transform: "log1p"
+    - name: "Line Item Value"
+      type: "numeric"
+      transform: "log1p"
+    - name: "Pack Price"
+      type: "numeric"
+      transform: "log1p"
+    - name: "Unit Price"
+      type: "numeric"
+      transform: "log1p"
+    - name: "Line Item Insurance (USD)"
+      type: "numeric"
+      transform: "log1p"
+      fill_na: 0.0
+    - name: "Unit of Measure (Per Pack)"
+      type: "numeric"
+
+  operational:
+    - name: "Fulfill Via"
+      type: "categorical"
+    - name: "Shipment Mode"
+      type: "categorical"
+      fill_na: "Missing"
+    - name: "Vendor INCO Term"
+      type: "categorical"
+
+  temporal:
+    - name: "Scheduled_Transit_Days"
+      type: "numeric"
+    - name: "PQ_to_PO_Days"
+      type: "numeric"
+      fill_na: -1
+    - name: "T_pred_year"
+      type: "numeric"
+    - name: "T_pred_month"
+      type: "numeric"
+    - name: "T_pred_quarter"
+      type: "numeric"
+    - name: "T_pred_dayofweek"
+      type: "numeric"
+
+  missingness_indicators:
+    - name: "is_rdc_fulfillment"
+      type: "binary"
+    - name: "is_pre_pq_process"
+      type: "binary"
+    - name: "po_sent_is_date"
+      type: "binary"
+    - name: "pq_first_sent_is_date"
+      type: "binary"
+    - name: "weight_is_numeric"
+      type: "binary"
+    - name: "freight_is_numeric"
+      type: "binary"
+
+historical_aggregates:
+  point_in_time:
+    - entity_col: "Vendor"
+      features:
+        - name: "vendor_hist_delay_rate"
+          agg: "mean"
+          target: "Delay_Flag"
+        - name: "vendor_hist_delay_median"
+          agg: "median"
+          target: "Delay_Days"
+        - name: "vendor_hist_volume"
+          agg: "count"
+          target: "Delay_Flag"
+    - entity_col: "Country"
+      features:
+        - name: "country_hist_delay_rate"
+          agg: "mean"
+          target: "Delay_Flag"
+        - name: "country_hist_delay_median"
+          agg: "median"
+          target: "Delay_Days"
+        - name: "country_hist_volume"
+          agg: "count"
+          target: "Delay_Flag"
+    - entity_col: "Manufacturing Site"
+      features:
+        - name: "site_hist_delay_rate"
+          agg: "mean"
+          target: "Delay_Flag"
+
+cold_start_policy:
+  - rule: "Use global expanding historical mean for previously unseen entities"
+
+excluded_features:
+  surrogate_keys:
+    - "ID"
+    - "ASN/DN #"
+    - "PQ #"
+    - "PO / SO #"
+  high_cardinality_text:
+    - "Item Description"
+  ambiguous_actuals:
+    - "Weight (Kilograms)"
+    - "Freight Cost (USD)"
+  target_derived:
+    - "Delivered to Client Date"
+    - "Delivery Recorded Date"
+    - "Delay_Flag"
+    - "Delay_Days"
+  cohort_filters:
+    - "is_temporal_anomaly"

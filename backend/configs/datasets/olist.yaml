@@ -1,0 +1,17 @@
+dataset:
+  name: "Olist"
+  domain: "External E-commerce"
+  raw_path: "data/external/olist/olist_orders_dataset.csv"
+  included_in_demo_archive: false
+  evidence_status: "NOT VALIDATED"
+  prediction_contract:
+    entity: "Order"
+    prediction_timestamp: "order_purchase_timestamp"
+    outcome_timestamp: "order_delivered_customer_date"
+    delay_definition: "order_delivered_customer_date > order_estimated_delivery_date"
+    eligibility_rules:
+      - "order_status == 'delivered'"
+  forbidden_features:
+    - "order_delivered_customer_date"
+    - "order_delivered_carrier_date"
+    - "order_approved_at"

@@ -1,0 +1,271 @@
+# =============================================================================
+# USAID SCMS Supply Chain Delay Intelligence
+# Experiment E10: Counterfactual Policy Evaluation Configuration
+# =============================================================================
+# Formal Design Freeze for Phase 2 — Experiment E10: Counterfactual Policy Evaluation
+# Evaluates whether the E8 cost-sensitive champion policy (gamma*=1.20) remains
+# economically preferable against operational alternatives under dynamic E9 states.
+# =============================================================================
+
+version: "1.0"
+experiment: "Phase 2 — Experiment E10 (Counterfactual Policy Evaluation)"
+milestone: "M2 Design Freeze & Baseline Invariance Verification"
+freeze_timestamp_utc: "2026-08-22T16:12:00Z"
+status: "FROZEN_AND_IMMUTABLE"
+
+# -----------------------------------------------------------------------------
+# 1. Scientific Guardrails & Non-Causal Provenance Tagging
+# -----------------------------------------------------------------------------
+guardrails:
+  non_causal_disclaimer: >-
+    Historical SCMS supply chain records lack randomized treatment assignments and explicit
+    intervention logs. All counterfactual transitions, risk reductions, and cost savings
+    evaluated in Experiment E10 represent synthetic scenario simulations parameterized by
+    explicit domain assumptions. No observational claims of actual historical intervention
+    efficacy or true causal treatment effects are asserted.
+  provenance_tags:
+    OBSERVED_SCMS_DATA: "Ground-truth historical shipment features, timestamps, and observational outcomes."
+    SYNTHETIC_E9_STATE: "Simulated operational state variables and telemetry anomalies generated across E9 regimes S0-S6."
+    SIMULATED_COUNTERFACTUAL: "Model-simulated counterfactual outcomes under hypothetical policy intervention."
+    SIMULATED_COST: "Synthetic business economic costs computed under scenario cost parameterizations."
+
+# -----------------------------------------------------------------------------
+# 2. Operational Action Space & Frozen Action Effects
+# -----------------------------------------------------------------------------
+actions:
+  P0_NO_ACTION:
+    action_code: "NO_ACTION"
+    display_name: "Do Nothing / Default Fulfillment"
+    description: "Business-as-usual fulfillment path with zero intervention."
+    action_type: "passive"
+    frozen_effects:
+      delta_days: 0.0
+      delta_risk: 0.0
+      delta_uncertainty: 0.0
+    cost_formula: "0.0"
+    source: "BASELINE_CONTROL"
+
+  P1_E8_COST_SENSITIVE:
+    action_code: "E8_COST_SENSITIVE"
+    display_name: "E8 Cost-Sensitive Decision Rule"
+    description: "E8 Champion cost-sensitive threshold policy with tuned Bayes multiplier gamma*=1.20."
+    action_type: "selective_intervention"
+    parameters:
+      gamma_multiplier: 1.20
+      calibrator: "IsotonicRegression"
+      decision_rule_formula: "d_i = I(p_i >= tau*_i) where tau*_i = FP_Cost(i) / (gamma* * Net_Benefit(i) + FP_Cost(i))"
+    triggered_action: "EXPEDITE"
+    frozen_effects_when_triggered:
+      delta_days: -3.0
+      delta_risk: 0.0
+      delta_uncertainty: 0.0
+    cost_formula_when_triggered: "C_triage + C_expedite"
+    source: "FROZEN_E8_CHAMPION (artifacts/results/e8_frozen_policy.json)"
+
+  P2_EXPEDITE:
+    action_code: "EXPEDITE"
+    display_name: "Proactive Expedited Logistics"
+    description: "Proactive express freight, priority carrier booking, and expedited customs handling."
+    action_type: "proactive_logistics"
+    frozen_effects:
+      delta_days: -3.0               # Expected transit time reduction: -3.0 calendar days
+      delta_risk: 0.0
+      delta_uncertainty: 0.0
+    cost_formula: "c_expedite_base + gamma_expedite * line_item_value"
+    source: "FROZEN_E9_ASSUMPTION (docs/e9_simulation_assumptions.json)"
+
+  P3_TRANSPORT_MODE_REVIEW:
+    action_code: "TRANSPORT_MODE_REVIEW"
+    display_name: "Transport Mode / Carrier Review"
+    description: "Modal shift review and carrier routing adjustment (Air/Sea/Truck/RDC)."
+    action_type: "routing_review"
+    frozen_effects:
+      delta_days: -2.0               # Expected ETA adjustment: -2.0 calendar days
+      delta_risk: 0.0
+      delta_uncertainty: 0.0
+    cost_formula: "c_mode_review_base + beta_mode * log(1 + line_item_value)"
+    source: "FROZEN_E9_ASSUMPTION (docs/e9_simulation_assumptions.json)"
+
+  P4_SUPPLIER_ESCALATION:
+    action_code: "SUPPLIER_ESCALATION"
+    display_name: "Supplier Escalation & SLA Enforcement"
+    description: "Vendor SLA enforcement, expedited PO manufacturing, and supplier communication."
+    action_type: "vendor_management"
+    frozen_effects:
+      delta_days: 0.0
+      delta_risk: -0.15              # Expected risk reduction: -15% relative/additive delay risk
+      delta_uncertainty: 0.0
+    cost_formula: "c_escalation_base + c_channel_inquiry"
+    source: "FROZEN_E9_ASSUMPTION (docs/e9_simulation_assumptions.json)"
+
+  P5_HUMAN_REVIEW:
+    action_code: "HUMAN_REVIEW"
+    display_name: "Control-Tower Human Expert Review"
+    description: "Deep manual audit and control-tower investigation to resolve operational uncertainty."
+    action_type: "expert_triage"
+    frozen_effects:
+      delta_days: 0.0
+      delta_risk: 0.0
+      delta_uncertainty: -0.50       # Expected uncertainty reduction: -50% CQR interval width
+    cost_formula: "c_triage_base + beta_audit * log(1 + line_item_value)"
+    source: "FROZEN_E9_ASSUMPTION (docs/e9_simulation_assumptions.json)"
+
+  ORACLE_POLICY:
+    action_code: "ORACLE_POLICY"
+    display_name: "Offline Cost-Minimizing Oracle"
+    description: "Theoretical omniscient oracle selecting action a* = argmin_{a in A} E[Cost(a | S_i)]."
+    action_type: "offline_oracle_benchmark"
+    isolation_contract: >-
+      STRICTLY OFFLINE POST-FREEZE ONLY. The Oracle policy must never be imported, referenced,
+      or executed during online policy execution, threshold tuning, or operational selection.
+      It is evaluated post-freeze exclusively to establish theoretical lower bounds, Oracle Gap,
+      and Policy Regret.
+
+# -----------------------------------------------------------------------------
+# 3. Cost Scenario Parameterizations (Low, Base, High)
+# -----------------------------------------------------------------------------
+cost_scenarios:
+  low:
+    name: "Low Cost Scenario"
+    description: "Conservative penalty scenario with low stockout impact and low review costs."
+    c_daily_base: 50.0               # Base daily operational delay penalty (USD/day)
+    rho_value: 0.0005                # Value-scaled daily holding rate (0.05%/day)
+    c_fixed_stockout: 200.0          # Fixed emergency stockout response administrative cost (USD)
+    c_triage_base: 25.0              # Baseline analyst labor triage cost per review (USD)
+    beta_audit: 5.0                  # Value-logarithm audit scaling factor (USD/log(USD))
+    c_direct_inquiry: 15.0           # Direct Drop vendor inquiry friction (USD)
+    c_rdc_inquiry: 5.0               # RDC warehouse check friction (USD)
+    c_expedite_base: 250.0           # Base carrier expediting fee (USD)
+    gamma_expedite: 0.0020           # Value-proportional expedite insurance surcharge (0.20%)
+    c_mode_review_base: 100.0        # Modal shift administrative review cost (USD)
+    beta_mode: 10.0                  # Modal review value scaling (USD/log(USD))
+    c_escalation_base: 75.0          # Supplier escalation administrative fee (USD)
+    delay_days_assumed: 10.0         # Benchmark unmitigated delay duration (days)
+    days_saved_efficacy: 4.0         # Expected delay reduction from intervention (days)
+    delta_first_line: 0.30           # Criticality boost for WHO First-Line regimen (+30%)
+    delta_pediatric: 0.20            # Criticality boost for Pediatric formulations (+20%)
+    delta_arv: 0.10                  # Criticality boost for ARV drug class (+10%)
+    mode_multipliers:
+      Air: 1.00
+      Air Charter: 0.90
+      Truck: 1.10
+      Ocean: 1.25
+      Default: 1.00
+
+  base:
+    name: "Base Cost Scenario"
+    description: "Empirically calibrated standard scenario reflecting realistic global health procurement costs."
+    c_daily_base: 150.0              # Base daily operational delay penalty (USD/day)
+    rho_value: 0.0010                # Value-scaled daily holding rate (0.10%/day)
+    c_fixed_stockout: 500.0          # Fixed emergency stockout response administrative cost (USD)
+    c_triage_base: 50.0              # Baseline analyst labor triage cost per review (USD)
+    beta_audit: 10.0                 # Value-logarithm audit scaling factor (USD/log(USD))
+    c_direct_inquiry: 30.0           # Direct Drop vendor inquiry friction (USD)
+    c_rdc_inquiry: 10.0              # RDC warehouse check friction (USD)
+    c_expedite_base: 500.0           # Base carrier expediting fee (USD)
+    gamma_expedite: 0.0050           # Value-proportional expedite insurance surcharge (0.50%)
+    c_mode_review_base: 200.0        # Modal shift administrative review cost (USD)
+    beta_mode: 20.0                  # Modal review value scaling (USD/log(USD))
+    c_escalation_base: 150.0         # Supplier escalation administrative fee (USD)
+    delay_days_assumed: 12.0         # Benchmark unmitigated delay duration (days)
+    days_saved_efficacy: 5.0         # Expected delay reduction from intervention (days)
+    delta_first_line: 0.30           # Criticality boost for WHO First-Line regimen (+30%)
+    delta_pediatric: 0.20            # Criticality boost for Pediatric formulations (+20%)
+    delta_arv: 0.15                  # Criticality boost for ARV drug class (+15%)
+    mode_multipliers:
+      Air: 1.00
+      Air Charter: 0.90
+      Truck: 1.10
+      Ocean: 1.25
+      Default: 1.00
+
+  high:
+    name: "High Cost Scenario"
+    description: "High penalty scenario with severe clinical stockout consequences and intensive expediting."
+    c_daily_base: 350.0              # Base daily operational delay penalty (USD/day)
+    rho_value: 0.0020                # Value-scaled daily holding rate (0.20%/day)
+    c_fixed_stockout: 1500.0         # Fixed emergency stockout response administrative cost (USD)
+    c_triage_base: 100.0             # Baseline analyst labor triage cost per review (USD)
+    beta_audit: 20.0                 # Value-logarithm audit scaling factor (USD/log(USD))
+    c_direct_inquiry: 60.0           # Direct Drop vendor inquiry friction (USD)
+    c_rdc_inquiry: 20.0              # RDC warehouse check friction (USD)
+    c_expedite_base: 1000.0          # Base carrier expediting fee (USD)
+    gamma_expedite: 0.0100           # Value-proportional expedite insurance surcharge (1.00%)
+    c_mode_review_base: 400.0        # Modal shift administrative review cost (USD)
+    beta_mode: 40.0                  # Modal review value scaling (USD/log(USD))
+    c_escalation_base: 300.0         # Supplier escalation administrative fee (USD)
+    delay_days_assumed: 15.0         # Benchmark unmitigated delay duration (days)
+    days_saved_efficacy: 6.0         # Expected delay reduction from intervention (days)
+    delta_first_line: 0.40           # Criticality boost for WHO First-Line regimen (+40%)
+    delta_pediatric: 0.30            # Criticality boost for Pediatric formulations (+30%)
+    delta_arv: 0.20                  # Criticality boost for ARV drug class (+20%)
+    mode_multipliers:
+      Air: 1.00
+      Air Charter: 0.90
+      Truck: 1.10
+      Ocean: 1.25
+      Default: 1.00
+
+# -----------------------------------------------------------------------------
+# 4. Evaluation Protocol & Chronological Settings
+# -----------------------------------------------------------------------------
+evaluation:
+  temporal:
+    dev_split_cutoff_date: "2014-08-24"
+    dev_sample_size: 7306
+    embargo_gap_days: 90
+    holdout_start_date: "2014-08-24"
+    holdout_duration_days: 365
+    holdout_sample_size: 1013
+    holdout_quarantine_status: "STRICTLY_QUARANTINED"
+    n_development_folds: 5
+    min_train_days: 730
+  
+  expected_cost_formulation:
+    total_cost: "E[Cost(a | S_i)] = Action_Cost(a, i) + E[Residual_Delay_Cost(a | S_i)] + E[Residual_Risk_Cost(a | S_i)]"
+    net_benefit: "Net_Benefit(a, i) = E[Cost(NO_ACTION | S_i)] - E[Cost(a | S_i)]"
+    policy_regret: "Regret(P_k, i) = E[Cost(P_k | S_i)] - E[Cost(Oracle | S_i)]"
+
+# -----------------------------------------------------------------------------
+# 5. Operational Capacity & Review Budgets
+# -----------------------------------------------------------------------------
+budgeting:
+  supported_capacities_k:
+    - 0.05                           # 5% capacity constraint
+    - 0.10                           # 10% capacity constraint
+    - 0.20                           # 20% capacity constraint
+  prioritization_policy: "EXPECTED_NET_BENEFIT"
+  ranking_score_formula: "Score_i = max_{a in A_intervene} (E[Cost(NO_ACTION | S_i)] - E[Cost(a | S_i)])"
+
+# -----------------------------------------------------------------------------
+# 6. Multi-Dimensional Sensitivity Analysis Grid (3x3)
+# -----------------------------------------------------------------------------
+sensitivity_grid:
+  action_cost_multipliers:
+    low: 0.50                        # -50% Action Cost
+    base: 1.00                       # Standard Action Cost
+    high: 2.00                       # +100% Action Cost
+  action_efficacy_multipliers:
+    low: 0.50                        # -50% Intervention Efficacy (e.g., Delta_days = -1.5)
+    base: 1.00                       # Standard Intervention Efficacy (e.g., Delta_days = -3.0)
+    high: 1.50                       # +50% Intervention Efficacy (e.g., Delta_days = -4.5)
+  grid_cells:
+    - { cost_mult: 0.50, eff_mult: 0.50, label: "Cost_Low__Eff_Low" }
+    - { cost_mult: 0.50, eff_mult: 1.00, label: "Cost_Low__Eff_Base" }
+    - { cost_mult: 0.50, eff_mult: 1.50, label: "Cost_Low__Eff_High" }
+    - { cost_mult: 1.00, eff_mult: 0.50, label: "Cost_Base__Eff_Low" }
+    - { cost_mult: 1.00, eff_mult: 1.00, label: "Cost_Base__Eff_Base" }
+    - { cost_mult: 1.00, eff_mult: 1.50, label: "Cost_Base__Eff_High" }
+    - { cost_mult: 2.00, eff_mult: 0.50, label: "Cost_High__Eff_Low" }
+    - { cost_mult: 2.00, eff_mult: 1.00, label: "Cost_High__Eff_Base" }
+    - { cost_mult: 2.00, eff_mult: 1.50, label: "Cost_High__Eff_High" }
+
+# -----------------------------------------------------------------------------
+# 7. Artifact Paths & Manifest References
+# -----------------------------------------------------------------------------
+artifacts:
+  pre_freeze_manifest: "artifacts/phase2/e10/e10_pre_freeze_manifest.json"
+  dev_evaluation_results: "artifacts/phase2/e10/e10_dev_evaluation_results.parquet"
+  sensitivity_grid_results: "artifacts/phase2/e10/e10_sensitivity_grid_results.parquet"
+  holdout_evaluation_results: "artifacts/phase2/e10/e10_holdout_evaluation_results.parquet"
+  immutability_manifest: "artifacts/phase2/e10/e10_immutability_manifest.json"

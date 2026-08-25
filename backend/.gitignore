@@ -1,0 +1,16 @@
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.env
+.env.*
+*.log
+.DS_Store
+Thumbs.db
+
+# Keep the exact serving artifacts committed: the API requires these at runtime.
+# artifacts/model_registry/v2/ is intentionally NOT ignored.

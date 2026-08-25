@@ -1,0 +1,243 @@
+# =============================================================================
+# Machine-Readable Prediction Contract Configuration
+# Supply Chain Delay Intelligence System — Stage 2
+# =============================================================================
+
+contract_version: "1.0.0"
+dataset: "scms"
+
+# -----------------------------------------------------------------------------
+# 1. Prediction Unit
+# -----------------------------------------------------------------------------
+prediction_unit:
+  entity_level: "shipment_line_item"
+  primary_key: "ID"
+  group_keys:
+    - "PO / SO #"
+    - "Project Code"
+    - "Country"
+
+# -----------------------------------------------------------------------------
+# 2. Prediction Timestamp Strategy (Dual-Channel Operational Milestone Anchor)
+# -----------------------------------------------------------------------------
+prediction_timestamp:
+  name: "T_pred"
+  description: "Dual-Channel Operational Milestone Anchor representing order commitment and execution release"
+  strategy: "dual_channel_operational_milestone"
+  direct_drop:
+    primary_anchor: "PO Sent to Vendor Date"
+    fallback_anchor: "PQ First Sent to Client Date"
+  from_rdc:
+    primary_anchor: "PQ First Sent to Client Date"
+    fallback_anchor: null
+  legacy_policy: "Retain all records in base dataset; mark pre-2010 unanchored records as INELIGIBLE_MISSING_ANCHOR for primary lead-time models"
+
+# -----------------------------------------------------------------------------
+# 3. Key Milestone Timestamps
+# -----------------------------------------------------------------------------
+milestone_timestamps:
+  quotation_timestamp:
+    name: "T_pq"
+    column: "PQ First Sent to Client Date"
+    milestone: "M1"
+  order_commitment_timestamp:
+    name: "T_po"
+    column: "PO Sent to Vendor Date"
+    milestone: "M2"
+  scheduled_timestamp:
+    name: "T_sched"
+    column: "Scheduled Delivery Date"
+    milestone: "M2"
+    description: "Contractually agreed commitment delivery deadline"
+  outcome_timestamp:
+    name: "T_outcome"
+    column: "Delivered to Client Date"
+    milestone: "M4"
+    description: "Physical arrival and formal acceptance date at destination client warehouse"
+  administrative_timestamp:
+    name: "T_record"
+    column: "Delivery Recorded Date"
+    milestone: "M5"
+    description: "Administrative ERP database commit timestamp logged post-delivery"
+
+# -----------------------------------------------------------------------------
+# 4. Forecast Horizon
+# -----------------------------------------------------------------------------
+forecast_horizon:
+  name: "planned_lead_time"
+  formula: "(Scheduled Delivery Date - T_pred).days"
+  unit: "calendar_days"
+  min_lead_time_days: 0
+
+# -----------------------------------------------------------------------------
+# 5. Targets Specification
+# -----------------------------------------------------------------------------
+targets:
+  classification:
+    name: "is_delayed"
+    alias: "Delay_Flag"
+    type: "binary"
+    formula: "Delivered to Client Date > Scheduled Delivery Date"
+    target_space: [0, 1]
+    class_0: "Non-Delayed (Early or On-Time, Delay_Days <= 0)"
+    class_1: "Delayed (Late Delivery, Delay_Days > 0)"
+    positive_class: 1
+    prevalence: 0.114878
+    loss_asymmetry_rationale: "Clinical stockout cost of late delivery exceeds warehouse holding cost of early delivery (C_late >> C_early)"
+  regression:
+    name: "Delay_Days"
+    type: "continuous_integer"
+    formula: "(Delivered to Client Date - Scheduled Delivery Date).days"
+    domain: "[-372, 192]"
+    unit: "calendar_days"
+    distribution:
+      mean: -6.02
+      median: 0.0
+      std: 27.23
+      iqr: 3.0
+
+# -----------------------------------------------------------------------------
+# 6. Population Eligibility Rules
+# -----------------------------------------------------------------------------
+eligibility_rules:
+  base_population:
+    - rule: "id_valid"
+      expr: "ID.notnull() & (ID > 0)"
+      description: "Primary key must be valid positive integer"
+    - rule: "scheduled_date_valid"
+      expr: "Scheduled Delivery Date is valid datetime"
+      description: "Scheduled Delivery Date must be valid datetime in [2006, 2016]"
+    - rule: "delivered_date_valid"
+      expr: "Delivered to Client Date is valid datetime"
+      description: "Delivered to Client Date must be valid datetime in [2006, 2016]"
+    - rule: "fulfill_via_valid"
+      expr: "Fulfill Via in ['From RDC', 'Direct Drop']"
+      description: "Sourcing mechanism must be recognized fulfillment channel"
+    - rule: "product_group_valid"
+      expr: "Product Group in ['ARV', 'HRDT', 'ANTM', 'ACT', 'MRDT']"
+      description: "Product group must be recognized health commodity category"
+  prediction_cohort:
+    - rule: "prediction_anchor_present"
+      expr: "T_pred is not null"
+      description: "Prediction anchor timestamp must be present and parseable"
+    - rule: "temporal_precedence"
+      expr: "T_pred <= Delivered to Client Date"
+      description: "Prediction timestamp must precede or equal physical delivery date"
+    - rule: "temporal_anomaly_clean"
+      expr: "is_temporal_anomaly == 0"
+      description: "Shipment must not exhibit historical ERP inverted timestamps"
+
+# -----------------------------------------------------------------------------
+# 7. Allowed Features (Available at or before T_pred / Milestone M2)
+# -----------------------------------------------------------------------------
+allowed_features:
+  identifiers_and_geography:
+    - "Project Code"
+    - "PQ #"
+    - "Country"
+    - "Managed By"
+  sourcing_and_commercial:
+    - "Fulfill Via"
+    - "Vendor INCO Term"
+    - "Shipment Mode"
+    - "Vendor"
+    - "Manufacturing Site"
+  product_specifications:
+    - "Product Group"
+    - "Sub Classification"
+    - "Item Description"
+    - "Molecule/Test Type"
+    - "Brand"
+    - "Dosage"
+    - "Dosage Form"
+    - "Unit of Measure (Per Pack)"
+    - "First Line Designation"
+  quantities_and_financials:
+    - "Line Item Quantity"
+    - "Line Item Value"
+    - "Pack Price"
+    - "Unit Price"
+    - "Line Item Insurance (USD)"
+  derived_pre_prediction_indicators:
+    - "is_rdc_fulfillment"
+    - "is_pre_pq_process"
+    - "po_sent_is_date"
+    - "pq_first_sent_is_date"
+    - "weight_is_numeric"
+    - "freight_is_numeric"
+    - "Scheduled_Transit_Days"
+    - "PQ_to_PO_Days"
+
+# -----------------------------------------------------------------------------
+# 8. Forbidden Features (Post-Prediction, Consignment Actuals, Post-Outcome, Target)
+# -----------------------------------------------------------------------------
+forbidden_features:
+  database_keys:
+    - name: "ID"
+      category: "database_key"
+      reason: "Surrogate database primary key causes memorization and row-order leakage"
+  consignment_dispatch:
+    - name: "ASN/DN #"
+      category: "post_po_consignment"
+      reason: "Consignment tracking identifier generated at physical warehouse packing post-PO"
+  consignment_actuals:
+    - name: "Weight (Kilograms)"
+      category: "ambiguous_actual"
+      reason: "Raw scale gross weight measured at warehouse dispatch; contains mixed parent ASN references"
+    - name: "Freight Cost (USD)"
+      category: "ambiguous_actual"
+      reason: "Final carrier invoices reflecting in-transit demurrage and emergency air expediting surcharges"
+  target_derived:
+    - name: "Delivered to Client Date"
+      category: "target_milestone"
+      reason: "Target outcome timestamp; 100% target leakage"
+    - name: "Delay_Days"
+      category: "target_variable"
+      reason: "Continuous regression target label"
+    - name: "Delay_Flag"
+      category: "target_variable"
+      reason: "Binary classification target label"
+  post_outcome_administrative:
+    - name: "Delivery Recorded Date"
+      category: "post_outcome_administrative"
+      reason: "Administrative ERP commit timestamp logged post-delivery"
+  cohort_filter_indicators:
+    - name: "is_temporal_anomaly"
+      category: "target_derived_filter"
+      reason: "Calculated using post-outcome timestamps; forbidden as ML feature, used only as eligibility filter"
+
+# -----------------------------------------------------------------------------
+# 9. Temporal Constraints & Inequalities
+# -----------------------------------------------------------------------------
+temporal_constraints:
+  - name: "outcome_precedence"
+    inequality: "T_pred(i) < T_outcome(i) for all eligible standard predictions"
+  - name: "feature_generation_bound"
+    inequality: "Timestamp(X_k(i)) <= T_pred(i) for all input features X_k"
+  - name: "forecast_horizon_bound"
+    inequality: "T_sched(i) - T_pred(i) >= 0"
+  - name: "target_orthogonality"
+    inequality: "d(X_k) / d(T_outcome) == 0 and d(X_k) / d(T_record) == 0"
+  - name: "rolling_origin_split_isolation"
+    inequality: "T_outcome(train) < T_cutoff <= T_pred(eval)"
+
+# -----------------------------------------------------------------------------
+# 10. Anomaly Handling Policy
+# -----------------------------------------------------------------------------
+anomaly_policy:
+  total_audited_anomalies: 12
+  affected_row_ids:
+    - 4190
+    - 4432
+    - 13148
+    - 25539
+    - 29140
+    - 42983
+    - 52710
+    - 57447
+    - 66431
+    - 67600
+    - 71920
+    - 72832
+  target_policy: "Retained in bronze/silver base datasets; targets are mathematically valid and evaluate to Class 0"
+  feature_policy: "Filter via is_temporal_anomaly == 0 for primary lead-time models; clamp negative lead times to NaN"

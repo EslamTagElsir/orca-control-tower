@@ -1,0 +1,66 @@
+# Multi-Task Modeling Configuration
+evaluation:
+  cv_strategy: "purged_rolling_origin"
+  n_splits: 5
+  train_window_months: 24
+  test_window_months: 6
+  embargo_days: 14
+
+classification:
+  target: "Delay_Flag"
+  metrics:
+    - "roc_auc"
+    - "pr_auc"
+    - "f1_macro"
+    - "brier_score"
+    - "expected_calibration_error"
+  models:
+    logistic_regression:
+      C: 1.0
+      solver: "lbfgs"
+      max_iter: 1000
+    lightgbm_classifier:
+      n_estimators: 300
+      learning_rate: 0.05
+      num_leaves: 31
+      subsample: 0.8
+      colsample_bytree: 0.8
+      random_state: 42
+    xgboost_classifier:
+      n_estimators: 300
+      learning_rate: 0.05
+      max_depth: 6
+      subsample: 0.8
+      colsample_bytree: 0.8
+      random_state: 42
+    catboost_classifier:
+      iterations: 300
+      learning_rate: 0.05
+      depth: 6
+      random_seed: 42
+      verbose: 0
+
+regression:
+  target: "Delay_Days"
+  metrics:
+    - "mae"
+    - "rmse"
+    - "r2"
+    - "median_ae"
+    - "pinball_loss_0.9"
+  models:
+    ridge_regression:
+      alpha: 1.0
+    lightgbm_regressor:
+      n_estimators: 300
+      learning_rate: 0.05
+      num_leaves: 31
+      subsample: 0.8
+      colsample_bytree: 0.8
+      random_state: 42
+    catboost_regressor:
+      iterations: 300
+      learning_rate: 0.05
+      depth: 6
+      random_seed: 42
+      verbose: 0

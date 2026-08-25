@@ -1,0 +1,20 @@
+{
+  "model_version": "v2.0.0-demo",
+  "registry_role": "research-validated decision intelligence prototype serving registry",
+  "classifier": "CatBoostClassifier(iterations=100, auto_class_weights=Balanced)",
+  "probability_calibration": "IsotonicRegression on temporally later calibration window",
+  "severity": "LightGBM quantile regressors q05/q50/q95 for delay days conditional on late shipment",
+  "uncertainty": "90% split Conformalized Quantile Regression (CQR)",
+  "explainability": "CatBoost native SHAP values at inference time",
+  "prediction_contract_version": "v1.0",
+  "training_data_version": "SCMS exact-hash source -> point-in-time features",
+  "raw_data_sha256": "918b992dd3e8d4b64d2a727b2c4ea607603d0c58f19484e73f7b78528c6a8673",
+  "created_utc": "2026-08-23T10:42:10.124212+00:00",
+  "git_commit": null,
+  "git_commit_note": "Source archive contained no .git history; fake commit removed. Use source_tree_sha256 from closure_manifest.json.",
+  "evidence_labels": [
+    "REAL DATA",
+    "MODEL OUTPUT",
+    "SIMULATED SCENARIO"
+  ]
+}

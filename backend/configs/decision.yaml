@@ -1,0 +1,48 @@
+decision:
+  actions:
+    - NO_ACTION
+    - MONITOR
+    - EXPEDITE
+    - SUPPLIER_ESCALATION
+    - ALTERNATIVE_SUPPLIER_REVIEW
+    - TRANSPORT_MODE_REVIEW
+    - SPLIT_ORDER_REVIEW
+    - HUMAN_REVIEW
+
+  risk_tiers:
+    LOW_RISK:
+      p_late_max: 0.3
+    WATCH:
+      p_late_max: 0.6
+    HIGH_RISK:
+      p_late_max: 0.85
+    CRITICAL:
+      p_late_max: 1.0
+
+  uncertainty_rules:
+    high_uncertainty_threshold_days: 14.0  # 90% interval width > 14 days triggers high uncertainty
+
+  cost_assumptions:
+    base_delay_cost_per_day: 150.0  # Simulated USD cost per day of delay
+    value_multiplier_enabled: true
+    value_multiplier_rate: 0.001   # 0.1% of line item value added to delay cost per day
+
+    intervention_costs:
+      NO_ACTION: 0.0
+      MONITOR: 10.0
+      EXPEDITE: 500.0
+      SUPPLIER_ESCALATION: 100.0
+      ALTERNATIVE_SUPPLIER_REVIEW: 250.0
+      TRANSPORT_MODE_REVIEW: 100.0
+      SPLIT_ORDER_REVIEW: 150.0
+      HUMAN_REVIEW: 50.0
+
+    intervention_efficacy:
+      # Simulated expected reduction in delay days
+      EXPEDITE: 5.0
+      TRANSPORT_MODE_REVIEW: 3.0
+      SUPPLIER_ESCALATION: 2.0
+      
+  auto_eligible_actions:
+    - NO_ACTION
+    - MONITOR

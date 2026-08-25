@@ -1,0 +1,27 @@
+﻿# Evaluation Configuration
+
+temporal_validation:
+  n_folds: 5
+  gap_days: 90
+  holdout_duration_days: 365
+  val_duration_days: 180
+  min_train_days: 730
+
+metrics:
+  classification:
+    - "pr_auc"
+    - "roc_auc"
+    - "f1"
+    - "precision"
+    - "recall"
+    - "balanced_accuracy"
+    - "brier_score"
+  regression:
+    - "mae"
+    - "rmse"
+    - "r2"
+
+baseline_models:
+  - "dummy"
+  - "logistic_regression"
+  - "lightgbm"

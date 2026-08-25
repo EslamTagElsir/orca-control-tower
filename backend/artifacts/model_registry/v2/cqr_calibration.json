@@ -1,0 +1,16 @@
+{
+  "method": "split_cqr",
+  "target": "Delay_Days_Conditional_On_Delay",
+  "nominal_coverage": 0.9,
+  "lower_quantile": 0.05,
+  "median_quantile": 0.5,
+  "upper_quantile": 0.95,
+  "finite_sample_quantile_level": 0.9087378640776699,
+  "q_adjustment": 2.353180347332717,
+  "calibration_rows": 103,
+  "train_delayed_rows": 959,
+  "calibration_window": {
+    "start": "2014-02-26",
+    "end": "2014-08-21"
+  }
+}

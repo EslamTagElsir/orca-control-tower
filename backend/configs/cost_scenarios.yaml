@@ -1,0 +1,94 @@
+# =============================================================================
+# USAID SCMS Supply Chain Delay Intelligence
+# Cost Scenario Configurations (Phase 2 — Experiment E8)
+# =============================================================================
+# Defines parameter assumptions for instance-dependent cost-sensitive evaluation
+# across Low, Base, and High impact scenarios.
+# =============================================================================
+
+version: "1.0"
+description: "Configurable Cost Scenario Models for USAID SCMS Supply Chain Delay Intelligence (Experiment E8)"
+default_scenario: "base"
+
+scenarios:
+  low:
+    name: "Low Cost Scenario"
+    description: "Conservative penalty scenario with low stockout impact and low review costs"
+    c_daily_base: 50.0             # Base daily operational delay penalty (USD/day)
+    rho_value: 0.0005              # Value-scaled daily holding/perishability rate (0.05%/day)
+    c_fixed_stockout: 200.0        # Fixed emergency stockout response administrative cost (USD)
+    c_triage_base: 25.0            # Baseline analyst labor triage cost per false alarm (USD)
+    beta_audit: 5.0                # Value-logarithm audit scaling factor (USD/log(USD))
+    c_direct_inquiry: 15.0         # Direct Drop external vendor inquiry friction (USD)
+    c_rdc_inquiry: 5.0             # RDC internal warehouse check friction (USD)
+    c_expedite_base: 250.0         # Base carrier expediting and logistics fee (USD)
+    gamma_expedite: 0.0020         # Value-proportional cargo insurance/handling surcharge (0.20%)
+    delay_days_assumed: 10.0       # Benchmark unmitigated delay duration (calendar days)
+    days_saved_efficacy: 4.0       # Expected delay reduction from intervention (calendar days)
+    delta_first_line: 0.30         # Criticality boost for WHO First-Line regimen (+30%)
+    delta_pediatric: 0.20          # Criticality boost for Pediatric formulations (+20%)
+    delta_arv: 0.10                # Criticality boost for ARV drug class (+10%)
+    mode_multipliers:
+      Air: 1.00
+      Air Charter: 0.90
+      Truck: 1.10
+      Ocean: 1.25
+      Default: 1.00
+
+  base:
+    name: "Base Cost Scenario"
+    description: "Empirically calibrated standard scenario reflecting realistic global health procurement and stockout penalties"
+    c_daily_base: 150.0            # Base daily operational delay penalty (USD/day)
+    rho_value: 0.0010              # Value-scaled daily holding/perishability rate (0.10%/day)
+    c_fixed_stockout: 500.0        # Fixed emergency stockout response administrative cost (USD)
+    c_triage_base: 50.0            # Baseline analyst labor triage cost per false alarm (USD)
+    beta_audit: 10.0               # Value-logarithm audit scaling factor (USD/log(USD))
+    c_direct_inquiry: 30.0         # Direct Drop external vendor inquiry friction (USD)
+    c_rdc_inquiry: 10.0            # RDC internal warehouse check friction (USD)
+    c_expedite_base: 500.0         # Base carrier expediting and logistics fee (USD)
+    gamma_expedite: 0.0050         # Value-proportional cargo insurance/handling surcharge (0.50%)
+    delay_days_assumed: 12.0       # Benchmark unmitigated delay duration (calendar days)
+    days_saved_efficacy: 5.0       # Expected delay reduction from intervention (calendar days)
+    delta_first_line: 0.30         # Criticality boost for WHO First-Line regimen (+30%)
+    delta_pediatric: 0.20          # Criticality boost for Pediatric formulations (+20%)
+    delta_arv: 0.15                # Criticality boost for ARV drug class (+15%)
+    mode_multipliers:
+      Air: 1.00
+      Air Charter: 0.90
+      Truck: 1.10
+      Ocean: 1.25
+      Default: 1.00
+
+  high:
+    name: "High Cost Scenario"
+    description: "High penalty scenario with severe clinical stockout consequences and intensive expedited handling"
+    c_daily_base: 350.0            # Base daily operational delay penalty (USD/day)
+    rho_value: 0.0020              # Value-scaled daily holding/perishability rate (0.20%/day)
+    c_fixed_stockout: 1500.0       # Fixed emergency stockout response administrative cost (USD)
+    c_triage_base: 100.0           # Baseline analyst labor triage cost per false alarm (USD)
+    beta_audit: 20.0               # Value-logarithm audit scaling factor (USD/log(USD))
+    c_direct_inquiry: 60.0         # Direct Drop external vendor inquiry friction (USD)
+    c_rdc_inquiry: 20.0            # RDC internal warehouse check friction (USD)
+    c_expedite_base: 1000.0        # Base carrier expediting and logistics fee (USD)
+    gamma_expedite: 0.0100         # Value-proportional cargo insurance/handling surcharge (1.00%)
+    delay_days_assumed: 15.0       # Benchmark unmitigated delay duration (calendar days)
+    days_saved_efficacy: 6.0       # Expected delay reduction from intervention (calendar days)
+    delta_first_line: 0.40         # Criticality boost for WHO First-Line regimen (+40%)
+    delta_pediatric: 0.30          # Criticality boost for Pediatric formulations (+30%)
+    delta_arv: 0.20                # Criticality boost for ARV drug class (+20%)
+    mode_multipliers:
+      Air: 1.00
+      Air Charter: 0.90
+      Truck: 1.10
+      Ocean: 1.25
+      Default: 1.00
+
+forbidden_columns:
+  - "Delivered to Client Date"
+  - "Delivery Recorded Date"
+  - "Delay_Flag"
+  - "Delay_Days"
+  - "Freight Cost (USD)"
+  - "Weight (Kilograms)"
+  - "ASN/DN #"
+  - "is_temporal_anomaly"
