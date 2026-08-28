@@ -20,7 +20,6 @@ import type { DecisionAction, DisplayTier, EventType, RiskTier } from "../types"
 import type { HumanDecisionKind, OperatorAction, ReasonCode } from "./intervention-policy";
 import type { TargetBand } from "./mutation-profiles";
 
-
 /* ------------------------------------------------------------------ */
 /* Provenance vocabulary                                               */
 /* ------------------------------------------------------------------ */
@@ -41,7 +40,6 @@ export const SIM_PROVENANCE = {
   /** A real operator decision recorded against the synthetic simulation. */
   humanDecision: "HUMAN DECISION ON SYNTHETIC SIMULATION",
 } as const;
-
 
 /* ------------------------------------------------------------------ */
 /* Lifecycle                                                           */
@@ -91,7 +89,6 @@ export type SimEventFamily =
   | "HUMAN_DECISION"
   | "INTERVENTION";
 
-
 export const FAMILY_LABEL: Record<SimEventFamily, string> = {
   SPAWN: "Shipment created",
   DISPATCH: "Dispatch",
@@ -114,7 +111,6 @@ export const FAMILY_LABEL: Record<SimEventFamily, string> = {
   DECISION_REQUIRED: "Human decision required",
   HUMAN_DECISION: "Human decision",
   INTERVENTION: "Intervention applied",
-
 };
 
 export const FAMILY_EVENT_TYPE: Record<SimEventFamily, EventType> = {
@@ -139,7 +135,6 @@ export const FAMILY_EVENT_TYPE: Record<SimEventFamily, EventType> = {
   DECISION_REQUIRED: "DECISION",
   HUMAN_DECISION: "DECISION",
   INTERVENTION: "DECISION",
-
 };
 
 /** Families that represent an operational exception being opened. */
@@ -344,7 +339,6 @@ export interface SimEpisode {
   interventionAudit: string[];
 }
 
-
 /* ------------------------------------------------------------------ */
 /* Events                                                              */
 /* ------------------------------------------------------------------ */
@@ -411,7 +405,6 @@ export interface SimulationSnapshot {
   /** null until the first model call resolves. */
   modelOnline: boolean | null;
   modelOfflineReason: string | null;
-
 }
 
 /* ------------------------------------------------------------------ */

@@ -52,8 +52,7 @@ function ResolutionHubPage() {
   );
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected =
-    pending.find((e) => e.id === selectedId) ?? pending[0] ?? null;
+  const selected = pending.find((e) => e.id === selectedId) ?? pending[0] ?? null;
 
   const source: DataSource = snapshot.modelOnline === false ? "fixture" : "live";
 
@@ -103,7 +102,8 @@ function ResolutionHubPage() {
                     </div>
                     <p className="mt-1 truncate text-[11px] text-muted-foreground">{ep.route}</p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      ORCA recommends <span className="text-foreground">{ep.recommendedAction}</span>
+                      ORCA recommends{" "}
+                      <span className="text-foreground">{ep.recommendedAction}</span>
                       {ep.riskAtOpen !== null ? ` · ${pct(ep.riskAtOpen)}` : ""}
                     </p>
                   </button>
@@ -148,8 +148,8 @@ function ResolutionHubPage() {
                       </div>
                       <p className="mt-1 text-muted-foreground">
                         {ep.decision ? REASON_CODE_LABEL[ep.decision.reasonCode] : ""} ·{" "}
-                        {ep.decision?.actorLabel} · {Math.round((ep.decision?.latencyMs ?? 0) / 1000)}s
-                        latency
+                        {ep.decision?.actorLabel} ·{" "}
+                        {Math.round((ep.decision?.latencyMs ?? 0) / 1000)}s latency
                       </p>
                       {ep.decision?.note ? (
                         <p className="mt-1 text-muted-foreground">Note: {ep.decision.note}</p>
@@ -219,7 +219,10 @@ function DecisionForm({
       />
       <PanelBody className="space-y-3">
         <div className="grid gap-2 sm:grid-cols-4">
-          <Stat label="Risk at open" value={episode.riskAtOpen !== null ? pct(episode.riskAtOpen) : "UNSCORED"} />
+          <Stat
+            label="Risk at open"
+            value={episode.riskAtOpen !== null ? pct(episode.riskAtOpen) : "UNSCORED"}
+          />
           <Stat label="Tier" value={episode.tierAtOpen} />
           <Stat
             label="Severity p50"

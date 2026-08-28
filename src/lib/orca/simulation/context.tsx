@@ -15,7 +15,6 @@ import type { HumanDecisionKind, OperatorAction, ReasonCode } from "./interventi
 import { createLearningPersistencePort } from "./persistence";
 import type { SimSpeed, SimulationSnapshot } from "./types";
 
-
 /**
  * ONE global Operational Digital Twin run, shared by every page.
  *
@@ -49,7 +48,6 @@ interface SimulationContextValue {
   /** Records a real human decision against an open Decision Episode. */
   submitDecision: (input: SubmitDecisionInput) => { ok: boolean; reason?: string };
 }
-
 
 /**
  * Kept on a global slot so a dev HMR re-evaluation of this module reuses the
@@ -141,7 +139,6 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     }),
     [snapshot, start, pause, resume, stop, newRun, setSpeed, submitDecision],
   );
-
 
   return <SimulationContext.Provider value={value}>{children}</SimulationContext.Provider>;
 }
