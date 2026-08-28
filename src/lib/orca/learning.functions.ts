@@ -13,6 +13,7 @@
  */
 
 import { createServerFn } from "@tanstack/react-start";
+import type { Json } from "@/integrations/supabase/types";
 import { z } from "zod";
 
 /* ------------------------------------------------------------------ */
@@ -25,7 +26,10 @@ const runSchema = z.object({
   speed: z.number().int().min(1).max(120),
 });
 
-const featuresSchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]));
+const featuresSchema = z.record(
+  z.string(),
+  z.union([z.string(), z.number(), z.boolean(), z.null()]),
+);
 
 const eventSchema = z.object({
   eventId: z.string().min(1).max(64),
@@ -92,7 +96,9 @@ export const startSimulationRun = createServerFn({ method: "POST" })
 
 export const endSimulationRun = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
-    z.object({ runId: z.string().min(1).max(64), status: z.enum(["PAUSED", "STOPPED"]) }).parse(input),
+    z
+      .object({ runId: z.string().min(1).max(64), status: z.enum(["PAUSED", "STOPPED"]) })
+      .parse(input),
   )
   .handler(async ({ data }) => {
     const db = await admin();
@@ -339,7 +345,7 @@ export const recordHumanDecision = createServerFn({ method: "POST" })
         run_id: data.run.runId,
         shipment_id: data.shipmentId,
         action: data.intervention.action,
-        effect_spec: data.intervention.effectSpec,
+        effect_spec: data.intervention.effectSpec as unknown as Json,
         simulator_policy_version: data.intervention.policyVersion,
         applied_sim_ms: data.intervention.appliedSimMs,
       });
@@ -444,14 +450,12 @@ export const listPersistedDecisions = createServerFn({ method: "POST" })
       run_id: string;
       shipment_id: string;
       opened_at: string;
-      orca_model_inferences:
-        | {
-            probability_late: number;
-            risk_tier: string;
-            severity_p50: number;
-            model_version: string;
-          }
-        | null;
+      orca_model_inferences: {
+        probability_late: number;
+        risk_tier: string;
+        severity_p50: number;
+        model_version: string;
+      } | null;
       orca_model_recommendations: { recommendation: string } | null;
       orca_human_decisions: {
         decision: string;

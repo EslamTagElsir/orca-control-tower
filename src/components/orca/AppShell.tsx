@@ -15,6 +15,7 @@ import {
   Settings as SettingsIcon,
   ScrollText,
   Coins,
+  Inbox,
   Waves,
 } from "lucide-react";
 
@@ -27,6 +28,7 @@ const NAV = [
   { to: "/control-tower", label: "Control Tower", icon: LayoutDashboard },
   { to: "/shipments", label: "Shipments", icon: Boxes },
   { to: "/exceptions", label: "Exceptions", icon: AlertTriangle },
+  { to: "/resolution-hub", label: "Resolution Hub", icon: Inbox },
   { to: "/network-map", label: "Network Map", icon: Globe2 },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/simulator", label: "What-If Simulator", icon: FlaskConical },

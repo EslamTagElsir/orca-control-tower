@@ -15,7 +15,6 @@ import type { HumanDecisionKind, OperatorAction, ReasonCode } from "./interventi
 import { createLearningPersistencePort } from "./persistence";
 import type { SimSpeed, SimulationSnapshot } from "./types";
 
-
 /**
  * ONE global Operational Digital Twin run, shared by every page.
  *
@@ -27,6 +26,15 @@ import type { SimSpeed, SimulationSnapshot } from "./types";
 const STORAGE_KEY = "orca.simulation.v1";
 const PERSIST_EVERY_MS = 3_000;
 
+export interface SubmitDecisionInput {
+  episodeId: string;
+  decision: HumanDecisionKind;
+  chosenAction: OperatorAction;
+  reasonCode: ReasonCode;
+  note?: string | null;
+  actorLabel?: string;
+}
+
 interface SimulationContextValue {
   snapshot: SimulationSnapshot;
   /** True while a run is running or paused. */
@@ -37,6 +45,8 @@ interface SimulationContextValue {
   stop: () => void;
   newRun: () => void;
   setSpeed: (speed: SimSpeed) => void;
+  /** Records a real human decision against an open Decision Episode. */
+  submitDecision: (input: SubmitDecisionInput) => { ok: boolean; reason?: string };
 }
 
 /**
@@ -66,7 +76,9 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
   if (!engineRef.current) {
     engineRef.current = new SimulationEngine();
     engineRef.current.setModelPort(modelPort);
+    engineRef.current.setPersistencePort(createLearningPersistencePort());
   }
+
   const engine = engineRef.current;
 
   const snapshot = useSyncExternalStore(engine.subscribe, engine.getSnapshot, serverSnapshot);
@@ -108,6 +120,10 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
   const stop = useCallback(() => engine.stop(), [engine]);
   const newRun = useCallback(() => engine.newRun(), [engine]);
   const setSpeed = useCallback((speed: SimSpeed) => engine.setSpeed(speed), [engine]);
+  const submitDecision = useCallback(
+    (input: SubmitDecisionInput) => engine.submitDecision(input),
+    [engine],
+  );
 
   const value = useMemo<SimulationContextValue>(
     () => ({
@@ -119,8 +135,9 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
       stop,
       newRun,
       setSpeed,
+      submitDecision,
     }),
-    [snapshot, start, pause, resume, stop, newRun, setSpeed],
+    [snapshot, start, pause, resume, stop, newRun, setSpeed, submitDecision],
   );
 
   return <SimulationContext.Provider value={value}>{children}</SimulationContext.Provider>;

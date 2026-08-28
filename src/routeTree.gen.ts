@@ -18,6 +18,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as ModelMonitorRouteImport } from './routes/model-monitor'
 import { Route as NetworkMapRouteImport } from './routes/network-map'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as ResolutionHubRouteImport } from './routes/resolution-hub'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ShipmentsRouteImport } from './routes/shipments'
 import { Route as SimulatorRouteImport } from './routes/simulator'
@@ -71,6 +72,11 @@ const ReportsRoute = ReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResolutionHubRoute = ResolutionHubRouteImport.update({
+  id: '/resolution-hub',
+  path: '/resolution-hub',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/model-monitor': typeof ModelMonitorRoute
   '/network-map': typeof NetworkMapRoute
   '/reports': typeof ReportsRoute
+  '/resolution-hub': typeof ResolutionHubRoute
   '/settings': typeof SettingsRoute
   '/shipments': typeof ShipmentsRoute
   '/simulator': typeof SimulatorRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/model-monitor': typeof ModelMonitorRoute
   '/network-map': typeof NetworkMapRoute
   '/reports': typeof ReportsRoute
+  '/resolution-hub': typeof ResolutionHubRoute
   '/settings': typeof SettingsRoute
   '/shipments': typeof ShipmentsRoute
   '/simulator': typeof SimulatorRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/model-monitor': typeof ModelMonitorRoute
   '/network-map': typeof NetworkMapRoute
   '/reports': typeof ReportsRoute
+  '/resolution-hub': typeof ResolutionHubRoute
   '/settings': typeof SettingsRoute
   '/shipments': typeof ShipmentsRoute
   '/simulator': typeof SimulatorRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/model-monitor'
     | '/network-map'
     | '/reports'
+    | '/resolution-hub'
     | '/settings'
     | '/shipments'
     | '/simulator'
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
     | '/model-monitor'
     | '/network-map'
     | '/reports'
+    | '/resolution-hub'
     | '/settings'
     | '/shipments'
     | '/simulator'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
     | '/model-monitor'
     | '/network-map'
     | '/reports'
+    | '/resolution-hub'
     | '/settings'
     | '/shipments'
     | '/simulator'
@@ -232,6 +244,7 @@ export interface RootRouteChildren {
   ModelMonitorRoute: typeof ModelMonitorRoute
   NetworkMapRoute: typeof NetworkMapRoute
   ReportsRoute: typeof ReportsRoute
+  ResolutionHubRoute: typeof ResolutionHubRoute
   SettingsRoute: typeof SettingsRoute
   ShipmentsRoute: typeof ShipmentsRoute
   SimulatorRoute: typeof SimulatorRoute
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/resolution-hub': {
+      id: '/resolution-hub'
+      path: '/resolution-hub'
+      fullPath: '/resolution-hub'
+      preLoaderRoute: typeof ResolutionHubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -368,6 +388,7 @@ const rootRouteChildren: RootRouteChildren = {
   ModelMonitorRoute: ModelMonitorRoute,
   NetworkMapRoute: NetworkMapRoute,
   ReportsRoute: ReportsRoute,
+  ResolutionHubRoute: ResolutionHubRoute,
   SettingsRoute: SettingsRoute,
   ShipmentsRoute: ShipmentsRoute,
   SimulatorRoute: SimulatorRoute,

@@ -173,7 +173,6 @@ export function createAutomaticGeneratorSource(rng: Rng): ShipmentSource {
         awaitingDecision: false,
         episodeId: null,
         interventionCount: 0,
-
       };
       shipment.nextMilestone = nextMilestoneFor(shipment);
       return shipment;

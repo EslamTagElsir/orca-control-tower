@@ -52,7 +52,6 @@ import {
   type SimulationSnapshot,
 } from "./types";
 
-
 /* ------------------------------------------------------------------ */
 /* Tunables                                                            */
 /* ------------------------------------------------------------------ */
@@ -216,7 +215,6 @@ export function idleSnapshot(): SimulationSnapshot {
   };
 }
 
-
 /* ------------------------------------------------------------------ */
 /* Engine                                                              */
 /* ------------------------------------------------------------------ */
@@ -236,7 +234,6 @@ export class SimulationEngine {
   private lastTickAt = 0;
   /** Verbatim /predict responses keyed by templateId|candidateKey (identical feature rows). */
   private predictCache = new Map<string, PredictResponse>();
-
 
   /* -------------------- store contract -------------------- */
 
@@ -280,7 +277,6 @@ export class SimulationEngine {
     }
   }
 
-
   /* -------------------- lifecycle -------------------- */
 
   start(seed = newSeed()) {
@@ -293,7 +289,6 @@ export class SimulationEngine {
     this.episodeSequence = 0;
     this.pendingShipments = [];
     this.predictCache.clear();
-
 
     const startedAtEpoch = Date.now();
     this.snapshot = {
@@ -362,7 +357,6 @@ export class SimulationEngine {
     }
   }
 
-
   resume() {
     if (this.snapshot.status !== "paused") return;
     this.commit({ status: "running" });
@@ -422,7 +416,6 @@ export class SimulationEngine {
     if (snapshot.status === "running") this.startClock();
   }
 
-
   /** Stops the clock without dropping subscribers or the run snapshot. */
   dispose() {
     this.stopClock();
@@ -472,7 +465,6 @@ export class SimulationEngine {
 
       const before = shipment.status;
       const result = advance(shipment, simDelta);
-
 
       for (const status of result.transitions) {
         if (status === "DELIVERED") continue;
@@ -583,7 +575,6 @@ export class SimulationEngine {
         );
         delivered.push(shipment);
         this.recordOutcome(shipment, simClockMs);
-
       } else {
         active.push(shipment);
       }
@@ -706,7 +697,6 @@ export class SimulationEngine {
       // Audit sink unavailable — the run continues.
     }
   }
-
 
   /**
    * Chooses which candidate band the next shipment aims at, based on the tiers
@@ -852,7 +842,8 @@ export class SimulationEngine {
         shipmentId: shipment.id,
         family: request.reason === "initial" ? "MODEL_SCORE" : "MODEL_RESCORE",
         detail,
-        provenance: request.reason === "initial" ? SIM_PROVENANCE.model : SIM_PROVENANCE.shockResult,
+        provenance:
+          request.reason === "initial" ? SIM_PROVENANCE.model : SIM_PROVENANCE.shockResult,
         riskBefore: previousRisk,
         riskAfter: prediction.probability_late,
         ...(request.audit.length > 0
@@ -886,7 +877,6 @@ export class SimulationEngine {
           inferenceKind: request.reason === "initial" ? "INITIAL" : "RESCORE",
         });
       }
-
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       shipment.model = {
@@ -1120,10 +1110,7 @@ export class SimulationEngine {
       shipment.featureAudit = [...shipment.featureAudit, ...audit];
     }
     if (effect.etaRecoveryHours > 0) {
-      shipment.etaVarianceHours = Math.max(
-        0,
-        shipment.etaVarianceHours - effect.etaRecoveryHours,
-      );
+      shipment.etaVarianceHours = Math.max(0, shipment.etaVarianceHours - effect.etaRecoveryHours);
     }
     if (effect.holdReleaseRatio > 0 && shipment.holdMs > 0) {
       shipment.holdMs = Math.round(shipment.holdMs * (1 - effect.holdReleaseRatio));
@@ -1187,8 +1174,7 @@ export class SimulationEngine {
       metrics: {
         ...this.snapshot.metrics,
         decisionsRecorded: this.snapshot.metrics.decisionsRecorded + 1,
-        interventionsApplied:
-          this.snapshot.metrics.interventionsApplied + (applied ? 1 : 0),
+        interventionsApplied: this.snapshot.metrics.interventionsApplied + (applied ? 1 : 0),
       },
     };
     for (const l of this.listeners) l();
@@ -1236,7 +1222,6 @@ export class SimulationEngine {
     return { ok: true };
   }
 }
-
 
 /** Elapsed simulated time as Dd HH:MM. */
 export function formatSimElapsed(simClockMs: number): string {
