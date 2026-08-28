@@ -122,6 +122,10 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
   const stop = useCallback(() => engine.stop(), [engine]);
   const newRun = useCallback(() => engine.newRun(), [engine]);
   const setSpeed = useCallback((speed: SimSpeed) => engine.setSpeed(speed), [engine]);
+  const submitDecision = useCallback(
+    (input: SubmitDecisionInput) => engine.submitDecision(input),
+    [engine],
+  );
 
   const value = useMemo<SimulationContextValue>(
     () => ({
@@ -133,9 +137,11 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
       stop,
       newRun,
       setSpeed,
+      submitDecision,
     }),
-    [snapshot, start, pause, resume, stop, newRun, setSpeed],
+    [snapshot, start, pause, resume, stop, newRun, setSpeed, submitDecision],
   );
+
 
   return <SimulationContext.Provider value={value}>{children}</SimulationContext.Provider>;
 }
