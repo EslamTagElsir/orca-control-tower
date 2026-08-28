@@ -27,6 +27,15 @@ import type { SimSpeed, SimulationSnapshot } from "./types";
 const STORAGE_KEY = "orca.simulation.v1";
 const PERSIST_EVERY_MS = 3_000;
 
+export interface SubmitDecisionInput {
+  episodeId: string;
+  decision: HumanDecisionKind;
+  chosenAction: OperatorAction;
+  reasonCode: ReasonCode;
+  note?: string | null;
+  actorLabel?: string;
+}
+
 interface SimulationContextValue {
   snapshot: SimulationSnapshot;
   /** True while a run is running or paused. */
@@ -37,7 +46,10 @@ interface SimulationContextValue {
   stop: () => void;
   newRun: () => void;
   setSpeed: (speed: SimSpeed) => void;
+  /** Records a real human decision against an open Decision Episode. */
+  submitDecision: (input: SubmitDecisionInput) => { ok: boolean; reason?: string };
 }
+
 
 /**
  * Kept on a global slot so a dev HMR re-evaluation of this module reuses the
