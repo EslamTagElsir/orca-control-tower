@@ -78,7 +78,9 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
   if (!engineRef.current) {
     engineRef.current = new SimulationEngine();
     engineRef.current.setModelPort(modelPort);
+    engineRef.current.setPersistencePort(createLearningPersistencePort());
   }
+
   const engine = engineRef.current;
 
   const snapshot = useSyncExternalStore(engine.subscribe, engine.getSnapshot, serverSnapshot);
