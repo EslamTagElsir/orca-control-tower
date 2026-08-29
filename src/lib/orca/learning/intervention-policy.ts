@@ -203,7 +203,8 @@ function buildPlan(action: PlannableAction): InterventionPlan {
     audit: [
       `${INTERVENTION_POLICY_VERSION} · ${action}: ${def.description}`,
       ...def.featureMutations.map(
-        (m) => `${m.field} × ${m.factor} — ${m.rationale} [${LEARNING_PROVENANCE.simulatedScenario}]`,
+        (m) =>
+          `${m.field} × ${m.factor} — ${m.rationale} [${LEARNING_PROVENANCE.simulatedScenario}]`,
       ),
     ],
   };
