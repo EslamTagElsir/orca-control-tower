@@ -181,11 +181,7 @@ function toShipment(scored: ScoredRow): OrcaShipment {
     PLANNING_DEFAULTS.intervention_cost,
     PLANNING_DEFAULTS.efficacy_days,
   );
-  const decision = (
-    ["NO_ACTION", "MONITOR", "INTERVENE"].includes(recommendation.recommendation)
-      ? recommendation.recommendation
-      : "MONITOR"
-  ) as DecisionAction;
+  const decision = parseDecisionAction(recommendation.recommendation);
 
   return {
     id: row.id,
@@ -535,11 +531,7 @@ export async function runWhatIf(input: WhatIfInput): Promise<ScenarioRunResponse
     input.efficacy_days,
   );
 
-  const decision = (
-    ["NO_ACTION", "MONITOR", "INTERVENE"].includes(recommendation.recommendation)
-      ? recommendation.recommendation
-      : "MONITOR"
-  ) as DecisionAction;
+  const decision = parseDecisionAction(recommendation.recommendation);
 
   return {
     shipment_id: row.id,

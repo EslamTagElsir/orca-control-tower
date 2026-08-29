@@ -922,11 +922,8 @@ export class SimulationEngine {
   ) {
     try {
       const response = await port.recommend(shipment.features);
-      const action = (
-        ["NO_ACTION", "MONITOR", "INTERVENE"].includes(response.recommendation)
-          ? response.recommendation
-          : "MONITOR"
-      ) as DecisionAction;
+      // Preserve the backend recommendation verbatim; unknown values stay UNKNOWN.
+      const action = parseDecisionAction(response.recommendation);
       shipment.model = {
         ...shipment.model,
         recommendation: {
