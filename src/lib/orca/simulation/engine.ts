@@ -16,7 +16,8 @@
 import { makeRng, newSeed, runIdFromSeed, type Rng } from "../prng";
 import { riskTier } from "../risk";
 import { rowToFeatures, type FeatureMap } from "../source-data";
-import type { PredictResponse, RecommendResponse, DecisionAction } from "../types";
+import type { PredictResponse, RecommendResponse } from "../types";
+import { parseDecisionAction } from "../types";
 import {
   applyShock,
   makeEvent,

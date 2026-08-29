@@ -30,8 +30,8 @@ import {
   type OrcaSourceRow,
 } from "./source-data";
 import { riskTier } from "./risk";
+import { parseDecisionAction } from "./types";
 import type {
-  DecisionAction,
   ExplainResponse,
   HealthResponse,
   OrcaEvent,
