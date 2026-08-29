@@ -17,7 +17,44 @@ export type RiskTier = "LOW_RISK" | "WATCH" | "HIGH_RISK" | "CRITICAL";
  */
 export type DisplayTier = RiskTier | "UNSCORED";
 
-export type DecisionAction = "NO_ACTION" | "MONITOR" | "INTERVENE";
+/**
+ * Decision action catalog.
+ *
+ * These are preserved VERBATIM from the ORCA backend `/recommend` response and
+ * from `configs/decision.yaml`. The frontend never collapses an unrecognised
+ * backend recommendation onto another action: anything outside this catalog is
+ * represented explicitly as `UNKNOWN` while the raw string is kept alongside.
+ */
+export const DECISION_ACTIONS = [
+  "NO_ACTION",
+  "MONITOR",
+  "HUMAN_REVIEW",
+  "TRANSPORT_MODE_REVIEW",
+  "SUPPLIER_ESCALATION",
+  "ALTERNATIVE_SUPPLIER_REVIEW",
+  "SPLIT_ORDER_REVIEW",
+  "EXPEDITE",
+  /** Legacy/aggregate action still emitted by some policy configurations. */
+  "INTERVENE",
+] as const;
+
+export type KnownDecisionAction = (typeof DECISION_ACTIONS)[number];
+
+/** `UNKNOWN` means: the backend returned something this build does not model. */
+export type DecisionAction = KnownDecisionAction | "UNKNOWN";
+
+export function isKnownDecisionAction(value: string): value is KnownDecisionAction {
+  return (DECISION_ACTIONS as readonly string[]).includes(value);
+}
+
+/**
+ * Validates a verbatim backend recommendation. Unknown values become
+ * `"UNKNOWN"` — never silently remapped to MONITOR or any other action.
+ */
+export function parseDecisionAction(value: string | null | undefined): DecisionAction {
+  if (typeof value === "string" && isKnownDecisionAction(value)) return value;
+  return "UNKNOWN";
+}
 
 export type EventType = "POSITION" | "ETA" | "EXCEPTION" | "MODEL" | "DECISION";
 

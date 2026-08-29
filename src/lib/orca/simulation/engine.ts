@@ -16,7 +16,8 @@
 import { makeRng, newSeed, runIdFromSeed, type Rng } from "../prng";
 import { riskTier } from "../risk";
 import { rowToFeatures, type FeatureMap } from "../source-data";
-import type { PredictResponse, RecommendResponse, DecisionAction } from "../types";
+import type { PredictResponse, RecommendResponse } from "../types";
+import { parseDecisionAction } from "../types";
 import {
   applyShock,
   makeEvent,
@@ -922,11 +923,8 @@ export class SimulationEngine {
   ) {
     try {
       const response = await port.recommend(shipment.features);
-      const action = (
-        ["NO_ACTION", "MONITOR", "INTERVENE"].includes(response.recommendation)
-          ? response.recommendation
-          : "MONITOR"
-      ) as DecisionAction;
+      // Preserve the backend recommendation verbatim; unknown values stay UNKNOWN.
+      const action = parseDecisionAction(response.recommendation);
       shipment.model = {
         ...shipment.model,
         recommendation: {

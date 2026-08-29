@@ -87,6 +87,13 @@ export function tierColor(tier: DisplayTier): string {
 
 export const DECISION_CLASSES: Record<string, string> = {
   INTERVENE: "bg-danger/15 text-danger border-danger/30",
+  EXPEDITE: "bg-danger/15 text-danger border-danger/30",
+  SUPPLIER_ESCALATION: "bg-warn/15 text-warn border-warn/30",
+  TRANSPORT_MODE_REVIEW: "bg-warn/15 text-warn border-warn/30",
+  ALTERNATIVE_SUPPLIER_REVIEW: "bg-warn/15 text-warn border-warn/30",
+  SPLIT_ORDER_REVIEW: "bg-warn/15 text-warn border-warn/30",
+  HUMAN_REVIEW: "bg-warn/15 text-warn border-warn/30",
   MONITOR: "bg-warn/15 text-warn border-warn/30",
   NO_ACTION: "bg-muted text-muted-foreground border-hairline",
+  UNKNOWN: "bg-muted text-muted-foreground border-hairline",
 };
