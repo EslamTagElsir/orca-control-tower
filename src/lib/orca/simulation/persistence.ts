@@ -156,7 +156,9 @@ export function createLearningPersistencePort(): PersistencePort {
             riskBefore: event.riskBefore ?? null,
             riskAfter: event.riskAfter ?? null,
             ...(event.featureAudit && event.featureAudit.length > 0
-              ? { featureAudit: event.featureAudit.slice(0, 60).map((audit) => audit.slice(0, 400)) }
+              ? {
+                  featureAudit: event.featureAudit.slice(0, 60).map((audit) => audit.slice(0, 400)),
+                }
               : {}),
           })),
         }),
