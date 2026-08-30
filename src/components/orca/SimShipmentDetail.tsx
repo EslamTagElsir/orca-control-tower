@@ -89,6 +89,9 @@ export function SimShipmentDetail({ shipmentId }: { shipmentId: string | null })
   const pendingEpisode = snapshot.episodes.find(
     (episode) => episode.shipmentId === shipment.id && episode.status === "PENDING",
   );
+  const pendingEpisode = snapshot.episodes.find(
+    (episode) => episode.shipmentId === shipment.id && episode.status === "PENDING",
+  );
 
   return (
     <div className="space-y-4">

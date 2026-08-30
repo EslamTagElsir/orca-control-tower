@@ -1129,10 +1129,6 @@ export class SimulationEngine {
         for (const l of this.listeners) l();
         const persistedEpisode = this.snapshot.episodes.find((e) => e.id === localId);
         if (persistedEpisode) this.persistDecisionForEpisode(run, persistedEpisode);
-        const persistedEpisode = this.snapshot.episodes.find((e) => e.id === localId);
-        if (persistedEpisode) this.persistDecisionForEpisode(run, persistedEpisode);
-        const persistedEpisode = this.snapshot.episodes.find((e) => e.id === localId);
-        if (persistedEpisode) this.persistDecisionForEpisode(run, persistedEpisode);
       } catch {
         // Audit sink unavailable — the episode stays local-only.
       }
