@@ -11,6 +11,7 @@
 import type {
   DecisionPayload,
   EpisodeOpenPayload,
+  ModelInferencePayload,
   OutcomePayload,
   PersistedShipment,
   PersistencePort,
@@ -69,8 +70,8 @@ function markFailure(error: unknown) {
   });
 }
 
-async function learningRequest<T>(path: string, body?: unknown, method: "GET" | "POST" = "POST") {
-  const response = await fetch(`/api/learning/${path}`, {
+async function requestJson<T>(url: string, body?: unknown, method: "GET" | "POST" = "POST") {
+  const response = await fetch(url, {
     method,
     headers:
       method === "POST"
@@ -91,11 +92,28 @@ async function learningRequest<T>(path: string, body?: unknown, method: "GET" | 
   return payload as T;
 }
 
+function learningRequest<T>(path: string, body?: unknown, method: "GET" | "POST" = "POST") {
+  return requestJson<T>(`/api/learning/${path}`, body, method);
+}
+
 function tracked(promise: Promise<unknown>) {
   void promise.catch((error) => {
     markFailure(error);
     console.warn("[Learning DB] persistence write failed", error);
   });
+}
+
+function predictionPayload(payload: ModelInferencePayload | EpisodeOpenPayload) {
+  return {
+    probability_late: payload.prediction.probability_late,
+    classification_decision: payload.prediction.classification_decision,
+    decision_threshold: payload.prediction.decision_threshold,
+    risk_tier: payload.prediction.risk_tier,
+    severity_p50: payload.prediction.severity_p50,
+    severity_interval_90: payload.prediction.severity_interval_90,
+    model_version: payload.prediction.model_version,
+    prediction_contract_version: payload.prediction.prediction_contract_version,
+  };
 }
 
 export async function testLearningDbConnection(): Promise<LearningDbHealth> {
@@ -127,20 +145,35 @@ export function createLearningPersistencePort(): PersistencePort {
       tracked(
         learningRequest("events", {
           run,
-          events: events.slice(0, 120).map((e) => ({
-            eventId: e.id,
-            shipmentId: e.shipmentId,
-            family: e.family,
-            eventType: e.eventType,
-            simClockMs: Math.max(0, Math.round(e.at)),
-            detail: e.detail.slice(0, 2000),
-            provenance: e.provenance.slice(0, 200),
-            riskBefore: e.riskBefore ?? null,
-            riskAfter: e.riskAfter ?? null,
-            ...(e.featureAudit && e.featureAudit.length > 0
-              ? { featureAudit: e.featureAudit.slice(0, 60).map((a) => a.slice(0, 400)) }
+          events: events.slice(0, 120).map((event) => ({
+            eventId: event.id,
+            shipmentId: event.shipmentId,
+            family: event.family,
+            eventType: event.eventType,
+            simClockMs: Math.max(0, Math.round(event.at)),
+            detail: event.detail.slice(0, 2000),
+            provenance: event.provenance.slice(0, 200),
+            riskBefore: event.riskBefore ?? null,
+            riskAfter: event.riskAfter ?? null,
+            ...(event.featureAudit && event.featureAudit.length > 0
+              ? { featureAudit: event.featureAudit.slice(0, 60).map((audit) => audit.slice(0, 400)) }
               : {}),
           })),
+        }),
+      );
+    },
+
+    inferenceRecorded(run: RunRef, payload: ModelInferencePayload) {
+      tracked(
+        requestJson("/api/learning-inference", {
+          run,
+          shipmentId: payload.shipmentId,
+          triggerEventId: payload.triggerEventId,
+          simClockMs: payload.simClockMs,
+          inferenceKind: payload.inferenceKind,
+          features: payload.features,
+          prediction: predictionPayload(payload),
+          state: payload.state,
         }),
       );
     },
@@ -154,16 +187,7 @@ export function createLearningPersistencePort(): PersistencePort {
           simClockMs: payload.simClockMs,
           inferenceKind: payload.inferenceKind,
           features: payload.features,
-          prediction: {
-            probability_late: payload.prediction.probability_late,
-            classification_decision: payload.prediction.classification_decision,
-            decision_threshold: payload.prediction.decision_threshold,
-            risk_tier: payload.prediction.risk_tier,
-            severity_p50: payload.prediction.severity_p50,
-            severity_interval_90: payload.prediction.severity_interval_90,
-            model_version: payload.prediction.model_version,
-            prediction_contract_version: payload.prediction.prediction_contract_version,
-          },
+          prediction: predictionPayload(payload),
           recommendation: {
             recommendation: payload.recommendation.recommendation,
             decision_reason: payload.recommendation.decision_reason,
