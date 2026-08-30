@@ -1,17 +1,9 @@
 /**
- * Human-in-the-loop decision vocabulary and bounded intervention effects.
+ * Human-in-the-loop decision vocabulary and deterministic intervention effects.
  *
- * PROVENANCE CONTRACT:
- *  - Nothing in this module computes or adjusts a risk value, tier, severity or
- *    model recommendation. It only produces BOUNDED PRE-OUTCOME feature edits
- *    (the same class of edit the What-If adapter already uses) plus synthetic
- *    operational effects (ETA recovery, hold reduction).
- *  - After an effect is applied the shipment MUST be re-scored by a real ORCA
- *    /predict call. The engine owns that step.
- *  - Effects are deterministic: the same action always produces the same edit,
- *    so a persisted intervention row can be replayed exactly.
- *
- * Framework-agnostic: plain TypeScript.
+ * Model risk/tier/severity are never edited here. Interventions can change only
+ * synthetic operational state or pre-outcome feature fields and the engine must
+ * call the real ORCA /predict endpoint afterwards when an effect is applied.
  */
 
 import { scaleField } from "../adapter";
@@ -22,30 +14,33 @@ export const INTERVENTION_POLICY_VERSION = "human-intervention-v1";
 /* Decision vocabulary                                                 */
 /* ------------------------------------------------------------------ */
 
-export const HUMAN_DECISIONS = ["APPROVE", "MODIFY", "REJECT", "DEFER"] as const;
-export type HumanDecisionKind = (typeof HUMAN_DECISIONS)[number];
+/** Phase 1 operator choices shown in the Resolution Hub. */
+export const HUMAN_DECISIONS = ["ACCEPT", "MODIFY", "REJECT"] as const;
+export type CurrentHumanDecisionKind = (typeof HUMAN_DECISIONS)[number];
+/** Legacy values are accepted only so an old session snapshot can still load. */
+export type HumanDecisionKind = CurrentHumanDecisionKind | "APPROVE" | "DEFER";
 
-export const HUMAN_DECISION_LABEL: Record<HumanDecisionKind, string> = {
-  APPROVE: "Approve recommendation",
-  MODIFY: "Approve a different action",
-  REJECT: "Reject — no intervention",
-  DEFER: "Defer — keep monitoring",
+export const HUMAN_DECISION_LABEL: Record<CurrentHumanDecisionKind, string> = {
+  ACCEPT: "Accept recommended action",
+  MODIFY: "Choose a different action",
+  REJECT: "Reject — no action",
 };
 
 /**
- * Operator action catalog. These are exactly the actions declared in the ORCA
- * backend `configs/decision.yaml` policy file — the frontend does not invent
- * operational actions.
+ * Structured action catalog. Values returned by `/recommend` are preserved
+ * verbatim whenever they are in this catalog. `INTERVENE` is kept only for
+ * compatibility with older policy configurations and is not silently remapped.
  */
 export const OPERATOR_ACTIONS = [
   "NO_ACTION",
   "MONITOR",
-  "EXPEDITE",
+  "HUMAN_REVIEW",
+  "TRANSPORT_MODE_REVIEW",
   "SUPPLIER_ESCALATION",
   "ALTERNATIVE_SUPPLIER_REVIEW",
-  "TRANSPORT_MODE_REVIEW",
   "SPLIT_ORDER_REVIEW",
-  "HUMAN_REVIEW",
+  "EXPEDITE",
+  "INTERVENE",
 ] as const;
 export type OperatorAction = (typeof OPERATOR_ACTIONS)[number];
 
@@ -54,26 +49,22 @@ export function isOperatorAction(value: string): value is OperatorAction {
 }
 
 export const REASON_CODES = [
-  "MODEL_AGREES_WITH_OPS",
-  "MODEL_MISSES_CONTEXT",
-  "CUSTOMER_COMMITMENT",
-  "COST_NOT_JUSTIFIED",
-  "CAPACITY_UNAVAILABLE",
-  "SUPPLIER_ALREADY_ENGAGED",
+  "COST_CONSTRAINT",
+  "SERVICE_PRIORITY",
+  "OPERATIONAL_CONSTRAINT",
   "INSUFFICIENT_EVIDENCE",
-  "POLICY_REQUIRES_REVIEW",
+  "PREFER_ALTERNATIVE_ACTION",
+  "OTHER",
 ] as const;
 export type ReasonCode = (typeof REASON_CODES)[number];
 
 export const REASON_CODE_LABEL: Record<ReasonCode, string> = {
-  MODEL_AGREES_WITH_OPS: "Model agrees with operational read",
-  MODEL_MISSES_CONTEXT: "Model misses operational context",
-  CUSTOMER_COMMITMENT: "Customer commitment forces action",
-  COST_NOT_JUSTIFIED: "Cost not justified at this risk",
-  CAPACITY_UNAVAILABLE: "Required capacity unavailable",
-  SUPPLIER_ALREADY_ENGAGED: "Supplier already engaged",
-  INSUFFICIENT_EVIDENCE: "Insufficient evidence to act",
-  POLICY_REQUIRES_REVIEW: "Policy requires manual review",
+  COST_CONSTRAINT: "Cost constraint",
+  SERVICE_PRIORITY: "Service priority",
+  OPERATIONAL_CONSTRAINT: "Operational constraint",
+  INSUFFICIENT_EVIDENCE: "Insufficient evidence",
+  PREFER_ALTERNATIVE_ACTION: "Prefer alternative action",
+  OTHER: "Other",
 };
 
 export function isReasonCode(value: string): value is ReasonCode {
@@ -81,14 +72,11 @@ export function isReasonCode(value: string): value is ReasonCode {
 }
 
 /**
- * Maps the verbatim ORCA /recommend output onto the operator action the
- * recommendation implies. `INTERVENE` is deliberately mapped to HUMAN_REVIEW:
- * the backend does not name a concrete intervention, so the operator picks it.
+ * ACCEPT must preserve the exact backend action. Unknown backend values cannot
+ * be invented into a concrete intervention, so they are held for HUMAN_REVIEW.
  */
 export function defaultActionFor(recommendation: string): OperatorAction {
-  if (isOperatorAction(recommendation)) return recommendation;
-  if (recommendation === "INTERVENE") return "EXPEDITE";
-  return "MONITOR";
+  return isOperatorAction(recommendation) ? recommendation : "HUMAN_REVIEW";
 }
 
 /* ------------------------------------------------------------------ */
@@ -98,13 +86,9 @@ export function defaultActionFor(recommendation: string): OperatorAction {
 export interface InterventionEffect {
   action: OperatorAction;
   label: string;
-  /** Plain-language description of the bounded pre-outcome edit. */
   description: string;
-  /** Synthetic operational ETA recovery, in hours (deterministic). */
   etaRecoveryHours: number;
-  /** Fraction of any remaining synthetic hold released (0 → 1). */
   holdReleaseRatio: number;
-  /** Whether the effect changes the feature row at all. */
   mutatesFeatures: boolean;
   mutate: (raw: Record<string, string>) => Record<string, string>;
 }
@@ -115,7 +99,7 @@ const EFFECTS: Record<OperatorAction, InterventionEffect> = {
   NO_ACTION: {
     action: "NO_ACTION",
     label: "No action",
-    description: "No operational change and no feature edit. The shipment is released as-is.",
+    description: "No operational or feature change.",
     etaRecoveryHours: 0,
     holdReleaseRatio: 0,
     mutatesFeatures: false,
@@ -124,8 +108,26 @@ const EFFECTS: Record<OperatorAction, InterventionEffect> = {
   MONITOR: {
     action: "MONITOR",
     label: "Monitor",
+    description: "Workflow-only monitoring; no feature change.",
+    etaRecoveryHours: 0,
+    holdReleaseRatio: 0,
+    mutatesFeatures: false,
+    mutate: passthrough,
+  },
+  HUMAN_REVIEW: {
+    action: "HUMAN_REVIEW",
+    label: "Human review",
+    description: "Workflow-only review; no feature change.",
+    etaRecoveryHours: 0,
+    holdReleaseRatio: 0,
+    mutatesFeatures: false,
+    mutate: passthrough,
+  },
+  INTERVENE: {
+    action: "INTERVENE",
+    label: "Generic intervention",
     description:
-      "Keeps the shipment under watch. No feature edit; the shipment is re-scored on its next operational trigger.",
+      "Legacy generic recommendation retained verbatim. No concrete feature edit is invented; a re-score may still audit the unchanged state.",
     etaRecoveryHours: 0,
     holdReleaseRatio: 0,
     mutatesFeatures: false,
@@ -134,7 +136,7 @@ const EFFECTS: Record<OperatorAction, InterventionEffect> = {
   EXPEDITE: {
     action: "EXPEDITE",
     label: "Expedite",
-    description: "Compresses planned transit days by 25% and releases half of the open hold.",
+    description: "Reduce planned transit days by 25% and release half of the synthetic hold.",
     etaRecoveryHours: 24,
     holdReleaseRatio: 0.5,
     mutatesFeatures: true,
@@ -147,7 +149,7 @@ const EFFECTS: Record<OperatorAction, InterventionEffect> = {
   SUPPLIER_ESCALATION: {
     action: "SUPPLIER_ESCALATION",
     label: "Supplier escalation",
-    description: "Reduces the vendor historical delay signals by 30%.",
+    description: "Improve vendor historical-delay scenario fields by a bounded 30%.",
     etaRecoveryHours: 12,
     holdReleaseRatio: 0.3,
     mutatesFeatures: true,
@@ -161,8 +163,7 @@ const EFFECTS: Record<OperatorAction, InterventionEffect> = {
   ALTERNATIVE_SUPPLIER_REVIEW: {
     action: "ALTERNATIVE_SUPPLIER_REVIEW",
     label: "Alternative supplier review",
-    description:
-      "Models a better-performing vendor: vendor historical delay rate and median drop by 45%.",
+    description: "Model a bounded improvement to vendor historical-delay scenario fields.",
     etaRecoveryHours: 8,
     holdReleaseRatio: 0.2,
     mutatesFeatures: true,
@@ -177,21 +178,21 @@ const EFFECTS: Record<OperatorAction, InterventionEffect> = {
     action: "TRANSPORT_MODE_REVIEW",
     label: "Transport mode review",
     description:
-      "Models a faster lane: planned transit days drop 35% and the destination delay signal eases 10%.",
+      "If the model feature row contains Shipment Mode, switch the simulated scenario to Air and shorten planned transit by a bounded 35%.",
     etaRecoveryHours: 18,
     holdReleaseRatio: 0.4,
     mutatesFeatures: true,
     mutate: (raw) => {
       const next = { ...raw };
+      if (Object.prototype.hasOwnProperty.call(next, "Shipment Mode")) next["Shipment Mode"] = "Air";
       scaleField(next, "Scheduled_Transit_Days", 0.65);
-      scaleField(next, "country_hist_delay_rate", 0.9);
       return next;
     },
   },
   SPLIT_ORDER_REVIEW: {
     action: "SPLIT_ORDER_REVIEW",
     label: "Split order review",
-    description: "Halves the line item quantity and trims planned transit days by 15%.",
+    description: "Halve line-item quantity and trim planned transit by a bounded 15%.",
     etaRecoveryHours: 10,
     holdReleaseRatio: 0.25,
     mutatesFeatures: true,
@@ -202,23 +203,12 @@ const EFFECTS: Record<OperatorAction, InterventionEffect> = {
       return next;
     },
   },
-  HUMAN_REVIEW: {
-    action: "HUMAN_REVIEW",
-    label: "Hold for human review",
-    description:
-      "Logs the review without changing the operational plan. No feature edit is applied.",
-    etaRecoveryHours: 0,
-    holdReleaseRatio: 0,
-    mutatesFeatures: false,
-    mutate: passthrough,
-  },
 };
 
 export function interventionEffect(action: OperatorAction): InterventionEffect {
   return EFFECTS[action];
 }
 
-/** Serializable description of an applied effect, stored on the audit row. */
 export function effectSpec(effect: InterventionEffect) {
   return {
     policy_version: INTERVENTION_POLICY_VERSION,
