@@ -8,6 +8,7 @@
  */
 
 import { useMutation } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { Cpu, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -85,6 +86,9 @@ export function SimShipmentDetail({ shipmentId }: { shipmentId: string | null })
 
   const model = shipment.model;
   const scored = model.phase === "scored";
+  const pendingEpisode = snapshot.episodes.find(
+    (episode) => episode.shipmentId === shipment.id && episode.status === "PENDING",
+  );
 
   return (
     <div className="space-y-4">
@@ -156,8 +160,16 @@ export function SimShipmentDetail({ shipmentId }: { shipmentId: string | null })
             <DecisionBadge decision={model.recommendation.action} />
             {model.recommendation.human_approval_required ? (
               <span className="rounded-sm border border-warn/30 bg-warn/10 px-1.5 py-0.5 text-[10px] font-semibold text-warn">
-                HUMAN APPROVAL REQUIRED
+                BACKEND HUMAN APPROVAL REQUIRED
               </span>
+            ) : null}
+            {pendingEpisode ? (
+              <Link
+                to="/resolution-hub"
+                className="rounded-sm border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/15"
+              >
+                Human decision required · Open Resolution Hub
+              </Link>
             ) : null}
           </div>
           <ul className="space-y-0.5">
