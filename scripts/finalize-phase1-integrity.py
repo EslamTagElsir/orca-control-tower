@@ -1,9 +1,21 @@
 from pathlib import Path
+import re
 
 p = Path("src/lib/orca/simulation/engine.ts")
 s = p.read_text()
 
-# 1) Avoid racing a standalone inference write against the episode-chain write.
+# Normalise an earlier migration retry: keep exactly one fast-click recovery call.
+repeated = re.compile(
+    r'(\n\s*const persistedEpisode = this\.snapshot\.episodes\.find\(\(e\) => e\.id === localId\);\n'
+    r'\s*if \(persistedEpisode\) this\.persistDecisionForEpisode\(run, persistedEpisode\);){2,}'
+)
+s = repeated.sub(
+    '\n        const persistedEpisode = this.snapshot.episodes.find((e) => e.id === localId);\n'
+    '        if (persistedEpisode) this.persistDecisionForEpisode(run, persistedEpisode);',
+    s,
+)
+
+# Avoid racing a standalone inference write against the episode-chain write.
 old = '''      for (const l of this.listeners) l();
       this.audit([event]);
       try {
@@ -81,15 +93,14 @@ if old in s:
 elif "episodeWillOwnInference" not in s:
     raise SystemExit("score persistence block not found")
 
-# 2) Every successful recommendation in Learning Simulation Mode requires a human response.
-old = '''      const needsDecision = options.allowEpisode && response.recommendation !== "NO_ACTION";
-'''
-new = '''      const needsDecision = options.allowEpisode;
-'''
-if old in s:
-    s = s.replace(old, new, 1)
+# Every successful recommendation in Learning Simulation Mode requires a response.
+s = s.replace(
+    '      const needsDecision = options.allowEpisode && response.recommendation !== "NO_ACTION";\n',
+    '      const needsDecision = options.allowEpisode;\n',
+    1,
+)
 
-# 3) If /recommend itself fails, persist the already-successful /predict inference.
+# If /recommend fails, keep the already-successful /predict inference.
 old = '''    } catch {
       // A failed /recommend never fabricates an action — the field stays null.
     }
@@ -132,16 +143,17 @@ if old in s:
 elif "recommendation failure stays model-layer only" not in s:
     raise SystemExit("recommend catch block not found")
 
-# 4) Once an async episode write receives its DB id, persist a decision that may
-# already have been made while the write was in flight.
-old = '''        this.snapshot = {
+# Once an async episode write receives its DB id, persist a decision that may
+# already have been made while the write was in flight. Do this only once.
+if "const persistedEpisode = this.snapshot.episodes.find((e) => e.id === localId);" not in s:
+    old = '''        this.snapshot = {
           ...this.snapshot,
           version: this.snapshot.version + 1,
           episodes: this.snapshot.episodes.map((e) => (e.id === localId ? { ...e, dbId } : e)),
         };
         for (const l of this.listeners) l();
 '''
-new = '''        this.snapshot = {
+    new = '''        this.snapshot = {
           ...this.snapshot,
           version: this.snapshot.version + 1,
           episodes: this.snapshot.episodes.map((e) => (e.id === localId ? { ...e, dbId } : e)),
@@ -150,12 +162,10 @@ new = '''        this.snapshot = {
         const persistedEpisode = this.snapshot.episodes.find((e) => e.id === localId);
         if (persistedEpisode) this.persistDecisionForEpisode(run, persistedEpisode);
 '''
-if old in s:
+    if old not in s:
+        raise SystemExit("episode dbId block not found")
     s = s.replace(old, new, 1)
-elif "persistDecisionForEpisode(run, persistedEpisode)" not in s:
-    raise SystemExit("episode dbId block not found")
 
-# 5) Add a single idempotent helper used both by normal and fast-click decision paths.
 marker = '''  /**
    * Records a real human decision against an open episode, applies the bounded
    * intervention effect and requeues a real ORCA /predict re-score.
@@ -195,34 +205,25 @@ helper = '''  private persistDecisionForEpisode(run: RunRef, episode: SimEpisode
   }
 
 '''
-if helper.strip() not in s:
+if "private persistDecisionForEpisode(run: RunRef" not in s:
     if marker not in s:
         raise SystemExit("submitDecision marker not found")
     s = s.replace(marker, helper + marker, 1)
 
-# 6) ACCEPT must be enforced by the engine, not merely by the UI.
-old = '''    const chosen =
+# ACCEPT must be enforced by the engine, not merely by the UI.
+s = s.replace(
+    '''    const chosen =
       input.decision === "APPROVE"
         ? defaultActionFor(episode.recommendedAction)
-        : input.decision === "REJECT"
-          ? "NO_ACTION"
-          : input.decision === "DEFER"
-            ? "MONITOR"
-            : input.chosenAction;
-'''
-new = '''    const chosen =
+''',
+    '''    const chosen =
       input.decision === "ACCEPT" || input.decision === "APPROVE"
         ? defaultActionFor(episode.recommendedAction)
-        : input.decision === "REJECT"
-          ? "NO_ACTION"
-          : input.decision === "DEFER"
-            ? "MONITOR"
-            : input.chosenAction;
-'''
-if old in s:
-    s = s.replace(old, new, 1)
+''',
+    1,
+)
 
-# 7) Replace duplicated decision persistence with the idempotent helper.
+# Replace old duplicated decision persistence with the shared helper once.
 start = s.find('''    // Persist the human decision (+ intervention) once the episode has a db id.\n''')
 end_marker = '''    // Every intervention is followed by a REAL ORCA /predict re-score.
 '''
