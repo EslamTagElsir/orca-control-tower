@@ -23,7 +23,9 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Complete engine persistence wiring
         if: github.event_name == 'push'
-        run: python3 scripts/complete-phase1-persistence.py
+        run: |
+          python3 scripts/complete-phase1-persistence.py
+          python3 scripts/finalize-phase1-integrity.py
       - name: Format changed learning sources
         if: github.event_name == 'push'
         run: |
@@ -46,7 +48,7 @@ jobs:
               src/routes/api/learning-audit.ts \
               src/routes/api/learning-inference.ts \
               src/routes/resolution-hub.tsx
-            git commit -m "Complete Phase 1 persistence wiring"
+            git commit -m "Finalize Phase 1 HITL integrity"
             git push
           fi
       - name: Generate routes and production build
