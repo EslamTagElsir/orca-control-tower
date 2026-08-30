@@ -1,0 +1,26 @@
+name: Learning Persistence QA
+
+on:
+  push:
+    branches:
+      - fix/learning-persistence
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: TypeScript
+        run: bunx tsc --noEmit
+      - name: Lint project-owned ORCA and Learning API source
+        run: bunx eslint src/lib/orca src/routes/api/learning --max-warnings 0
+      - name: Production build
+        run: bun run build
