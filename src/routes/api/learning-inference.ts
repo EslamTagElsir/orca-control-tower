@@ -74,7 +74,8 @@ async function handle(request: Request) {
       .eq("trigger_event_id", body.triggerEventId)
       .eq("inference_kind", body.inferenceKind)
       .maybeSingle();
-    if (existingError) throw new Error(`Learning DB inference read failed: ${existingError.message}`);
+    if (existingError)
+      throw new Error(`Learning DB inference read failed: ${existingError.message}`);
     if (existing) return noStore({ ok: true, inferenceId: existing.id, inserted: false });
 
     const { data: snapshot, error: snapshotError } = await supabaseAdmin

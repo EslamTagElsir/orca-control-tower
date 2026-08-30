@@ -112,14 +112,13 @@ export interface PersistedShipment {
   initialFeatures: FeatureMap;
 }
 
-export interface EpisodeOpenPayload {
+export interface ModelInferencePayload {
   shipmentId: string;
-  triggerEventId: string | null;
+  triggerEventId: string;
   simClockMs: number;
   inferenceKind: "INITIAL" | "RESCORE" | "POST_INTERVENTION";
   features: FeatureMap;
   prediction: PredictResponse;
-  recommendation: RecommendResponse;
   state: {
     shipmentStatus: string;
     progress: number;
@@ -128,6 +127,11 @@ export interface EpisodeOpenPayload {
     exceptionOpen: boolean;
     exceptionFamily: string | null;
   };
+}
+
+export interface EpisodeOpenPayload extends Omit<ModelInferencePayload, "triggerEventId"> {
+  triggerEventId: string | null;
+  recommendation: RecommendResponse;
 }
 
 export interface DecisionPayload {
@@ -168,6 +172,7 @@ export interface PersistencePort {
   runEnded(runId: string, status: "PAUSED" | "STOPPED"): void;
   shipmentsCreated(run: RunRef, shipments: PersistedShipment[]): void;
   eventsAppended(run: RunRef, events: SimEvent[]): void;
+  inferenceRecorded(run: RunRef, payload: ModelInferencePayload): void;
   episodeOpened(run: RunRef, payload: EpisodeOpenPayload): Promise<string | null>;
   decisionRecorded(run: RunRef, payload: DecisionPayload): void;
   outcomeRecorded(run: RunRef, payload: OutcomePayload): void;
@@ -361,6 +366,11 @@ export class SimulationEngine {
   resume() {
     if (this.snapshot.status !== "paused") return;
     this.commit({ status: "running" });
+    try {
+      this.persistence?.runStarted(this.runRef);
+    } catch {
+      // Audit sink unavailable — the simulation resumes independently.
+    }
     this.startClock();
     this.pump();
   }
@@ -864,6 +874,31 @@ export class SimulationEngine {
       };
       for (const l of this.listeners) l();
       this.audit([event]);
+      try {
+        this.persistence?.inferenceRecorded(this.runRef, {
+          shipmentId: shipment.id,
+          triggerEventId: event.id,
+          simClockMs: Math.max(0, Math.round(this.snapshot.simClockMs)),
+          inferenceKind:
+            request.reason === "initial"
+              ? "INITIAL"
+              : request.reason === "intervention"
+                ? "POST_INTERVENTION"
+                : "RESCORE",
+          features: shipment.features,
+          prediction,
+          state: {
+            shipmentStatus: shipment.status,
+            progress: shipment.progress,
+            position: shipment.position,
+            etaVarianceHours: shipment.etaVarianceHours,
+            exceptionOpen: shipment.exceptionOpen,
+            exceptionFamily: shipment.exceptionFamily,
+          },
+        });
+      } catch {
+        // Audit sink unavailable — model scoring remains authoritative and continues.
+      }
 
       // /recommend only for meaningful high-risk state changes.
       const needsRecommendation =
@@ -875,7 +910,12 @@ export class SimulationEngine {
           // A post-intervention re-score never re-opens a gate: the operator has
           // already answered for this shipment state.
           allowEpisode: request.reason !== "intervention",
-          inferenceKind: request.reason === "initial" ? "INITIAL" : "RESCORE",
+          inferenceKind:
+            request.reason === "initial"
+              ? "INITIAL"
+              : request.reason === "intervention"
+                ? "POST_INTERVENTION"
+                : "RESCORE",
         });
       }
     } catch (error) {
