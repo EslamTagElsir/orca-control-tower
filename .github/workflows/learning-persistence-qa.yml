@@ -24,3 +24,19 @@ jobs:
         run: bunx tsc --noEmit
       - name: Lint project-owned Phase 1 source
         run: bunx eslint src/components/orca/SimShipmentDetail.tsx src/lib/orca src/routes/api/learning src/routes/api/learning-audit.ts src/routes/api/learning-inference.ts src/routes/resolution-hub.tsx --max-warnings 0
+      - name: Runtime capability probe
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ORCA_API_INTERNAL_URL: ${{ secrets.ORCA_API_INTERNAL_URL }}
+        run: |
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "Learning DB runtime secrets: AVAILABLE"
+          else
+            echo "Learning DB runtime secrets: NOT CONFIGURED IN GITHUB ACTIONS"
+          fi
+          if [ -n "$ORCA_API_INTERNAL_URL" ]; then
+            echo "ORCA backend runtime secret: AVAILABLE"
+          else
+            echo "ORCA backend runtime secret: NOT CONFIGURED IN GITHUB ACTIONS"
+          fi
