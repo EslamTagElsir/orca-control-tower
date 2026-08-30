@@ -41,6 +41,11 @@ const SELECT_CLS =
   "w-full rounded-md border border-border bg-card px-2 py-1.5 text-xs text-foreground outline-none focus:border-primary";
 
 type LearningStatus = "connected" | "degraded" | "unavailable";
+type EpisodeStatus =
+  | "AWAITING_HUMAN_DECISION"
+  | "DECIDED"
+  | "INTERVENTION_APPLIED"
+  | "OUTCOME_RECORDED";
 
 type PersistedAuditRow = {
   episodeId: string;
@@ -49,22 +54,13 @@ type PersistedAuditRow = {
   triggerEventId: string | null;
   openedAt: string;
   openedSimMs: number;
-  status:
-    | "AWAITING_HUMAN_DECISION"
-    | "DECIDED"
-    | "INTERVENTION_APPLIED"
-    | "OUTCOME_RECORDED";
+  status: EpisodeStatus;
   inference: null | {
     probability_late: number;
     risk_tier: string;
     severity_p50: number;
-    severity_interval_90: unknown;
-    classification_decision: boolean;
-    decision_threshold: number;
     model_version: string;
-    prediction_contract_version: string;
     evidence_label: string;
-    created_at: string;
   };
   recommendation: null | {
     recommendation: string;
@@ -73,7 +69,6 @@ type PersistedAuditRow = {
     robustness: string;
     backend_human_approval_required: boolean;
     evidence_label: string;
-    created_at: string;
   };
   decision: null | {
     decision: string;
@@ -83,15 +78,11 @@ type PersistedAuditRow = {
     note: string | null;
     actor_label: string;
     decision_latency_ms: number;
-    decided_at: string;
     provenance: string;
   };
   intervention: null | {
     action: string;
-    effect_spec: unknown;
     simulator_policy_version: string;
-    applied_sim_ms: number;
-    applied_at: string;
     provenance: string;
   };
   outcome: null | {
@@ -99,29 +90,47 @@ type PersistedAuditRow = {
     simulated_delay_hours: number;
     final_eta_variance_hours: number;
     intervention_count: number;
-    recorded_at: string;
     provenance: string;
   };
-  provenance: string;
+};
+
+type AuditSummary = {
+  awaitingHumanDecision: number;
+  decided: number;
+  interventionApplied: number;
+  outcomeRecorded: number;
 };
 
 type PersistedAuditResponse = {
   status: "connected";
-  summary: {
-    awaitingHumanDecision: number;
-    decided: number;
-    interventionApplied: number;
-    outcomeRecorded: number;
-  };
+  summary: AuditSummary;
   rows: PersistedAuditRow[];
 };
 
-const EMPTY_SUMMARY = {
+type AuditErrorResponse = {
+  status?: string;
+  detail?: string;
+  error?: string;
+};
+
+const EMPTY_SUMMARY: AuditSummary = {
   awaitingHumanDecision: 0,
   decided: 0,
   interventionApplied: 0,
   outcomeRecorded: 0,
 };
+
+function isAuditResponse(value: unknown): value is PersistedAuditResponse {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<PersistedAuditResponse>;
+  return candidate.status === "connected" && Array.isArray(candidate.rows) && !!candidate.summary;
+}
+
+function errorDetail(value: unknown, fallback: string): string {
+  if (!value || typeof value !== "object") return fallback;
+  const candidate = value as AuditErrorResponse;
+  return candidate.detail ?? candidate.error ?? fallback;
+}
 
 function ResolutionHubPage() {
   const { snapshot, isActive, submitDecision } = useSimulation();
@@ -135,15 +144,15 @@ function ResolutionHubPage() {
 
   const refreshAudit = useCallback(async () => {
     try {
-      const query = snapshot.runId ? `?runId=${encodeURIComponent(snapshot.runId)}&limit=60` : "?limit=60";
+      const query = snapshot.runId
+        ? `?runId=${encodeURIComponent(snapshot.runId)}&limit=60`
+        : "?limit=60";
       const response = await fetch(`/api/learning-audit${query}`, {
         headers: { accept: "application/json" },
       });
-      const body = (await response.json()) as
-        | PersistedAuditResponse
-        | { status?: string; detail?: string; error?: string };
-      if (!response.ok || body.status !== "connected" || !("rows" in body)) {
-        throw new Error(body.detail ?? body.error ?? `Learning DB read failed (${response.status})`);
+      const body: unknown = await response.json();
+      if (!response.ok || !isAuditResponse(body)) {
+        throw new Error(errorDetail(body, `Learning DB read failed (${response.status})`));
       }
       setPersisted(body);
       setLearningStatus("connected");
@@ -168,7 +177,6 @@ function ResolutionHubPage() {
     () => snapshot.episodes.filter((episode) => episode.status === "RESOLVED").slice(0, 40),
     [snapshot.episodes],
   );
-
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = pending.find((episode) => episode.id === selectedId) ?? pending[0] ?? null;
   const source: DataSource = snapshot.modelOnline === false ? "fixture" : "live";
@@ -187,7 +195,10 @@ function ResolutionHubPage() {
       }
     >
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <HubKpi label="Awaiting Human Decision" value={persisted.summary.awaitingHumanDecision || pending.length} />
+        <HubKpi
+          label="Awaiting Human Decision"
+          value={persisted.summary.awaitingHumanDecision || pending.length}
+        />
         <HubKpi label="Decided" value={persisted.summary.decided || resolved.length} />
         <HubKpi
           label="Intervention Applied"
@@ -340,8 +351,9 @@ function DecisionForm({
   }) => { ok: boolean; reason?: string };
 }) {
   const recommendedAction = defaultActionFor(episode.recommendedAction);
-  const modifyOptions = OPERATOR_ACTIONS.filter(
-    (action) => action !== recommendedAction && action !== "INTERVENE",
+  const modifyOptions = useMemo(
+    () => OPERATOR_ACTIONS.filter((action) => action !== recommendedAction && action !== "INTERVENE"),
+    [recommendedAction],
   );
   const [decision, setDecision] = useState<CurrentHumanDecisionKind>("ACCEPT");
   const [chosenAction, setChosenAction] = useState<OperatorAction>(recommendedAction);
