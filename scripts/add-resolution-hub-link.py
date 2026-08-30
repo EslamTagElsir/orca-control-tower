@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 p = Path("src/components/orca/SimShipmentDetail.tsx")
 s = p.read_text()
@@ -10,19 +11,26 @@ if 'import { Link } from "@tanstack/react-router";' not in s:
         1,
     )
 
-old = '''  const model = shipment.model;
-  const scored = model.phase === "scored";
-'''
-new = '''  const model = shipment.model;
-  const scored = model.phase === "scored";
-  const pendingEpisode = snapshot.episodes.find(
+# Normalise earlier retries so the declaration remains single and idempotent.
+pending_block = '''  const pendingEpisode = snapshot.episodes.find(
     (episode) => episode.shipmentId === shipment.id && episode.status === "PENDING",
-  );
+  );'''
+s = re.sub(
+    r'(  const pendingEpisode = snapshot\.episodes\.find\(\n'
+    r'    \(episode\) => episode\.shipmentId === shipment\.id && episode\.status === "PENDING",\n'
+    r'  \);\n?){2,}',
+    pending_block + "\n",
+    s,
+)
+
+if pending_block not in s:
+    old = '''  const model = shipment.model;
+  const scored = model.phase === "scored";
 '''
-if old in s:
+    new = old + pending_block + "\n"
+    if old not in s:
+        raise SystemExit("pending episode insertion point not found")
     s = s.replace(old, new, 1)
-elif "const pendingEpisode = snapshot.episodes.find" not in s:
-    raise SystemExit("pending episode insertion point not found")
 
 old = '''            {model.recommendation.human_approval_required ? (
               <span className="rounded-sm border border-warn/30 bg-warn/10 px-1.5 py-0.5 text-[10px] font-semibold text-warn">
