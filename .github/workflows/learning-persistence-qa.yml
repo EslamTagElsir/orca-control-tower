@@ -18,9 +18,9 @@ jobs:
           bun-version: latest
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Generate routes and production build
+        run: bun run build
       - name: TypeScript
         run: bunx tsc --noEmit
       - name: Lint project-owned ORCA and Learning API source
         run: bunx eslint src/lib/orca src/routes/api/learning --max-warnings 0
-      - name: Production build
-        run: bun run build
