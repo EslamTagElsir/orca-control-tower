@@ -59,7 +59,8 @@ function markSuccess() {
 }
 
 function markFailure(error: unknown) {
-  const message = error instanceof Error ? error.message.slice(0, 300) : "Unknown Learning DB error";
+  const message =
+    error instanceof Error ? error.message.slice(0, 300) : "Unknown Learning DB error";
   publishHealth({
     status: health.lastSuccessAt === null ? "unavailable" : "degraded",
     lastSuccessAt: health.lastSuccessAt,
@@ -71,16 +72,19 @@ function markFailure(error: unknown) {
 async function learningRequest<T>(path: string, body?: unknown, method: "GET" | "POST" = "POST") {
   const response = await fetch(`/api/learning/${path}`, {
     method,
-    headers: method === "POST" ? { "content-type": "application/json", accept: "application/json" } : { accept: "application/json" },
+    headers:
+      method === "POST"
+        ? { "content-type": "application/json", accept: "application/json" }
+        : { accept: "application/json" },
     ...(method === "POST" ? { body: JSON.stringify(body) } : {}),
   });
 
   const payload = (await response.json().catch(() => null)) as
-    | ({ detail?: string; error?: string } & T)
-    | null;
+    ({ detail?: string; error?: string } & T) | null;
 
   if (!response.ok) {
-    const detail = payload?.detail ?? payload?.error ?? `Learning DB request failed (${response.status})`;
+    const detail =
+      payload?.detail ?? payload?.error ?? `Learning DB request failed (${response.status})`;
     throw new Error(detail);
   }
   markSuccess();

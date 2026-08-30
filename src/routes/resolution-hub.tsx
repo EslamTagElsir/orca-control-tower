@@ -42,10 +42,7 @@ const SELECT_CLS =
 
 type LearningStatus = "connected" | "degraded" | "unavailable";
 type EpisodeStatus =
-  | "AWAITING_HUMAN_DECISION"
-  | "DECIDED"
-  | "INTERVENTION_APPLIED"
-  | "OUTCOME_RECORDED";
+  "AWAITING_HUMAN_DECISION" | "DECIDED" | "INTERVENTION_APPLIED" | "OUTCOME_RECORDED";
 
 type PersistedAuditRow = {
   episodeId: string;
@@ -222,8 +219,8 @@ function ResolutionHubPage() {
           }
         />
         <PanelBody className="text-xs text-muted-foreground">
-          {persisted.rows.length} persisted decision episode{persisted.rows.length === 1 ? "" : "s"} loaded ·{" "}
-          {persisted.summary.outcomeRecorded} synthetic outcome
+          {persisted.rows.length} persisted decision episode{persisted.rows.length === 1 ? "" : "s"}{" "}
+          loaded · {persisted.summary.outcomeRecorded} synthetic outcome
           {persisted.summary.outcomeRecorded === 1 ? "" : "s"} recorded. These records support later
           learning analysis; the model does not retrain itself.
         </PanelBody>
@@ -266,7 +263,8 @@ function ResolutionHubPage() {
                   </div>
                   <p className="mt-1 truncate text-[11px] text-muted-foreground">{episode.route}</p>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    ORCA recommends <span className="text-foreground">{episode.recommendedAction}</span>
+                    ORCA recommends{" "}
+                    <span className="text-foreground">{episode.recommendedAction}</span>
                     {episode.riskAtOpen !== null ? ` · ${pct(episode.riskAtOpen)}` : ""}
                   </p>
                   <p className="mt-1 text-[10px] font-medium uppercase tracking-wide text-warn">
@@ -306,7 +304,9 @@ function ResolutionHubPage() {
               {resolved.length === 0 ? (
                 <PanelEmpty message="No decision has been recorded in the current run yet." />
               ) : (
-                resolved.map((episode) => <CurrentDecisionCard key={episode.id} episode={episode} />)
+                resolved.map((episode) => (
+                  <CurrentDecisionCard key={episode.id} episode={episode} />
+                ))
               )}
             </PanelBody>
           </Panel>
@@ -352,7 +352,8 @@ function DecisionForm({
 }) {
   const recommendedAction = defaultActionFor(episode.recommendedAction);
   const modifyOptions = useMemo(
-    () => OPERATOR_ACTIONS.filter((action) => action !== recommendedAction && action !== "INTERVENE"),
+    () =>
+      OPERATOR_ACTIONS.filter((action) => action !== recommendedAction && action !== "INTERVENE"),
     [recommendedAction],
   );
   const [decision, setDecision] = useState<CurrentHumanDecisionKind>("ACCEPT");
@@ -398,8 +399,8 @@ function DecisionForm({
             </span>
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Backend human approval flag: {episode.backendApprovalRequired ? "true" : "false"} · Learning
-            Simulation Mode still requires a human response for every recommendation.
+            Backend human approval flag: {episode.backendApprovalRequired ? "true" : "false"} ·
+            Learning Simulation Mode still requires a human response for every recommendation.
           </p>
           {episode.reasons.length > 0 ? (
             <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] text-muted-foreground">
@@ -484,8 +485,9 @@ function DecisionForm({
         </Field>
 
         <p className="rounded-md border border-border bg-muted/20 px-2.5 py-2 text-[11px] text-muted-foreground">
-          SIMULATED SCENARIO effect · {effect.label}: {effect.description}. This effect never sets model
-          risk/tier/severity directly; feature-changing actions are re-scored through ORCA /predict.
+          SIMULATED SCENARIO effect · {effect.label}: {effect.description}. This effect never sets
+          model risk/tier/severity directly; feature-changing actions are re-scored through ORCA
+          /predict.
         </p>
 
         {error ? <p className="text-[11px] text-danger">{error}</p> : null}
@@ -526,10 +528,13 @@ function CurrentDecisionCard({ episode }: { episode: SimEpisode }) {
         </span>
       </div>
       <p className="mt-1 text-muted-foreground">
-        {episode.decision ? String(episode.decision.reasonCode) : ""} · {episode.decision?.actorLabel} ·{" "}
-        {Math.round((episode.decision?.latencyMs ?? 0) / 1000)}s latency
+        {episode.decision ? String(episode.decision.reasonCode) : ""} ·{" "}
+        {episode.decision?.actorLabel} · {Math.round((episode.decision?.latencyMs ?? 0) / 1000)}s
+        latency
       </p>
-      {episode.decision?.note ? <p className="mt-1 text-muted-foreground">Note: {episode.decision.note}</p> : null}
+      {episode.decision?.note ? (
+        <p className="mt-1 text-muted-foreground">Note: {episode.decision.note}</p>
+      ) : null}
       {episode.interventionAudit.length > 0 ? (
         <ul className="mt-1 space-y-0.5 text-muted-foreground">
           {episode.interventionAudit.map((audit) => (
@@ -551,11 +556,15 @@ function PersistedEpisodeCard({ row }: { row: PersistedAuditRow }) {
     <div className="rounded-md border border-border bg-card px-3 py-2 text-[11px]">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-mono text-xs font-semibold">{row.shipmentId}</span>
-        <span className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px]">{row.runId}</span>
+        <span className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px]">
+          {row.runId}
+        </span>
         <span className="rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold">
           {row.status}
         </span>
-        {row.inference?.evidence_label ? <EvidenceBadge label={row.inference.evidence_label} /> : null}
+        {row.inference?.evidence_label ? (
+          <EvidenceBadge label={row.inference.evidence_label} />
+        ) : null}
       </div>
       <div className="mt-2 grid gap-1 text-muted-foreground md:grid-cols-2 xl:grid-cols-4">
         <span>Risk: {row.inference ? pct(row.inference.probability_late) : "—"}</span>
@@ -563,19 +572,25 @@ function PersistedEpisodeCard({ row }: { row: PersistedAuditRow }) {
         <span>Recommendation: {row.recommendation?.recommendation ?? "—"}</span>
         <span>Robustness: {row.recommendation?.robustness ?? "—"}</span>
       </div>
-      {reasons.length > 0 ? <p className="mt-1 text-muted-foreground">Reasons: {reasons.join(" · ")}</p> : null}
+      {reasons.length > 0 ? (
+        <p className="mt-1 text-muted-foreground">Reasons: {reasons.join(" · ")}</p>
+      ) : null}
       {row.recommendation ? (
         <p className="mt-1 text-muted-foreground">
-          Backend human approval flag: {row.recommendation.backend_human_approval_required ? "true" : "false"}
+          Backend human approval flag:{" "}
+          {row.recommendation.backend_human_approval_required ? "true" : "false"}
         </p>
       ) : null}
       {row.decision ? (
         <p className="mt-1">
-          Human decision: <strong>{row.decision.decision}</strong> · chosen {row.decision.chosen_action} ·{" "}
-          {row.decision.reason_code} · {Math.round(row.decision.decision_latency_ms / 1000)}s · {row.decision.actor_label}
+          Human decision: <strong>{row.decision.decision}</strong> · chosen{" "}
+          {row.decision.chosen_action} · {row.decision.reason_code} ·{" "}
+          {Math.round(row.decision.decision_latency_ms / 1000)}s · {row.decision.actor_label}
         </p>
       ) : null}
-      {row.decision?.note ? <p className="mt-1 text-muted-foreground">Note: {row.decision.note}</p> : null}
+      {row.decision?.note ? (
+        <p className="mt-1 text-muted-foreground">Note: {row.decision.note}</p>
+      ) : null}
       {row.intervention ? (
         <p className="mt-1 text-muted-foreground">
           Intervention: {row.intervention.action} · {row.intervention.simulator_policy_version} ·{" "}
@@ -589,7 +604,8 @@ function PersistedEpisodeCard({ row }: { row: PersistedAuditRow }) {
         </p>
       ) : null}
       <p className="mt-1 text-[10px] text-muted-foreground/70">
-        Opened {new Date(row.openedAt).toLocaleString()} · trigger {row.triggerEventId ?? "initial state"}
+        Opened {new Date(row.openedAt).toLocaleString()} · trigger{" "}
+        {row.triggerEventId ?? "initial state"}
       </p>
     </div>
   );

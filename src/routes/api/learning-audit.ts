@@ -76,7 +76,9 @@ async function readAudit(request: Request) {
     if (inferenceResult.error)
       throw new Error(`Learning DB inference read failed: ${inferenceResult.error.message}`);
     if (recommendationResult.error)
-      throw new Error(`Learning DB recommendation read failed: ${recommendationResult.error.message}`);
+      throw new Error(
+        `Learning DB recommendation read failed: ${recommendationResult.error.message}`,
+      );
     if (decisionResult.error)
       throw new Error(`Learning DB decision read failed: ${decisionResult.error.message}`);
     if (interventionResult.error)
@@ -128,7 +130,8 @@ async function readAudit(request: Request) {
       const recommendation = recommendationById.get(episode.recommendation_id) ?? null;
       const decision = decisionByEpisode.get(episode.id) ?? null;
       const intervention = interventionByEpisode.get(episode.id) ?? null;
-      const outcome = outcomeByShipment.get(`${episode.run_id}\u0000${episode.shipment_id}`) ?? null;
+      const outcome =
+        outcomeByShipment.get(`${episode.run_id}\u0000${episode.shipment_id}`) ?? null;
       const status = outcome
         ? "OUTCOME_RECORDED"
         : intervention
@@ -156,7 +159,8 @@ async function readAudit(request: Request) {
     return noStore({
       status: "connected",
       summary: {
-        awaitingHumanDecision: rows.filter((row) => row.status === "AWAITING_HUMAN_DECISION").length,
+        awaitingHumanDecision: rows.filter((row) => row.status === "AWAITING_HUMAN_DECISION")
+          .length,
         decided: rows.filter((row) => row.status === "DECIDED").length,
         interventionApplied: rows.filter((row) => row.status === "INTERVENTION_APPLIED").length,
         outcomeRecorded: rows.filter((row) => row.status === "OUTCOME_RECORDED").length,
@@ -165,7 +169,10 @@ async function readAudit(request: Request) {
     });
   } catch (error) {
     console.error("[Learning DB audit]", error);
-    return noStore({ status: "unavailable", error: "learning_db_read_failed", detail: safeMessage(error) }, 503);
+    return noStore(
+      { status: "unavailable", error: "learning_db_read_failed", detail: safeMessage(error) },
+      503,
+    );
   }
 }
 

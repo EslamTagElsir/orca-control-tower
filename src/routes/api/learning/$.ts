@@ -295,7 +295,9 @@ async function handleEpisode(request: Request) {
         .select("id")
         .single();
       if (error || !snapshot) {
-        throw new Error(`Learning DB snapshot write failed: ${error?.message ?? "no row returned"}`);
+        throw new Error(
+          `Learning DB snapshot write failed: ${error?.message ?? "no row returned"}`,
+        );
       }
       snapshotId = snapshot.id;
     }
@@ -333,7 +335,8 @@ async function handleEpisode(request: Request) {
     .select("id")
     .eq("inference_id", inferenceId)
     .maybeSingle();
-  if (recReadError) throw new Error(`Learning DB recommendation read failed: ${recReadError.message}`);
+  if (recReadError)
+    throw new Error(`Learning DB recommendation read failed: ${recReadError.message}`);
 
   let recommendationId = existingRecommendation?.id ?? null;
   if (!recommendationId) {
@@ -353,7 +356,9 @@ async function handleEpisode(request: Request) {
       .select("id")
       .single();
     if (error || !recommendation) {
-      throw new Error(`Learning DB recommendation write failed: ${error?.message ?? "no row returned"}`);
+      throw new Error(
+        `Learning DB recommendation write failed: ${error?.message ?? "no row returned"}`,
+      );
     }
     recommendationId = recommendation.id;
   }
@@ -363,7 +368,8 @@ async function handleEpisode(request: Request) {
     .select("id")
     .eq("recommendation_id", recommendationId)
     .maybeSingle();
-  if (episodeReadError) throw new Error(`Learning DB episode read failed: ${episodeReadError.message}`);
+  if (episodeReadError)
+    throw new Error(`Learning DB episode read failed: ${episodeReadError.message}`);
 
   let episodeId = existingEpisode?.id ?? null;
   if (!episodeId) {
@@ -422,7 +428,8 @@ async function handleDecision(request: Request) {
     .select("id")
     .eq("episode_id", body.episodeId)
     .maybeSingle();
-  if (decisionReadError) throw new Error(`Learning DB decision read failed: ${decisionReadError.message}`);
+  if (decisionReadError)
+    throw new Error(`Learning DB decision read failed: ${decisionReadError.message}`);
 
   let decisionId = existingDecision?.id ?? null;
   if (!decisionId) {
@@ -430,7 +437,12 @@ async function handleDecision(request: Request) {
       .from("orca_human_decisions")
       .insert({
         episode_id: body.episodeId,
-        decision: body.decision === "APPROVE" ? "ACCEPT" : body.decision === "DEFER" ? "MODIFY" : body.decision,
+        decision:
+          body.decision === "APPROVE"
+            ? "ACCEPT"
+            : body.decision === "DEFER"
+              ? "MODIFY"
+              : body.decision,
         recommended_action: body.recommendedAction,
         chosen_action: body.chosenAction,
         reason_code: body.reasonCode,

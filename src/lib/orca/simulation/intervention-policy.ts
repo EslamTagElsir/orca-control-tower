@@ -184,7 +184,8 @@ const EFFECTS: Record<OperatorAction, InterventionEffect> = {
     mutatesFeatures: true,
     mutate: (raw) => {
       const next = { ...raw };
-      if (Object.prototype.hasOwnProperty.call(next, "Shipment Mode")) next["Shipment Mode"] = "Air";
+      if (Object.prototype.hasOwnProperty.call(next, "Shipment Mode"))
+        next["Shipment Mode"] = "Air";
       scaleField(next, "Scheduled_Transit_Days", 0.65);
       return next;
     },
