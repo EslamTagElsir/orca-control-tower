@@ -1,0 +1,14 @@
+citation_key,focus,binary_delay_risk,delay_duration_or_severity,posthoc_probability_calibration,quantile_modeling,conformal_or_cqr,operational_ranking_or_optimization,temporal_or_chronological_evaluation,explicit_post_outcome_embargo,explicit_capacity_constraint,pharmaceutical_or_health_domain,domain,priority_threat,distinguishing_boundary
+muller2025analytical,Systematic review of delivery-delay prediction,REVIEW,PARTIAL,NO,NO,NO,NO,NO,NO,NO,NO,General SC,MEDIUM,Field-level review; documents classification emphasis and need for integrated decision support.
+oliveira2021lead,Pharmaceutical lead-time forecasting,NO,YES,NO,NO,NO,NO,UNCLEAR,NO,NO,YES,Pharmaceutical,HIGH,Earlier pharma lead-time ML; no calibrated risk/CQR/triage.
+thomas2023application,Order-delivery delay classification,YES,NO,NO,NO,NO,NO,UNCLEAR,NO,NO,NO,General SC,MEDIUM,Direct late-delivery classifier; no severity/uncertainty/triage.
+zaghdoudi2024collaborative,Delay prediction + supplier optimization,YES,NO,NO,NO,NO,YES,UNCLEAR,NO,PARTIAL,NO,Manufacturing,HIGH,Prediction-to-decision precedent; no CQR or conditional severity.
+bassiouni2024deep,Late-order classification,YES,NO,NO,NO,NO,NO,NO,NO,NO,NO,General SC,MEDIUM,"Uses five-fold CV, not temporal embargoed evaluation."
+hupman2024predicting,Pharmaceutical disruption risk,YES,NO,NO,NO,NO,NO,YES,NO,NO,YES,Pharmaceutical,HIGH,Pharma risk under COVID regime shift; not shipment-delay severity/CQR.
+gali2025predicting,Global healthcare shipment delays,YES,NO,NO,NO,NO,NO,UNCLEAR,NO,NO,YES,Healthcare logistics,HIGH,Direct healthcare shipment-delay ML; no conformal severity or embargo.
+pathak2025predicting,HIV-medicine delay occurrence + duration,YES,YES,NO,NO,NO,NO,PARTIAL,NO,NO,YES,HIV medicines,CRITICAL,Closest domain threat; two-stage occurrence+duration but no CQR/calibration/triage.
+yang2026o2rdl,Joint logistics risk + delay forecasting,YES,YES,PARTIAL,NO,NO,NO,YES,NO,NO,NO,Multimodal logistics,CRITICAL,Chronological joint risk/delay framework; no CQR or capacity triage.
+faulkner2026uncertainty,Delay classification + quantile severity + CQR,YES,YES,NO,YES,YES,NO,YES,NO,NO,NO,Industrial logistics,CRITICAL,"Strongest methodological threat; CQR and chronological split, but no post-hoc risk calibration/embargo/Top-K triage."
+makhado2026conformal,Conformal delay uncertainty + terminal scheduling,NO,YES,NO,PARTIAL,YES,YES,UNCLEAR,NO,YES,NO,Container terminals,CRITICAL,Conformal-to-capacity-constrained logistics decision precedent; not binary calibrated delay risk.
+sadeek2026uncertainty,Conformal flight-delay uncertainty,NO,YES,NO,PARTIAL,YES,NO,YES,NO,NO,NO,Air transport,HIGH,Conformal delay UQ under changing temporal regimes; not supply-chain shipment triage.
+liang2026freeports,Risk-based inspection under resource constraints,YES,NO,NO,NO,NO,YES,NO,NO,YES,NO,Maritime containers,HIGH,Capacity-constrained inspection precedent; no shipment-delay severity/CQR.

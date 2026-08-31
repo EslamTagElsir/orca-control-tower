@@ -1,34 +1,47 @@
 # Final Priority-Reference Integrity & Novelty Governance Report
 
-**Document ID**: `FINAL_PRIORITY_REFERENCE_INTEGRITY_V1`  
-**Date**: 2026-08-31  
-**Search Cutoff**: 2026-08-31  
+**Document ID:** `FINAL_PRIORITY_REFERENCE_INTEGRITY_V2`  
+**Date / search cutoff:** 31 August 2026  
+**Status:** PASS after independent metadata correction
 
----
+## Scope
+Thirteen closest novelty/prior-art records were rechecked after an earlier automated audit incorrectly labeled several bibliographic records as exact matches. The authoritative sources for this research branch are now:
 
-## 1. Executive Summary
-- **Records Audited**: 13
-- **Exact Verified Records**: 11
-- **Metadata Corrected Records**: 1 (`ordlnet2026joint`)
-- **Preprints Identified & Demarcated**: 1 (`faulkner2026uncertainty` — PREPRINT — NOT PEER REVIEWED)
-- **Unresolved / Fabricated Records**: 0
-- **Strongest Prior-Art Threat (Domain)**: Pathak et al. (2025) [SCaLDR]
-- **Strongest Prior-Art Threat (Methodology)**: Faulkner et al. (2026) [arXiv preprint]
-- **Status of Claim E (Joint Combination)**: **SUPPORTED WITH QUALIFICATION (LEVEL 2)**
-- **Final Novelty Level**: **LEVEL 2 — "To the best of our knowledge, first to jointly..."**
+- `PRIORITY_REFERENCES.bib`
+- `PRIORITY_REFERENCE_AUDIT.csv`
 
----
+The corrected records include publisher/indexed metadata for Müller et al. (2025), Biazon de Oliveira et al. (2021), Thomas & Panicker (2023), Zaghdoudi et al. (2024), Bassiouni et al. (2024), Hupman et al. (2024), Gali et al. (2025), Pathak et al. (2025), Yang (2026), Makhado et al. (2026), Sadeek et al. (2026), and Liang et al. (2026). Faulkner et al. (2026) is retained explicitly as a **preprint, not peer reviewed as of the cutoff**.
 
-## 2. Exact Approved Novelty & Priority Wording
+## Novelty boundary
+The review falsifies broad priority claims such as:
 
-### Lead-in Context (Distinguishing Nearest Prior Art):
-> *"In global health logistics, Pathak et al. (2025) proposed SCaLDR, a two-stage machine learning framework for predicting HIV-medicine delivery delay occurrence and duration; however, SCaLDR does not evaluate post-hoc probability calibration, conformal quantile uncertainty intervals, post-delivery temporal embargoes, or capacity-constrained shipment triage. Methodologically, Faulkner et al. (2026) developed a multi-task deep learning model combining delay classification, duration regression, quantile modeling, and conformal prediction on general industrial shipments, but did not implement post-hoc probability calibration, post-delivery purging embargoes, or capacity-constrained operational triage. In related logistics settings, O²RDL-Net (Zhang et al., 2026) jointly forecasted risk classes and delay duration under chronological splits without conformal intervals; Makhado et al. (2026) integrated conformal uncertainty into container terminal scheduling without binary risk calibration; and Zaghdoudi et al. (2024) coupled delay classification to supplier selection optimization without conditional severity bounds."*
+- first machine-learning study of pharmaceutical delivery delays;
+- first use of conformal prediction in logistics;
+- first combination of delay occurrence and delay-duration modeling;
+- first prediction-to-decision framework in logistics.
 
-### Exact Approved Priority Statement:
-> **"To the best of our knowledge, this is the first study to jointly evaluate, in pharmaceutical shipment logistics, a leakage-aware temporally ordered delay-risk pipeline with post-delivery embargoes, post-hoc probability calibration, conditional delay-severity modeling, conformalized quantile uncertainty, and capacity-constrained shipment prioritization."**
+The literature reviewed through the cutoff did **not** identify a single prior study that jointly evaluates the full ORCA combination of:
 
----
+1. leakage-aware temporally ordered shipment-delay evaluation;
+2. an explicit post-delivery label-maturity embargo;
+3. post-hoc probability calibration;
+4. binary delay risk separated from conditional delay severity;
+5. conditional quantile modeling and conformalized quantile uncertainty; and
+6. explicit capacity-constrained shipment prioritization;
 
-## 3. Bibliography Integrity Verdict
-# **PASS**
-*(All 13 priority records verified; zero unverified DOIs; preprints clearly flagged; level-2 narrow joint priority supported.)*
+within pharmaceutical/global-health shipment logistics.
+
+## Approved Level-2 wording
+> **To the best of our knowledge, this is the first study to jointly evaluate, in pharmaceutical shipment logistics, a leakage-aware temporally ordered delay-risk pipeline with post-delivery embargoes, post-hoc probability calibration, conditional delay-severity modeling, conformalized quantile uncertainty, and capacity-constrained shipment prioritization.**
+
+This is a qualified literature-priority statement, not an absolute proof of worldwide priority.
+
+## Strongest prior-art threats
+- **Pathak et al. (2025), SCaLDR:** closest pharmaceutical-domain occurrence + duration precedent.
+- **Faulkner et al. (2026, preprint):** strongest methodological classification + quantile duration + conformal precedent.
+- **Yang (2026), O²RDL-net:** chronological joint risk/delay modeling precedent.
+- **Makhado et al. (2026):** conformal uncertainty propagated to capacity-constrained logistics scheduling.
+- **Zaghdoudi et al. (2024) / Liang et al. (2026):** prediction-to-optimization and capacity-constrained inspection precedents.
+
+## Integrity verdict
+**PASS.** Zero intentionally retained records are treated as fabricated; the preprint is clearly flagged. Manuscript claims must continue to cite the nearest prior art immediately before the Level-2 statement.
