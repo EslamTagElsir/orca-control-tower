@@ -13,6 +13,7 @@ from delay_intelligence.api.schemas import (
     RecommendResponse,
 )
 from delay_intelligence.decision.engine import DecisionEngine
+from delay_intelligence.monitoring.readiness import validate_production_drift_artifact
 from delay_intelligence.serving.feature_builder import build_features
 from delay_intelligence.serving.model_loader import ModelLoader
 
@@ -27,6 +28,7 @@ DECISION_CONFIG = REPO_ROOT / "configs" / "decision.yaml"
 DRIFT_CONFIG = REPO_ROOT / "configs" / "drift.yaml"
 DRIFT_PACKAGE = REPO_ROOT / "src" / "delay_intelligence" / "drift"
 DRIFT_ARTIFACTS = REPO_ROOT / "artifacts" / "drift"
+PRODUCTION_DRIFT_ARTIFACT = REPO_ROOT / "artifacts" / "monitoring" / "latest.json"
 CAUSAL_STABILITY = REPO_ROOT / "artifacts" / "causal" / "causal_edge_stability.csv"
 
 
@@ -139,10 +141,10 @@ def reliability():
 def monitoring_readiness():
     """Describe whether ORCA can support a truthful production-drift claim.
 
-    The repository contains a chronological drift engine and a historical CV runner,
-    but production drift is only considered connected when separately versioned
-    production drift artifacts are present. This endpoint deliberately reports
-    readiness rather than synthesizing live drift values from holdout evidence.
+    Historical CV drift and serving-registry reliability remain separate from
+    production telemetry. A CONNECTED state is only possible when a versioned
+    production monitoring artifact passes the contract and matches the active
+    serving model and prediction contract.
     """
     expected_engine_files = [
         "detector.py",
@@ -151,39 +153,37 @@ def monitoring_readiness():
         "runner.py",
         "schemas.py",
     ]
-    expected_artifacts = [
+    expected_historical_artifacts = [
         "drift_metrics.csv",
         "feature_drift_summary.csv",
         "drift_triggers.json",
         "cv_drift_summary.json",
     ]
 
+    metadata = _read_registry_json("metadata.json")
     engine_files = {name: (DRIFT_PACKAGE / name).exists() for name in expected_engine_files}
-    artifact_files = {name: (DRIFT_ARTIFACTS / name).exists() for name in expected_artifacts}
+    artifact_files = {name: (DRIFT_ARTIFACTS / name).exists() for name in expected_historical_artifacts}
     engine_available = DRIFT_CONFIG.exists() and all(engine_files.values())
     historical_artifacts_available = all(artifact_files.values())
 
-    # Historical CV artifacts, when present, are still development evidence. They
-    # do not constitute a live production window or a production drift SLA.
-    production_monitoring_connected = False
+    production_artifact = validate_production_drift_artifact(
+        PRODUCTION_DRIFT_ARTIFACT,
+        expected_model_version=metadata.get("model_version"),
+        expected_prediction_contract_version=metadata.get("prediction_contract_version"),
+    )
+    production_monitoring_connected = bool(engine_available and production_artifact["valid"])
+    live_window_connected = bool(production_artifact["valid"])
 
-    blockers = []
+    blockers: list[str] = []
     if not engine_available:
         blockers.append("Chronological drift engine/config is incomplete in this deployment.")
-    if not historical_artifacts_available:
-        blockers.append("Historical drift artifacts are not packaged in this deployment.")
-    blockers.extend(
-        [
-            "No versioned live production reference/detection window is connected.",
-            "No production drift artifact contract with timestamp and data provenance is published.",
-        ]
-    )
+    blockers.extend(production_artifact["errors"])
 
     return {
-        "status": "NOT_CONNECTED" if not production_monitoring_connected else "CONNECTED",
+        "status": "CONNECTED" if production_monitoring_connected else "NOT_CONNECTED",
         "evidence_label": "SYSTEM STATUS",
         "production_monitoring_connected": production_monitoring_connected,
-        "live_window_connected": False,
+        "live_window_connected": live_window_connected,
         "drift_engine": {
             "available": engine_available,
             "config_available": DRIFT_CONFIG.exists(),
@@ -198,9 +198,17 @@ def monitoring_readiness():
             "artifacts_available": historical_artifacts_available,
             "artifact_files": artifact_files,
         },
+        "production_artifact": {
+            "path": "artifacts/monitoring/latest.json",
+            "present": production_artifact["artifact_present"],
+            "valid": production_artifact["valid"],
+            "summary": production_artifact["summary"],
+            "contract_version": "1.0",
+        },
         "claim_boundary": (
-            "ORCA may report model-registry reliability evidence, but must not claim live production drift "
-            "until a versioned production reference/detection window and drift artifact are connected."
+            "ORCA may report model-registry reliability evidence and historical development drift separately, "
+            "but may only report live production drift when artifacts/monitoring/latest.json satisfies contract "
+            "1.0 and matches the active serving registry."
         ),
         "blockers": blockers,
     }
