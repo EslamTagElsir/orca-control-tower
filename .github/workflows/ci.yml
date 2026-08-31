@@ -99,3 +99,35 @@ jobs:
           backend/tests/test_reliability_artifact.py
           backend/tests/test_drift_readiness_contract.py
           backend/tests/test_production_monitoring_contract.py
+
+  dependency-cleanup-artifact:
+    name: Generate Lovable dependency cleanup lockfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Remove unused legacy Lovable packages
+        run: bun remove @lovable.dev/mcp-js @lovable.dev/vite-tanstack-config
+
+      - name: Verify removed packages are absent
+        run: |
+          if grep -q '@lovable.dev/' package.json bun.lock; then
+            echo 'Legacy Lovable package references remain after bun remove.'
+            exit 1
+          fi
+
+      - name: Upload regenerated manifest and lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: lovable-dependency-cleanup
+          path: |
+            package.json
+            bun.lock
+          retention-days: 1
