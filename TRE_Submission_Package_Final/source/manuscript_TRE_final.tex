@@ -1,0 +1,1175 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  % set entry spacing
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{}
+
+\begin{document}
+
+\section{Temporal Evaluation, Calibrated Risk, and Conformal
+Delay-Severity Prediction in Pharmaceutical
+Logistics}\label{temporal-evaluation-calibrated-risk-and-conformal-delay-severity-prediction-in-pharmaceutical-logistics}
+
+\textbf{Anonymized manuscript for double-anonymized review}
+
+\subsection{Abstract}\label{abstract}
+
+Delivery delays in global health supply chains disrupt treatment
+continuity, deplete buffer stocks, and complicate procurement and
+transportation planning. Machine-learning models for shipment-delay
+prediction are often evaluated with random cross-validation, which can
+obscure deterioration when the data-generating process changes over
+time. We evaluate an integrated logistics decision-support framework
+that combines prediction-time leakage control, expanding-origin temporal
+evaluation with 90-day post-delivery embargoes, calibrated delay-risk
+estimation, conditional delay-severity modeling, conformalized quantile
+uncertainty, and capacity-constrained shipment prioritization. Using the
+USAID Supply Chain Management System delivery-history data (N = 10,324
+shipments across 42 recipient countries), random cross-validation
+overestimated PR-AUC relative to temporally ordered evaluation across
+all five tested classifiers, with relative inflation from 26.2\% for
+logistic regression to 99.7\% for LightGBM. Platt scaling reduced Brier
+score and expected calibration error while preserving continuous
+rankings. Conditional-median severity estimates achieved lower mean
+absolute error than LightGBM quantile point predictions, while the
+quantile models enabled Split Conformalized Quantile Regression. Under
+exchangeability, split CQR has finite-sample marginal coverage
+guarantees; here, temporally later cohorts are treated as empirical
+out-of-time coverage audits rather than formal guarantees under shift.
+On the secondary locked registry benchmark (N = 1,013; 61 delays), 90\%
+CQR achieved 91.80\% empirical coverage (56/61; exact 95\% CI
+81.90\%-97.28\%) with 46.27-day mean width. Simulated Top-K triage
+showed different trade-offs among risk, severity, and uncertainty. The
+results support temporally disciplined and uncertainty-aware logistics
+evaluation rather than a single universally dominant model or ranking
+policy.
+
+\textbf{Keywords:} Pharmaceutical logistics; shipment delay; temporal
+validation; probability calibration; conformal prediction; decision
+support
+
+\subsection{1. Introduction}\label{introduction}
+
+Global health supply chains operate under long international lead times,
+heterogeneous transport modes, procurement constraints, and uneven
+infrastructure. Delayed health-product deliveries can contribute to
+stockouts and emergency responses, making delivery reliability a
+practical logistics concern (Yadav 2015; Vledder et al. 2019).
+Predictive analytics can help identify shipments that warrant attention,
+but a deployable logistics model must answer more than whether an order
+is likely to be late. It must be evaluated at a realistic prediction
+time, provide probabilities that are meaningful for decision thresholds,
+characterize how severe a delay may become, communicate uncertainty, and
+support prioritization when review capacity is limited.
+
+A central methodological difficulty is temporal dependence. Randomly
+mixing historical and future shipments can allow a model-selection
+process to exploit distributional information unavailable at deployment
+time. Leakage and poorly matched validation can therefore produce
+optimistic scientific claims (Kapoor and Narayanan 2023; Roberts et al.
+2017; Bergmeir and Benítez 2012). In shipment data, the problem is
+amplified by label maturity: an order can be known before its eventual
+delivery outcome is resolved. We therefore treat prediction-time
+integrity and temporal separation as part of the scientific problem
+rather than as implementation details.
+
+A second challenge is that ranking and probability reliability are
+different objectives. A classifier may separate late and on-time
+shipments reasonably well while assigning probability values that are
+unsuitable for thresholding or resource allocation. Post-hoc calibration
+methods such as Platt scaling and isotonic regression provide
+established tools for this distinction (Platt 1999; Niculescu-Mizil and
+Caruana 2005; Guo et al. 2017). Third, binary risk and delay magnitude
+are operationally distinct. A short delay and a prolonged disruption can
+have different consequences even when both share the same binary label.
+Quantile regression offers a way to describe asymmetric conditional
+delay distributions (Koenker and Bassett 1978), while conformalized
+quantile regression (CQR) can conformalize such bounds under its
+validity assumptions (Romano, Patterson, and Candès 2019; Angelopoulos
+and Bates 2023).
+
+Finally, logistics teams face finite intervention capacity. Prediction
+becomes operationally useful only when it informs which shipments to
+inspect or escalate. This motivates a decision layer in which calibrated
+risk, conditional severity, and uncertainty may produce different
+rankings rather than a claim that one score is universally superior
+(Bertsimas and Kallus 2020).
+
+This study evaluates these components within historical USAID Supply
+Chain Management System (SCMS) shipment records. Its contributions are:
+(1) a leakage-aware expanding temporal evaluation with a 90-day
+label-maturity embargo; (2) a five-model comparison quantifying
+random-split optimism; (3) separate evaluation of probability
+calibration and conditional severity; (4) empirical auditing of CQR
+coverage and sharpness in temporally later cohorts; and (5) a
+capacity-constrained Top-K prioritization analysis explicitly labeled as
+a simulated operational scenario.
+
+\subsection{2. Related work}\label{related-work}
+
+\subsubsection{2.1 Supply-chain delay prediction and pharmaceutical
+logistics}\label{supply-chain-delay-prediction-and-pharmaceutical-logistics}
+
+Machine learning has been applied broadly to supply-chain risk and
+disruption prediction (Baryannis et al. 2019). Earlier pharmaceutical
+work includes machine-learning lead-time forecasting (Biazon de Oliveira
+et al. 2021), while more recent studies have examined pharmaceutical
+disruption risk across the COVID-19 regime shift (Hupman, Zhang, and Li
+2024) and global-health shipment delays using shipment and country-level
+logistics indicators (Gali, Molavi, and Alavi 2025). Order-delay
+classification is also represented in general supply-chain studies
+(Thomas and Panicker 2023; Bassiouni et al. 2024). A recent analytical
+review of delivery-delay prediction identifies continued emphasis on
+predictive classification and highlights the importance of linking
+predictions to decision support (Müller et al. 2025).
+
+\subsubsection{2.2 Temporal evaluation, leakage, and label
+maturity}\label{temporal-evaluation-leakage-and-label-maturity}
+
+Temporally structured evaluation is necessary when observations are
+dependent or non-stationary. Random cross-validation can understate
+prospective error when data have temporal structure (Roberts et al.
+2017), while leakage has been identified as a broader reproducibility
+problem in machine-learning science (Kapoor and Narayanan 2023).
+Time-series validation literature similarly emphasizes matching the
+validation design to the deployment setting (Bergmeir and Benítez 2012).
+Purging or embargo ideas have also been used in other time-dependent
+domains to separate training observations from outcomes whose
+information would not yet be available (López de Prado 2018). In the
+present logistics setting, the embargo is tied directly to shipment
+outcome resolution.
+
+\subsubsection{2.3 Calibration and severity
+uncertainty}\label{calibration-and-severity-uncertainty}
+
+Probability calibration is distinct from discrimination. Platt scaling
+applies a monotonic logistic mapping to model scores, while isotonic
+regression provides a more flexible monotonic mapping (Platt 1999;
+Zadrozny and Elkan 2002; Niculescu-Mizil and Caruana 2005). Reliability
+is evaluated here with Brier score (Brier 1950) and a 10-bin expected
+calibration error, with the latter treated as a descriptive calibration
+metric rather than a sufficient stand-alone measure.
+
+Conditional severity is modeled only among truly delayed shipments to
+avoid a target distribution dominated by zero-delay observations.
+Quantile regression (Koenker and Bassett 1978) provides lower, median,
+and upper conditional estimates. CQR then adjusts learned quantile
+intervals using held-out conformity scores (Romano, Patterson, and
+Candès 2019). Standard conformal validity relies on exchangeability or
+related conditions; covariate shift and broader non-exchangeability
+require additional care (Tibshirani et al. 2019; Gibbs and Candès 2021;
+Barber et al. 2023). We therefore distinguish formal
+exchangeability-based guarantees from empirical future-period coverage
+in this study.
+
+\subsubsection{2.4 Prediction-to-decision integration and closest prior
+art}\label{prediction-to-decision-integration-and-closest-prior-art}
+
+Recent work narrows the novelty boundary substantially. In global-health
+logistics, Pathak et al. (Pathak et al. 2025) proposed SCaLDR, a
+two-stage framework for HIV-medicine shipment-delay occurrence and
+duration. In broader logistics, Yang (Yang 2026) jointly modeled risk
+classification and delay forecasting using a chronological design.
+Faulkner et al. (Faulkner et al. 2026), a 2026 preprint, combines delay
+classification, quantile duration modeling, and conformalized
+uncertainty on a very large industrial shipment dataset. Conformal
+prediction has also been propagated into capacity-constrained
+container-terminal scheduling (Makhado, Sejeso, and Paepae 2026) and
+transportation-delay uncertainty (Sadeek, Hanaoka, and Sugishita 2026).
+Separately, delay classification has been coupled to supplier-selection
+and order-allocation optimization (Zaghdoudi et al. 2024), and
+risk-based container inspection has been formulated under explicit
+operational resource constraints (Liang et al. 2026).
+
+These studies rule out broad claims that the present work is the first
+application of machine learning to pharmaceutical delays, the first use
+of conformal prediction in logistics, or the first combination of delay
+occurrence and duration. \textbf{To the best of our knowledge, this is
+the first study to jointly evaluate, in pharmaceutical shipment
+logistics, a leakage-aware temporally ordered delay-risk pipeline with
+post-delivery embargoes, post-hoc probability calibration, conditional
+delay-severity modeling, conformalized quantile uncertainty, and
+capacity-constrained shipment prioritization.} This is a qualified
+joint-combination priority claim based on literature reviewed through 31
+August 2026, not a claim of algorithmic novelty.
+
+\subsection{3. Data and prediction-time
+formulation}\label{data-and-prediction-time-formulation}
+
+\subsubsection{3.1 Dataset and outcome}\label{dataset-and-outcome}
+
+The study uses the public USAID SCMS Delivery History Dataset and
+associated program documentation (USAID SCMS Project 2015; USAID 2016).
+The canonical file contains 10,324 completed shipment records across 42
+recipient countries. There are 1,186 delayed records, corresponding to
+an overall delay prevalence of 11.488\%. The commodity mix includes
+antiretroviral pharmaceuticals, rapid diagnostic tests, antimalarial
+products, and ancillary health-supply items. The dataset is historical
+and observational; it does not contain randomized intervention outcomes.
+
+For shipment i, the binary target is Y\_i = 1 when the delivered date
+occurs after the scheduled delivery date and Y\_i = 0 otherwise.
+Positive delay severity S\_i is the number of calendar days beyond the
+scheduled date and is modeled only in the subset Y\_i = 1.
+
+\subsubsection{3.2 Prediction-time feature
+contract}\label{prediction-time-feature-contract}
+
+The prediction anchor T\_pred represents the point at which the shipment
+schedule is available and a prospective risk score could be issued. The
+frozen research contract contains 39 pre-outcome features. Post-outcome
+and target-derived fields - including Delay\_Days, Delay\_Flag,
+Delivered to Client Date, and Delivery Recorded Date - are excluded.
+Categorical missing values are represented explicitly; numeric
+missingness is imputed using training-only statistics. The objective is
+not merely to remove obvious target columns but to ensure that all
+engineered features are computable at or before T\_pred.
+
+\subsection{4. Temporal evaluation and leakage-control
+protocol}\label{temporal-evaluation-and-leakage-control-protocol}
+
+The primary evidence comes from five expanding-origin temporal
+development folds covering a development cohort of 7,306 shipments,
+including 1,125 delayed observations. A 90-day embargo is inserted
+between the end of eligible training outcomes and each validation
+window. The embargo acts as a label-maturity buffer so that shipments
+whose final outcomes would not yet be resolved cannot contribute target
+information to training. Figure 2 provides a schematic representation.
+
+A later 717-row calibration buffer (103 delayed shipments) is used for
+frozen post-hoc calibration and conformal adjustment where specified.
+The secondary Locked Registry Evaluation Set contains 1,013 shipments
+from 24 August 2014 through 24 August 2015, of which 61 are delayed
+(6.02\%). This cohort was historically evaluated by the serving registry
+before the research track and is therefore treated as a
+\textbf{secondary locked registry benchmark}, not as a newly untouched
+confirmatory holdout.
+
+\textbf{Table 1. Evidence hierarchy and temporal cohorts.}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2143}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2857}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2857}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2143}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Cohort
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+N
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Delayed
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Scientific role
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Canonical SCMS population & 10,324 & 1,186 & Historical source
+population \\
+Temporal development cohort & 7,306 & 1,125 & Primary evidence: 5
+expanding folds \\
+Calibration buffer & 717 & 103 & Frozen probability/CQR calibration
+buffer \\
+Locked registry benchmark & 1,013 & 61 & Secondary replication/benchmark
+evidence \\
+\end{longtable}
+
+\subsection{5. Delay-risk
+classification}\label{delay-risk-classification}
+
+Five tabular classifiers were compared: regularized logistic regression,
+Random Forest, CatBoost, XGBoost, and LightGBM (Breiman 2001;
+Prokhorenkova et al. 2018; Chen and Guestrin 2016; Ke et al. 2017).
+PR-AUC is primary because delay is the minority class; ROC-AUC and Brier
+score are secondary. Random 5-fold cross-validation is included only as
+a diagnostic comparator. Model selection and paper claims rely on
+temporal evaluation.
+
+\textbf{Table 2. Random-split diagnostic versus expanding temporal
+evaluation.}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1304}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1739}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1739}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1739}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1739}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1739}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Model
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Random PR-AUC
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Temporal PR-AUC
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Relative inflation
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Temporal ROC-AUC
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Temporal Brier
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Logistic Regression & 0.3799 & 0.3011 & +26.2\% & 0.7132 & 0.2001 \\
+Random Forest & 0.4780 & 0.3238 & +47.6\% & 0.7316 & 0.1605 \\
+CatBoost & 0.5608 & 0.3164 & +77.3\% & 0.7401 & 0.1417 \\
+XGBoost & 0.5591 & 0.2917 & +91.6\% & 0.7128 & 0.1395 \\
+LightGBM & 0.5975 & 0.2992 & +99.7\% & 0.7277 & 0.1430 \\
+\end{longtable}
+
+Random splitting produced higher PR-AUC for every tested architecture.
+Relative inflation ranged from 26.2\% for logistic regression to 99.7\%
+for LightGBM, with Random Forest at 47.6\% and CatBoost at 77.3\%. We
+interpret these differences as evidence that random splitting materially
+overstates performance relative to the temporally ordered deployment
+proxy. The experiment does not establish a single causal mechanism such
+as entity memorization; the gap is consistent with temporal dependence
+and changing distribution structure.
+
+\subsection{6. Probability calibration}\label{probability-calibration}
+
+Tree-ensemble scores were evaluated in raw form and after Platt or
+isotonic calibration. Platt scaling was frozen for the operational
+comparison because it improved probability reliability while preserving
+continuous score ordering. Isotonic regression often improved ECE or
+Brier score further but introduced ties that reduced PR-AUC in these
+experiments.
+
+\textbf{Table 3. Probability calibration on temporal development folds.}
+
+\begin{longtable}[]{@{}llrrrr@{}}
+\toprule\noalign{}
+Model & Calibration & Brier & ECE (10 bins) & PR-AUC & ROC-AUC \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+CatBoost & Raw & 0.1398 & 0.0850 & 0.2999 & 0.6916 \\
+CatBoost & Platt & 0.1357 & 0.0807 & 0.2999 & 0.6916 \\
+CatBoost & Isotonic & 0.1336 & 0.0760 & 0.2730 & 0.6854 \\
+Random Forest & Raw & 0.1797 & 0.2051 & 0.3296 & 0.7269 \\
+Random Forest & Platt & 0.1317 & 0.0866 & 0.3296 & 0.7269 \\
+Random Forest & Isotonic & 0.1316 & 0.0774 & 0.2904 & 0.6985 \\
+\end{longtable}
+
+For CatBoost, Platt calibration reduced Brier score from 0.1398 to
+0.1357 and ECE from 0.0850 to 0.0807 while leaving PR-AUC at 0.2999. For
+Random Forest, the reduction was larger: Brier fell from 0.1797 to
+0.1317 and ECE from 0.2051 to 0.0866 while PR-AUC remained 0.3296. No
+hypothesis test of calibration improvement is claimed; the results are
+descriptive quantitative comparisons.
+
+\subsection{7. Conditional delay-severity
+modeling}\label{conditional-delay-severity-modeling}
+
+Severity is evaluated only on delayed shipments. A simple conditional
+median provides a transparent baseline. Ridge regression tests a linear
+feature-dependent model, while LightGBM quantile regressors estimate
+asymmetric conditional quantiles used by the CQR layer. This separation
+avoids allowing the large mass at zero delay to dominate a continuous
+regression loss.
+
+\textbf{Table 4. Conditional severity point error on temporal
+development folds.}
+
+\begin{longtable}[]{@{}lrrr@{}}
+\toprule\noalign{}
+Model & MAE, days & Median AE, days & q0.50 pinball \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Conditional median & 15.62 +/- 6.43 & 7.60 +/- 0.89 & 7.81 \\
+LightGBM quantile q0.50 & 16.96 +/- 4.66 & 8.74 +/- 1.64 & 8.48 \\
+Ridge regression & 23.76 +/- 3.92 & 15.01 +/- 0.54 & 11.88 \\
+\end{longtable}
+
+The conditional median achieved the lowest mean point error (15.62
+days), compared with 16.96 days for the LightGBM median quantile and
+23.76 days for Ridge. This negative result is important: the more
+complex quantile model is not presented as a universally better point
+predictor. Its principal role is to represent conditional asymmetry and
+provide quantile bounds for conformalization.
+
+\subsection{8. Conformalized quantile
+regression}\label{conformalized-quantile-regression}
+
+For nominal coverage 1-gamma, lower and upper LightGBM quantile models
+estimate q\_(gamma/2)(x) and q\_(1-gamma/2)(x). On a disjoint
+calibration set, the nonconformity score is E\_i =
+max(q\_low(x\_i)-s\_i, s\_i-q\_high(x\_i)). The finite-sample adjustment
+uses the empirical quantile of conformity scores with the frozen
+higher-quantile rule. The final interval expands the learned lower and
+upper quantiles by this adjustment.
+
+Under exchangeability, split CQR provides finite-sample marginal
+coverage guarantees (Romano, Patterson, and Candès 2019). Because the
+evaluation here is explicitly temporal and may be non-exchangeable,
+future-cohort coverage is interpreted as an \textbf{empirical
+out-of-time audit}, not as a formal distribution-free guarantee under
+arbitrary temporal shift (Tibshirani et al. 2019; Barber et al. 2023).
+
+\textbf{Table 5. CQR coverage and sharpness.}
+
+\begin{longtable}[]{@{}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedleft
+Nominal
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Development coverage
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Dev. mean width (days)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Dev. median width
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Locked coverage (61 delays)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Exact 95\% CI
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Locked mean width
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+80\% & 78.33\% +/- 8.37\% & 46.37 & 40.55 & 70.49\% (43/61) &
+57.43-81.48\% & 41.04 \\
+90\% & 85.76\% +/- 15.24\% & 110.33 & 106.73 & 91.80\% (56/61) &
+81.90-97.28\% & 46.27 \\
+95\% & 95.84\% +/- 6.02\% & 153.55 & 151.98 & 100.00\% (61/61) &
+94.13-100.00\% & 61.74 \\
+\end{longtable}
+
+Development results show meaningful temporal variability, especially at
+the 90\% level, where average interval width was 110.33 days with large
+fold-to-fold variation. On the locked benchmark, the 80\% point estimate
+undercovered (70.49\%), although the nominal 80\% level falls inside the
+exact interval; the 90\% level achieved 91.80\% coverage; and the 95\%
+level covered all 61 delayed shipments at the cost of wider intervals.
+Reporting all three levels makes the coverage-sharpness trade-off
+explicit rather than selecting a favorable level after evaluation.
+
+\subsection{9. Secondary locked registry
+benchmark}\label{secondary-locked-registry-benchmark}
+
+The secondary benchmark is used to examine whether the frozen research
+pipeline behaves consistently in the same historical period previously
+seen by the serving registry. It is not a new globally unseen test set.
+CatBoost is retained as the \textbf{deployment-aligned primary model},
+while Random Forest is reported as the \textbf{development PR-AUC
+sensitivity comparator}. Their roles were frozen before this benchmark
+and are not redefined based on benchmark performance.
+
+\textbf{Table 6. Locked registry benchmark classification results.}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0714}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0952}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0952}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0952}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0952}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0952}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0952}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0952}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0952}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0952}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Model
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Role
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Threshold
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+PR-AUC
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+ROC-AUC
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Brier
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+ECE
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Precision
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Recall
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+F1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Balanced accuracy
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+CatBoost & Deployment-aligned primary & 0.1000 & 0.2709 & 0.7477 &
+0.0527 & 0.0568 & 0.2174 & 0.7377 (45/61) & 0.3358 & 0.7899 \\
+Random Forest & PR-AUC sensitivity comparator & 0.1050 & 0.3195 & 0.7898
+& 0.0493 & 0.0314 & 0.2117 & 0.7705 (47/61) & 0.3322 & 0.8037 \\
+\end{longtable}
+
+Random Forest achieved higher benchmark PR-AUC (0.3195 versus 0.2709),
+ROC-AUC, Brier score, ECE, recall, and balanced accuracy. CatBoost had
+slightly higher F1 and precision at its frozen threshold. These results
+do not support calling CatBoost the best predictive model; they support
+transparent model-role separation and sensitivity analysis.
+
+On the 61 delayed benchmark shipments, the conditional median achieved
+MAE 9.05 days and median absolute error 7.00 days, whereas the LightGBM
+quantile median had MAE 14.21 days but median absolute error 4.91 days.
+Again, the evidence favors different models for different loss functions
+rather than a universal severity winner.
+
+\subsection{10. Capacity-constrained operational prioritization
+{[}SIMULATED
+SCENARIO{]}}\label{capacity-constrained-operational-prioritization-simulated-scenario}
+
+The operational analysis assumes that a logistics team can inspect only
+the top K\% of shipments. Three rankings are compared: calibrated risk
+alone, calibrated risk multiplied by predicted median severity, and
+calibrated risk multiplied by the upper-severity estimate. Outcomes are
+retrospectively evaluated using observed delays; no real intervention
+was applied, and no causal or financial-effect claim is made.
+
+At K=1\%, risk-only ranking captured 1 of 15 high-severity delays, while
+both severity-aware rankings captured 8 of 15. At K=5\%, the
+corresponding counts were 2 of 15 versus 10 of 15. At K=10\%, both
+severity-aware strategies captured 13 of 15 high-severity delays, but
+risk x q50 captured more total delays than risk x q95. At K=20\%,
+risk-only ranking captured all 15 high-severity delays and more total
+delayed shipments than the other strategies. Thus, the evidence does not
+support a universally superior uncertainty-aware ranking. Instead,
+\textbf{risk, severity, and uncertainty generate different
+prioritization trade-offs under constrained inspection capacity}.
+
+The complete Top-K table is provided in the supplementary material and
+every operational result is labeled \textbf{{[}SIMULATED SCENARIO{]}}.
+
+\subsection{11. Discussion}\label{discussion}
+
+\subsubsection{11.1 Random-split optimism is a logistics evaluation
+problem}\label{random-split-optimism-is-a-logistics-evaluation-problem}
+
+The largest and most consistent result is not that one classifier
+dominates another, but that the evaluation design changes the apparent
+level of performance. Every architecture showed higher PR-AUC under
+random cross-validation than under expanding temporal evaluation. The
+effect was model-dependent: 26.2\% for logistic regression and nearly
+100\% for LightGBM. This reinforces the need to make prediction-time
+information sets and outcome maturity explicit when evaluating logistics
+forecasting systems.
+
+The 90-day embargo is not proposed as a universally optimal constant. It
+is a domain-specific label-maturity policy chosen to reduce the chance
+that unresolved shipment outcomes leak across temporal boundaries. Other
+logistics systems should set this gap from their own information-delay
+characteristics.
+
+\subsubsection{11.2 Calibration matters when probability enters a
+decision
+rule}\label{calibration-matters-when-probability-enters-a-decision-rule}
+
+For resource allocation, the numeric scale of risk matters. Platt
+scaling reduced Brier and ECE without changing continuous ordering,
+making it an operationally convenient calibrator in this study. Isotonic
+calibration sometimes attained lower calibration error but produced
+coarser tied probabilities and lower PR-AUC. The implication is not that
+Platt scaling is universally superior, but that calibrator choice should
+reflect both reliability and the decision process consuming the scores.
+
+\subsubsection{11.3 A simple severity baseline remains difficult to
+beat}\label{a-simple-severity-baseline-remains-difficult-to-beat}
+
+The conditional median's lower MAE is a useful caution against assuming
+that model complexity automatically improves operational point
+forecasts. Feature-dependent quantile models remain valuable because the
+task is not only point prediction: asymmetric quantiles define
+heterogeneous uncertainty bounds for CQR. The manuscript therefore
+separates the point-estimation result from the uncertainty-estimation
+role.
+
+\subsubsection{11.4 Conformal uncertainty should be audited under
+temporal
+shift}\label{conformal-uncertainty-should-be-audited-under-temporal-shift}
+
+The locked 90\% CQR result is encouraging in that period, but it should
+not be generalized into a guarantee under shift. Development folds show
+large variation in both coverage and width, and the 80\% locked point
+estimate undercovers. The study therefore treats future coverage as an
+empirical diagnostic. For live deployment, uncertainty quality would
+require ongoing monitoring and governed recalibration rather than
+permanent reliance on a frozen conformal layer.
+
+\subsubsection{11.5 Prioritization depends on operational objective and
+capacity}\label{prioritization-depends-on-operational-objective-and-capacity}
+
+The simulated decision layer highlights an operational distinction often
+hidden by aggregate classification metrics. Under tight review budgets,
+incorporating severity strongly increased high-severity capture relative
+to risk-only ranking. At larger budgets, risk-only ranking recovered
+more total delayed shipments and eventually all high-severity delays.
+This pattern is useful because it prevents the operational analysis from
+collapsing into a single `best policy' headline. Organizations should
+define whether the objective is broad delay capture, severe-delay
+avoidance, delay-day capture, or another cost-sensitive criterion before
+choosing a queue score.
+
+\subsection{12. Limitations}\label{limitations}
+
+First, the empirical evidence comes from one historical USAID SCMS
+dataset. The multi-country nature of the data does not establish
+generalizability to contemporary commercial, e-commerce, cold-chain, or
+other supply chains. Second, all records are observational; no
+randomized expediting or inspection interventions are available, so
+operational triage is simulated and no causal effect or realized
+financial savings are claimed. Third, the locked benchmark contains only
+61 delayed shipments. A single covered or uncovered shipment therefore
+changes empirical coverage by about 1.64 percentage points, motivating
+exact binomial intervals.
+
+Fourth, temporal prevalence and feature distributions vary, so direct
+metric comparisons across periods must be contextualized. Brier score in
+particular is prevalence-sensitive. Fifth, standard CQR validity
+conditions do not automatically hold under temporal distribution shift.
+The out-of-time coverage results are therefore empirical audits. Sixth,
+the secondary locked registry benchmark was historically evaluated by
+the serving registry before this research track and should not be
+described as a newly untouched confirmatory holdout. Seventh, the
+Level-2 priority statement is qualified by the literature reviewed
+through 31 August 2026 and could be narrowed by newly indexed or
+inaccessible prior work.
+
+\subsection{13. Reproducibility and evidence
+governance}\label{reproducibility-and-evidence-governance}
+
+The research process freezes the dataset, split logic, model roles,
+thresholds, calibration policy, and benchmark protocol before the
+secondary benchmark is read. The canonical dataset SHA-256 is
+\texttt{918b992dd3e8d4b64d2a727b2c4ea607603d0c58f19484e73f7b78528c6a8673}.
+The final evaluation freeze SHA-256 is
+\texttt{631F1FA4241FBE697B46D9658B8720D2CE13CFB5A9F65E32C7532F8A1F6CD21A},
+and the locked benchmark manifest SHA-256 is
+\texttt{62BE80CE9BC977767BC983EDABF61DAA23609A1801251F4E93CFA9693EBDD9AB}.
+The frozen integrity suite reported 26 of 26 tests passing.
+
+For double-anonymized review, repository identity and author-linked URLs
+are omitted from this manuscript. A blinded reproducibility package can
+be supplied during review, with public repository details restored after
+the review process in accordance with journal policy.
+
+\subsection{14. Conclusion}\label{conclusion}
+
+This study evaluates a logistics delay-intelligence pipeline under
+temporally ordered conditions rather than treating a random split as a
+proxy for deployment. Across five classifier families, random splitting
+materially overstated PR-AUC. Probability calibration improved
+reliability without requiring a new classifier, while a simple
+conditional median remained competitive for severity point estimation.
+CQR added an explicit uncertainty layer whose future-period performance
+was evaluated empirically rather than assumed to remain valid under
+shift. Finally, simulated Top-K prioritization showed that risk,
+severity, and uncertainty support different operational objectives
+depending on review capacity.
+
+The main contribution is therefore methodological integration and
+evaluation discipline rather than a new learning algorithm. For
+pharmaceutical shipment logistics, the results support a workflow in
+which prediction-time leakage control, temporally ordered validation,
+calibrated risk, conditional severity, uncertainty auditing, and
+explicit operational capacity are treated as one connected
+decision-support problem.
+
+\subsection{Data availability}\label{data-availability}
+
+The study uses the publicly released USAID SCMS Delivery History
+Dataset. The exact source citation and data-access route are provided in
+the references. A checksum of the canonical analysis file is reported in
+the reproducibility section.
+
+\subsection{Code availability}\label{code-availability}
+
+Code and frozen research artifacts are maintained in a
+version-controlled research repository. Repository identity is
+\textbf{{[}BLINDED FOR DOUBLE-ANONYMIZED REVIEW{]}} in this submission
+version. The final accepted manuscript will provide the public
+repository and reproducibility instructions, subject to journal policy.
+
+\subsection{Ethics and responsible
+use}\label{ethics-and-responsible-use}
+
+The analysis uses retrospective shipment transactions and is intended
+for logistics decision support. Predictions should not be used as
+automatic punitive assessments of suppliers or personnel. Operational
+rankings require human review, and simulated decision outcomes should
+not be interpreted as observed intervention effects.
+
+\subsection{Declaration of generative AI and AI-assisted technologies in
+the manuscript preparation
+process}\label{declaration-of-generative-ai-and-ai-assisted-technologies-in-the-manuscript-preparation-process}
+
+During the preparation of this work, the author used OpenAI ChatGPT and
+Google Gemini to support literature-search organization, manuscript
+structuring, language refinement, bibliographic integrity checks, and
+submission-readiness review. After using these tools/services, the author
+reviewed and edited the content as needed, independently verified
+quantitative results and references against frozen artifacts and primary
+sources, and takes full responsibility for the content of the publication.
+
+\subsection{References}\label{references}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Müller, N., Burggräf, P., Steinberg, F., Sauer, C.R., Schütz, M.
+  (2025). An analytical review of predictive methods for delivery delays
+  in supply chains. Supply Chain Analytics 11, 100130.
+  https://doi.org/10.1016/j.sca.2025.100130
+\item
+  Biazon de Oliveira, M., Zucchi, G., Lippi, M., Cordeiro, D.F., Rosa da
+  Silva, N., Iori, M. (2021). Lead Time Forecasting with Machine
+  Learning Techniques for a Pharmaceutical Supply Chain. ICEIS, 634-641.
+  https://doi.org/10.5220/0010434406340641
+\item
+  Pathak, N., Keshari, S., Rai, S., Saksham, K., Raj, P. (2025).
+  Predicting Global Supply Chain Delays for HIV Medicines Using SCaLDR:
+  A Two-stage ML Framework. IEEE CICT.
+  https://doi.org/10.1109/CICT67193.2025.11399211
+\item
+  Yang, X. (2026). O²RDL-net for joint risk classification and delay
+  forecasting in logistics systems using interaction amplified deep.
+  Scientific Reports 16, 24683.
+  https://doi.org/10.1038/s41598-026-55703-6
+\item
+  Faulkner, S., Zandehshahvar, R., Eghbal Akhlaghi, V., Ouellet, S.,
+  Jordan, C., Van Hentenryck, P. (2026). Uncertainty-Aware Delivery
+  Delay Duration Prediction via Multi-Task Deep Learning.
+  arXiv:2602.20271. Preprint.
+\item
+  Makhado, N., Sejeso, M., Paepae, T. (2026). Conformal prediction-based
+  sequential scheduling for container terminal operations under
+  uncertainty. Operations Research Perspectives 17, 100409.
+  https://doi.org/10.1016/j.orp.2026.100409
+\item
+  Liang, X., Fan, S., Li, H., Goerlandt, F., Yang, Z. (2026). Freeports
+  under the lens: securing container supply chains with a risk-based
+  inspection framework. Transportation Research Part E 208, 104658.
+  https://doi.org/10.1016/j.tre.2025.104658
+\item
+  Zaghdoudi, M.A., Hajri-Gabouj, S., Ghezail, F., Darmoul, S., Varnier,
+  C., Zerhouni, N. (2024). Collaborative and integrated data-driven
+  delay prediction and supplier selection optimization: A case study in
+  a furniture industry. Computers \& Industrial Engineering 197, 110590.
+  https://doi.org/10.1016/j.cie.2024.110590
+\item
+  Hupman, A.C., Zhang, J., Li, H. (2024). Predicting pharmaceutical
+  supply chain disruptions before and during the COVID-19 pandemic. Risk
+  Analysis 44(12), 2797-2811. https://doi.org/10.1111/risa.17453
+\item
+  Gali, J.S., Molavi, N., Alavi, S. (2025). Predicting Global Healthcare
+  Supply Chain Delays: A Machine Learning Approach Leveraging
+  Country-level Logistics Metrics. Journal of International Technology
+  and Information Management 34(1), Article 3.
+  https://doi.org/10.58729/1941-6679.1634
+\item
+  Sadeek, S.N., Hanaoka, S., Sugishita, K. (2026). Uncertainty
+  quantification of departure delay considering network properties and
+  conformal prediction framework. Journal of Air Transport Management
+  136, 103037. https://doi.org/10.1016/j.jairtraman.2026.103037
+\item
+  Bassiouni, M.M., Chakrabortty, R.K., Sallam, K.M., Hussain, O.K.
+  (2024). Deep learning approaches to identify order status in a complex
+  supply chain. Expert Systems with Applications 250, 123947.
+  https://doi.org/10.1016/j.eswa.2024.123947
+\item
+  Thomas, A., Panicker, V.V. (2023). Application of Machine Learning
+  Algorithms for Order Delivery Delay Prediction in Supply Chain
+  Disruption Management. In Intelligent Manufacturing Systems in
+  Industry 4.0, 491-500. https://doi.org/10.1007/978-981-99-1665-8\_42
+\item
+  Kapoor, S., Narayanan, A. (2023). Leakage and the reproducibility
+  crisis in machine-learning-based science. Patterns 4(9), 100804.
+  https://doi.org/10.1016/j.patter.2023.100804
+\item
+  Roberts, D.R. et al.~(2017). Cross-validation strategies for data with
+  temporal, spatial or phylogenetic structure. Ecography 40(8), 913-929.
+  https://doi.org/10.1111/ecog.02881
+\item
+  Niculescu-Mizil, A., Caruana, R. (2005). Predicting good probabilities
+  with supervised learning. ICML, 625-632.
+  https://doi.org/10.1145/1102351.1102430
+\item
+  Romano, Y., Patterson, E., Candès, E. (2019). Conformalized Quantile
+  Regression. NeurIPS 32, 3543-3553.
+\item
+  Barber, R.F., Candès, E.J., Ramdas, A., Tibshirani, R.J. (2023).
+  Conformal prediction beyond exchangeability. Annals of Statistics
+  51(2), 816-845. https://doi.org/10.1214/23-AOS2276
+\item
+  Yadav, P. (2015). Health Product Supply Chains in Developing
+  Countries. Health Systems \& Reform 1(2), 142-154.
+  https://doi.org/10.4161/23288604.2014.968005
+\item
+  Vledder, M., Friedman, J., Sjöblom, M., Brown, T., Yadav, P. (2019).
+  Improving Supply Chain for Essential Drugs in Low-Income Countries.
+  Health Systems \& Reform 5(2), 158-177.
+  https://doi.org/10.1080/23288604.2019.1596050
+\item
+  Baryannis, G., Validi, S., Dani, S., Antoniou, G. (2019). Supply chain
+  risk management and artificial intelligence: state of the art and
+  future research directions. International Journal of Production
+  Research 57(7), 2179-2202.
+  https://doi.org/10.1080/00207543.2018.1530476
+\item
+  Guo, C., Pleiss, G., Sun, Y., Weinberger, K.Q. (2017). On Calibration
+  of Modern Neural Networks. ICML 70, 1321-1330.
+\item
+  Koenker, R., Bassett, G. (1978). Regression Quantiles. Econometrica
+  46(1), 33-50. https://doi.org/10.2307/1913643
+\item
+  Bertsimas, D., Kallus, N. (2020). From Predictive to Prescriptive
+  Analytics. Management Science 66(3), 1025-1044.
+  https://doi.org/10.1287/mnsc.2018.3253
+\item
+  USAID SCMS Project (2015). Supply Chain Management System: Final
+  Program Report (2005-2015). U.S. Agency for International Development
+  and Partnership for Supply Chain Management.
+\end{enumerate}
+
+\phantomsection\label{refs}
+\begin{CSLReferences}{1}{0}
+\bibitem[\citeproctext]{ref-angelopoulos2023gentle}
+Angelopoulos, Anastasios N., and Stephen Bates. 2023. {``Conformal
+Prediction: A Gentle Introduction.''} \emph{Foundations and Trends in
+Machine Learning} 16 (4): 494--591.
+\url{https://doi.org/10.1561/2200000101}.
+
+\bibitem[\citeproctext]{ref-barber2023beyond}
+Barber, Rina Foygel, Emmanuel J. Candès, Aaditya Ramdas, and Ryan J.
+Tibshirani. 2023. {``Conformal Prediction Beyond Exchangeability.''}
+\emph{The Annals of Statistics} 51 (2): 816--45.
+\url{https://doi.org/10.1214/23-AOS2276}.
+
+\bibitem[\citeproctext]{ref-baryannis2019supply}
+Baryannis, George, Sahar Validi, Samir Dani, and Grigoris Antoniou.
+2019. {``Supply Chain Risk Management and Artificial Intelligence: State
+of the Art and Future Research Directions.''} \emph{International
+Journal of Production Research} 57 (7): 2179--2202.
+\url{https://doi.org/10.1080/00207543.2018.1530476}.
+
+\bibitem[\citeproctext]{ref-bassiouni2024deep}
+Bassiouni, Mahmoud M., Ripon K. Chakrabortty, Karam M. Sallam, and Omar
+K. Hussain. 2024. {``Deep Learning Approaches to Identify Order Status
+in a Complex Supply Chain.''} \emph{Expert Systems with Applications}
+250: 123947. \url{https://doi.org/10.1016/j.eswa.2024.123947}.
+
+\bibitem[\citeproctext]{ref-bergmeir2012use}
+Bergmeir, Christoph, and José M. Benítez. 2012. {``On the Use of
+Cross-Validation for Time Series Predictor Evaluation.''}
+\emph{Information Sciences} 191: 192--213.
+\url{https://doi.org/10.1016/j.ins.2011.12.028}.
+
+\bibitem[\citeproctext]{ref-bertsimas2020predictive}
+Bertsimas, Dimitris, and Nathan Kallus. 2020. {``From Predictive to
+Prescriptive Analytics.''} \emph{Management Science} 66 (3): 1025--44.
+\url{https://doi.org/10.1287/mnsc.2018.3253}.
+
+\bibitem[\citeproctext]{ref-oliveira2021lead}
+Biazon de Oliveira, Maiza, Giorgio Zucchi, Marco Lippi, Douglas Farias
+Cordeiro, Núbia Rosa da Silva, and Manuel Iori. 2021. {``Lead Time
+Forecasting with Machine Learning Techniques for a Pharmaceutical Supply
+Chain.''} In \emph{Proceedings of the 23rd International Conference on
+Enterprise Information Systems (ICEIS)}, 1:634--41. SciTePress.
+\url{https://doi.org/10.5220/0010434406340641}.
+
+\bibitem[\citeproctext]{ref-breiman2001random}
+Breiman, Leo. 2001. {``Random Forests.''} \emph{Machine Learning} 45
+(1): 5--32. \url{https://doi.org/10.1023/A:1010933404324}.
+
+\bibitem[\citeproctext]{ref-brier1950verification}
+Brier, Glenn W. 1950. {``Verification of Forecasts Expressed in Terms of
+Probability.''} \emph{Monthly Weather Review} 78 (1): 1--3.
+\url{https://doi.org/10.1175/1520-0493(1950)078\%3C0001:VOFEIT\%3E2.0.CO;2}.
+
+\bibitem[\citeproctext]{ref-chen2016xgboost}
+Chen, Tianqi, and Carlos Guestrin. 2016. {``XGBoost: A Scalable Tree
+Boosting System.''} In \emph{Proceedings of the 22nd ACM SIGKDD
+International Conference on Knowledge Discovery and Data Mining},
+785--94. \url{https://doi.org/10.1145/2939672.2939785}.
+
+\bibitem[\citeproctext]{ref-faulkner2026uncertainty}
+Faulkner, Stefan, Reza Zandehshahvar, Vahid Eghbal Akhlaghi, Sebastien
+Ouellet, Carsten Jordan, and Pascal Van Hentenryck. 2026.
+{``Uncertainty-Aware Delivery Delay Duration Prediction via Multi-Task
+Deep Learning.''} \url{https://arxiv.org/abs/2602.20271}.
+
+\bibitem[\citeproctext]{ref-gali2025predicting}
+Gali, Jeevan Sai, Nima Molavi, and Sepideh Alavi. 2025. {``Predicting
+Global Healthcare Supply Chain Delays: A Machine Learning Approach
+Leveraging Country-Level Logistics Metrics.''} \emph{Journal of
+International Technology and Information Management} 34 (1).
+\url{https://doi.org/10.58729/1941-6679.1634}.
+
+\bibitem[\citeproctext]{ref-gibbs2021adaptive}
+Gibbs, Isaac, and Emmanuel Candès. 2021. {``Adaptive Conformal Inference
+Under Distribution Shift.''} In \emph{Advances in Neural Information
+Processing Systems}, 34:1660--72.
+
+\bibitem[\citeproctext]{ref-guo2017calibration}
+Guo, Chuan, Geoff Pleiss, Yu Sun, and Kilian Q. Weinberger. 2017. {``On
+Calibration of Modern Neural Networks.''} In \emph{Proceedings of the
+34th International Conference on Machine Learning}, 70:1321--30. PMLR.
+
+\bibitem[\citeproctext]{ref-hupman2024predicting}
+Hupman, Andrea C., Juan Zhang, and Haitao Li. 2024. {``Predicting
+Pharmaceutical Supply Chain Disruptions Before and During the COVID-19
+Pandemic.''} \emph{Risk Analysis} 44 (12): 2797--2811.
+\url{https://doi.org/10.1111/risa.17453}.
+
+\bibitem[\citeproctext]{ref-kapoor2023leakage}
+Kapoor, Sayash, and Arvind Narayanan. 2023. {``Leakage and the
+Reproducibility Crisis in Machine-Learning-Based Science.''}
+\emph{Patterns} 4 (9): 100804.
+\url{https://doi.org/10.1016/j.patter.2023.100804}.
+
+\bibitem[\citeproctext]{ref-ke2017lightgbm}
+Ke, Guolin, Qi Meng, Thomas Finley, Taifeng Wang, Wei Chen, Weidong Ma,
+Qiwei Ye, and Tie-Yan Liu. 2017. {``LightGBM: A Highly Efficient
+Gradient Boosting Decision Tree.''} In \emph{Advances in Neural
+Information Processing Systems}, 30:3146--54.
+
+\bibitem[\citeproctext]{ref-koenker1978regression}
+Koenker, Roger, and Gilbert Bassett. 1978. {``Regression Quantiles.''}
+\emph{Econometrica} 46 (1): 33--50.
+\url{https://doi.org/10.2307/1913643}.
+
+\bibitem[\citeproctext]{ref-liang2026freeports}
+Liang, Xinrui, Shiqi Fan, Huanhuan Li, Floris Goerlandt, and Zaili Yang.
+2026. {``Freeports Under the Lens: Securing Container Supply Chains with
+a Risk-Based Inspection Framework.''} \emph{Transportation Research Part
+E: Logistics and Transportation Review} 208: 104658.
+\url{https://doi.org/10.1016/j.tre.2025.104658}.
+
+\bibitem[\citeproctext]{ref-deprado2018advances}
+López de Prado, Marcos. 2018. \emph{Advances in Financial Machine
+Learning}. John Wiley \& Sons.
+
+\bibitem[\citeproctext]{ref-makhado2026conformal}
+Makhado, Ndifelani, Matthews Sejeso, and Thulane Paepae. 2026.
+{``Conformal Prediction-Based Sequential Scheduling for Container
+Terminal Operations Under Uncertainty.''} \emph{Operations Research
+Perspectives} 17: 100409.
+\url{https://doi.org/10.1016/j.orp.2026.100409}.
+
+\bibitem[\citeproctext]{ref-muller2025analytical}
+Müller, Norman, Peter Burggräf, Fabian Steinberg, Carl René Sauer, and
+Maximilian Schütz. 2025. {``An Analytical Review of Predictive Methods
+for Delivery Delays in Supply Chains.''} \emph{Supply Chain Analytics}
+11: 100130. \url{https://doi.org/10.1016/j.sca.2025.100130}.
+
+\bibitem[\citeproctext]{ref-niculescu2005predicting}
+Niculescu-Mizil, Alexandru, and Rich Caruana. 2005. {``Predicting Good
+Probabilities with Supervised Learning.''} In \emph{Proceedings of the
+22nd International Conference on Machine Learning}, 625--32.
+\url{https://doi.org/10.1145/1102351.1102430}.
+
+\bibitem[\citeproctext]{ref-pathak2025predicting}
+Pathak, N., S. Keshari, S. Rai, K. Saksham, and P. Raj. 2025.
+{``Predicting Global Supply Chain Delays for HIV Medicines Using SCaLDR:
+A Two-Stage ML Framework.''} In \emph{2025 IEEE 9th International
+Conference on Information and Communication Technology (CICT)}. IEEE.
+\url{https://doi.org/10.1109/CICT67193.2025.11399211}.
+
+\bibitem[\citeproctext]{ref-platt1999probabilistic}
+Platt, John. 1999. {``Probabilistic Outputs for Support Vector Machines
+and Comparisons to Regularized Likelihood Methods.''} In \emph{Advances
+in Large Margin Classifiers}, 61--74. MIT Press.
+
+\bibitem[\citeproctext]{ref-prokhorenkova2018catboost}
+Prokhorenkova, Liudmila, Gleb Gusev, Aleksandr Vorobev, Anna Veronika
+Dorogush, and Andrey Gulin. 2018. {``CatBoost: Unbiased Boosting with
+Categorical Features.''} In \emph{Advances in Neural Information
+Processing Systems}, 31:6638--48.
+
+\bibitem[\citeproctext]{ref-roberts2017crossvalidation}
+Roberts, David R., Volker Bahn, Simone Ciuti, Mark S. Boyce, Jane Elith,
+Gurutzeta Guillera-Arroita, Severin Hauenstein, et al. 2017.
+{``Cross-Validation Strategies for Data with Temporal, Spatial or
+Phylogenetic Structure.''} \emph{Ecography} 40 (8): 913--29.
+\url{https://doi.org/10.1111/ecog.02881}.
+
+\bibitem[\citeproctext]{ref-romano2019cqr}
+Romano, Yaniv, Evan Patterson, and Emmanuel Candès. 2019.
+{``Conformalized Quantile Regression.''} In \emph{Advances in Neural
+Information Processing Systems}, 32:3543--53.
+
+\bibitem[\citeproctext]{ref-sadeek2026uncertainty}
+Sadeek, Soumik Nafis, Shinya Hanaoka, and Kashin Sugishita. 2026.
+{``Uncertainty Quantification of Departure Delay Considering Network
+Properties and Conformal Prediction Framework.''} \emph{Journal of Air
+Transport Management} 136: 103037.
+\url{https://doi.org/10.1016/j.jairtraman.2026.103037}.
+
+\bibitem[\citeproctext]{ref-thomas2023application}
+Thomas, Arun, and Vinay V. Panicker. 2023. {``Application of Machine
+Learning Algorithms for Order Delivery Delay Prediction in Supply Chain
+Disruption Management.''} In \emph{Intelligent Manufacturing Systems in
+Industry 4.0: Select Proceedings of IPDIMS 2022}, 491--500. Springer
+Nature Singapore. \url{https://doi.org/10.1007/978-981-99-1665-8_42}.
+
+\bibitem[\citeproctext]{ref-tibshirani2019covariate}
+Tibshirani, Ryan J., Rina Foygel Barber, Emmanuel Candès, and Aaditya
+Ramdas. 2019. {``Conformal Prediction Under Covariate Shift.''} In
+\emph{Advances in Neural Information Processing Systems}, 32:2530--40.
+
+\bibitem[\citeproctext]{ref-scmsdataset2016}
+USAID. 2016. {``USAID Supply Chain Management System (SCMS) Delivery
+History Dataset.''} U.S. President's Emergency Plan for AIDS Relief
+(PEPFAR) / USAID Data Repository.
+
+\bibitem[\citeproctext]{ref-usaid2015scms}
+USAID SCMS Project. 2015. {``Supply Chain Management System: Final
+Program Report (2005--2015).''} Washington, DC: U.S. Agency for
+International Development; Partnership for Supply Chain Management.
+
+\bibitem[\citeproctext]{ref-vledder2019improving}
+Vledder, Monique, Jed Friedman, Mirja Sjöblom, Timothy Brown, and
+Prashant Yadav. 2019. {``Improving Supply Chain for Essential Drugs in
+Low-Income Countries: Results from a Large Scale Randomized Experiment
+in Zambia.''} \emph{Health Systems \& Reform} 5 (2): 158--77.
+\url{https://doi.org/10.1080/23288604.2019.1596050}.
+
+\bibitem[\citeproctext]{ref-yadav2015health}
+Yadav, Prashant. 2015. {``Health Product Supply Chains in Developing
+Countries: Diagnosis of the Root Causes of Underperformance and an
+Agenda for Reform.''} \emph{Health Systems \& Reform} 1 (2): 142--54.
+\url{https://doi.org/10.4161/23288604.2014.968005}.
+
+\bibitem[\citeproctext]{ref-yang2026o2rdl}
+Yang, Xiao. 2026. {``O\(^2\)RDL-Net for Joint Risk Classification and
+Delay Forecasting in Logistics Systems Using Interaction Amplified
+Deep.''} \emph{Scientific Reports} 16: 24683.
+\url{https://doi.org/10.1038/s41598-026-55703-6}.
+
+\bibitem[\citeproctext]{ref-zadrozny2002transforming}
+Zadrozny, Bianca, and Charles Elkan. 2002. {``Transforming Classifier
+Scores into Accurate Multiclass Probability Estimates.''} In
+\emph{Proceedings of the Eighth ACM SIGKDD International Conference on
+Knowledge Discovery and Data Mining}, 694--99.
+\url{https://doi.org/10.1145/775047.775151}.
+
+\bibitem[\citeproctext]{ref-zaghdoudi2024collaborative}
+Zaghdoudi, Mohamed Aziz, Sonia Hajri-Gabouj, Feiza Ghezail, Saber
+Darmoul, Christophe Varnier, and Noureddine Zerhouni. 2024.
+{``Collaborative and Integrated Data-Driven Delay Prediction and
+Supplier Selection Optimization: A Case Study in a Furniture
+Industry.''} \emph{Computers \& Industrial Engineering} 197: 110590.
+\url{https://doi.org/10.1016/j.cie.2024.110590}.
+
+\end{CSLReferences}
+
+\end{document}

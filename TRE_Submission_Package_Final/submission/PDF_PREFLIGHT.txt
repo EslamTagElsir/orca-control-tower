@@ -1,0 +1,6 @@
+PDF: /mnt/data/TRE_Submission_Package/ORCA_TRE_Anonymized_Manuscript.pdf
+Pages: 9
+Encrypted: False
+Openable (PyMuPDF): True
+Likely scanned: False
+XFA present: False
