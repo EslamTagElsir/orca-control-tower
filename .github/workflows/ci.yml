@@ -40,6 +40,7 @@ jobs:
           src/routes/model-monitor.tsx
           src/routes/monitoring-readiness.tsx
           src/routes/reports.tsx
+          src/routes/settings.tsx
           'src/routes/api/orca/$.ts'
           --rule 'prettier/prettier: off'
 
