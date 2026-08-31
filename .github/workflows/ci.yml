@@ -66,7 +66,7 @@ jobs:
       - name: Compile backend source
         run: python -m compileall -q backend/src
 
-      - name: Run API, registry, and drift-readiness contracts
+      - name: Run API, registry, and monitoring contracts
         env:
           PYTHONPATH: backend/src
         run: >-
@@ -74,3 +74,4 @@ jobs:
           backend/tests/test_api_schemas.py
           backend/tests/test_reliability_artifact.py
           backend/tests/test_drift_readiness_contract.py
+          backend/tests/test_production_monitoring_contract.py
