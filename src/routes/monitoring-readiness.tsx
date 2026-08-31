@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, CheckCircle2, DatabaseZap, ShieldAlert, Waves } from "lucide-react";
+import { AlertTriangle, CheckCircle2, DatabaseZap, FileCheck2, ShieldAlert, Waves } from "lucide-react";
 
 import { routeHead } from "@/components/orca/RouteShell";
 import {
@@ -90,6 +90,8 @@ function MonitoringReadinessPage() {
 
   const data = readiness.data;
   const connected = data.production_monitoring_connected;
+  const artifact = data.production_artifact;
+  const summary = artifact.summary;
 
   return (
     <div className="space-y-3 p-3 lg:p-4">
@@ -122,9 +124,9 @@ function MonitoringReadinessPage() {
           note="Detector, metrics, policy, runner, schemas and drift configuration are present."
         />
         <StateCard
-          label="Historical artifacts"
-          ready={data.historical_evaluation.artifacts_available}
-          note="Development-CV drift artifacts are packaged and inspectable."
+          label="Production artifact"
+          ready={artifact.valid}
+          note={`Contract ${artifact.contract_version} at ${artifact.path}.`}
         />
         <StateCard
           label="Live window"
@@ -134,9 +136,65 @@ function MonitoringReadinessPage() {
         <StateCard
           label="Production claim"
           ready={data.production_monitoring_connected}
-          note="A versioned production drift artifact can support a live monitoring claim."
+          note="A validated artifact matching the active serving registry supports the live claim."
         />
       </section>
+
+      <div className="grid gap-3 xl:grid-cols-2">
+        <Panel>
+          <PanelHeader
+            title="Production artifact provenance"
+            hint="The exact artifact allowed to promote monitoring to CONNECTED"
+            actions={<FileCheck2 className="size-4 text-muted-foreground" aria-hidden />}
+          />
+          <PanelBody className="space-y-2 text-[11px]">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="rounded-md border border-hairline bg-surface-sunken p-3">
+                <p className="orca-label text-[10px]">Artifact state</p>
+                <p className="mt-1 font-semibold">{artifact.present ? (artifact.valid ? "VALID" : "INVALID") : "ABSENT"}</p>
+                <p className="orca-num mt-1 break-all text-muted-foreground">{artifact.path}</p>
+              </div>
+              <div className="rounded-md border border-hairline bg-surface-sunken p-3">
+                <p className="orca-label text-[10px]">Pipeline run</p>
+                <p className="orca-num mt-1 font-semibold">{summary?.pipeline_run_id ?? "—"}</p>
+                <p className="mt-1 text-muted-foreground">Generated {summary?.generated_utc ?? "—"}</p>
+              </div>
+            </div>
+            <div className="rounded-md border border-hairline bg-surface-sunken p-3 text-muted-foreground">
+              <span className="font-semibold text-foreground">Artifact model:</span> {summary?.model_version ?? "—"} ·{" "}
+              <span className="font-semibold text-foreground">prediction contract:</span>{" "}
+              {summary?.prediction_contract_version ?? "—"} ·{" "}
+              <span className="font-semibold text-foreground">drift status:</span> {summary?.overall_status ?? "—"}
+            </div>
+          </PanelBody>
+        </Panel>
+
+        <Panel>
+          <PanelHeader
+            title="Production evidence blockers"
+            hint="What still prevents a live drift claim"
+            actions={<ShieldAlert className="size-4 text-warn" aria-hidden />}
+          />
+          <PanelBody className="space-y-2">
+            {data.blockers.length === 0 ? (
+              <div className="flex gap-2 rounded-md border border-success/30 bg-success/10 p-3 text-[11px] leading-relaxed text-success">
+                <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                <span>No monitoring contract blockers are reported.</span>
+              </div>
+            ) : (
+              data.blockers.map((blocker) => (
+                <div
+                  key={blocker}
+                  className="flex gap-2 rounded-md border border-hairline bg-surface-sunken p-3 text-[11px] leading-relaxed text-muted-foreground"
+                >
+                  <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warn" aria-hidden />
+                  <span>{blocker}</span>
+                </div>
+              ))
+            )}
+          </PanelBody>
+        </Panel>
+      </div>
 
       <div className="grid gap-3 xl:grid-cols-2">
         <Panel>
@@ -172,29 +230,22 @@ function MonitoringReadinessPage() {
                 ))}
               </div>
             </div>
-            <div className="rounded-md border border-hairline bg-surface-sunken p-3 text-[11px] text-muted-foreground">
-              Historical runner scope: <strong className="text-foreground">{data.historical_evaluation.scope}</strong>.
-              Final holdout quarantine by design: {data.historical_evaluation.final_holdout_quarantined_by_design ? "yes" : "no"}.
-            </div>
           </PanelBody>
         </Panel>
 
         <Panel>
-          <PanelHeader
-            title="Production evidence blockers"
-            hint="What still prevents a live drift claim"
-            actions={<ShieldAlert className="size-4 text-warn" aria-hidden />}
-          />
-          <PanelBody className="space-y-2">
-            {data.blockers.map((blocker) => (
-              <div
-                key={blocker}
-                className="flex gap-2 rounded-md border border-hairline bg-surface-sunken p-3 text-[11px] leading-relaxed text-muted-foreground"
-              >
-                <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warn" aria-hidden />
-                <span>{blocker}</span>
-              </div>
-            ))}
+          <PanelHeader title="Historical development layer" hint="Explicitly not production telemetry" />
+          <PanelBody className="space-y-2 text-[11px] text-muted-foreground">
+            <p>
+              Runner scope: <strong className="text-foreground">{data.historical_evaluation.scope}</strong>
+            </p>
+            <p>
+              Historical artifacts packaged: {data.historical_evaluation.artifacts_available ? "yes" : "no"}
+            </p>
+            <p>
+              Final holdout quarantine by design:{" "}
+              {data.historical_evaluation.final_holdout_quarantined_by_design ? "yes" : "no"}
+            </p>
           </PanelBody>
         </Panel>
       </div>
