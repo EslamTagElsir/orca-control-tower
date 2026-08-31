@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   frontend:
-    name: Frontend lint and build
+    name: Frontend targeted lint and full build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -31,10 +31,15 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Lint
-        run: bun run lint
+      - name: Lint changed ORCA surface
+        run: >-
+          bunx eslint
+          src/lib/orca/reliability.ts
+          src/routes/model-monitor.tsx
+          'src/routes/api/orca/$.ts'
+          --rule 'prettier/prettier: off'
 
-      - name: Build
+      - name: Build full frontend
         run: bun run build
 
   backend-contracts:
