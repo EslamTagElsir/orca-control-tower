@@ -39,6 +39,17 @@ jobs:
             exit 1
           fi
 
+      - name: Verify frontend deployment contract
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const config = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
+          if (config.installCommand !== 'bun install --frozen-lockfile') throw new Error('Unexpected Vercel install command');
+          if (config.buildCommand !== 'bun run build') throw new Error('Unexpected Vercel build command');
+          const ignore = fs.readFileSync('.vercelignore', 'utf8');
+          if (!ignore.includes('backend/')) throw new Error('Vercel payload must exclude backend/');
+          NODE
+
       - name: Lint changed ORCA surface
         run: >-
           bunx eslint
@@ -96,6 +107,21 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
+
+      - name: Verify Railway deployment contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          config = json.loads(Path('backend/railway.json').read_text())
+          assert config['build']['builder'] == 'DOCKERFILE'
+          assert config['build']['dockerfilePath'] == 'Dockerfile'
+          assert config['deploy']['healthcheckPath'] == '/health'
+          assert config['deploy']['healthcheckTimeout'] == 300
+          assert config['deploy']['restartPolicyType'] == 'ON_FAILURE'
+          assert config['deploy']['restartPolicyMaxRetries'] == 10
+          PY
 
       - name: Install lightweight test dependencies
         run: python -m pip install --upgrade pip pytest pydantic PyYAML
