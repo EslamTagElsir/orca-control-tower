@@ -7,8 +7,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Temporary write permission is used only by the guarded same-repo cleanup job
+# below so Bun can commit its generated package manifest and lockfile verbatim.
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -100,34 +102,42 @@ jobs:
           backend/tests/test_drift_readiness_contract.py
           backend/tests/test_production_monitoring_contract.py
 
-  dependency-cleanup-artifact:
-    name: Generate Lovable dependency cleanup lockfile
+  dependency-cleanup-commit:
+    name: Commit Bun-generated Lovable dependency cleanup
+    if: github.event_name == 'pull_request' && github.head_ref == 'feat/supp-reliability-hardening'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout
+      - name: Checkout PR head branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      - name: Remove unused legacy Lovable packages
-        run: bun remove @lovable.dev/mcp-js @lovable.dev/vite-tanstack-config
-
-      - name: Verify removed packages are absent
+      - name: Remove unused legacy Lovable packages and regenerate lockfile
+        shell: bash
         run: |
+          set -euo pipefail
+          if ! grep -q '@lovable.dev/' package.json bun.lock; then
+            echo 'Legacy Lovable packages are already absent; no cleanup commit needed.'
+            exit 0
+          fi
+
+          bun remove @lovable.dev/mcp-js @lovable.dev/vite-tanstack-config
+
           if grep -q '@lovable.dev/' package.json bun.lock; then
             echo 'Legacy Lovable package references remain after bun remove.'
             exit 1
           fi
 
-      - name: Upload regenerated manifest and lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: lovable-dependency-cleanup
-          path: |
-            package.json
-            bun.lock
-          retention-days: 1
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json bun.lock
+          git diff --cached --check
+          git commit -m 'build: remove legacy Lovable dependencies'
+          git push origin HEAD:${GITHUB_HEAD_REF}
