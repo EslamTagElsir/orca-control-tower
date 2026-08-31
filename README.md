@@ -2,94 +2,184 @@
 
 # ORCA Control Tower
 
-**Supply Chain Decision Intelligence — Sense → Predict → Explain → Simulate → Decide**
+### **Operational Risk & Cost Analytics**
 
+**AI-powered supply-chain decision intelligence for predicting risk, explaining why it matters, simulating alternatives, and supporting better operational decisions.**
+
+**Sense → Predict → Explain → Simulate → Decide**
+
+[![CI](https://github.com/EslamTagElsir/orca-control-tower/actions/workflows/ci.yml/badge.svg)](https://github.com/EslamTagElsir/orca-control-tower/actions/workflows/ci.yml)
 ![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)
-![TanStack Start](https://img.shields.io/badge/TanStack%20Start-Frontend-FF4154)
-![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi)
-![Docker](https://img.shields.io/badge/Docker-Frontend%20%2B%20Backend-2496ED?logo=docker&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-ML%20API-009688?logo=fastapi&logoColor=white)
 ![CatBoost](https://img.shields.io/badge/CatBoost-Risk%20Model-FFCC00)
 ![LightGBM](https://img.shields.io/badge/LightGBM-Severity-4CAF50)
+![Docker](https://img.shields.io/badge/Docker-Frontend%20%2B%20Backend-2496ED?logo=docker&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Deployed%20Prototype-22c55e)
 
-**[Repository](https://github.com/EslamTagElsir/orca-control-tower)** · **[Legacy Published App](https://orca-control-tower.lovable.app)**
-
-> GitHub is the canonical source of truth. The frontend builds with the native TanStack Start + Nitro toolchain and has a standalone Node/Docker runtime. The legacy Lovable URL can lag the repository until separately republished.
+### [🚀 Live Application](https://orca-control-tower.vercel.app) · [📚 Evidence Policy](docs/EVIDENCE_POLICY.md) · [🔁 Reproducibility](docs/REPRODUCIBILITY.md) · [📈 Monitoring](docs/MONITORING.md)
 
 </div>
 
-## Overview
+---
 
-ORCA is an enterprise-style supply-chain decision intelligence system built as a single monorepo with two independently deployable layers:
+## What is ORCA?
 
-- a React / TanStack Start Control Tower at the repository root;
-- a FastAPI / ML intelligence service under `backend/`.
+**ORCA (Operational Risk & Cost Analytics)** is a deployed decision-intelligence prototype for modern logistics and supply-chain operations.
 
-The product deliberately separates **operational experience**, **model evidence**, **simulation**, and **production monitoring** so the UI does not present research holdout metrics or synthetic events as live production truth.
+Instead of acting as another dashboard that only reports what already happened, ORCA is designed around a decision workflow:
 
-```text
-Sense → Predict → Explain → Simulate → Decide
+> **What is likely to go wrong? → How serious could it be? → Why is the model concerned? → What options can we test? → What should an operator prioritize next?**
+
+The platform combines a responsive operational Control Tower with a production-style ML service that supports:
+
+- calibrated shipment risk prediction;
+- delay-severity estimation with uncertainty;
+- SHAP-based local explanations;
+- decision recommendations;
+- what-if simulation;
+- model reliability evidence;
+- drift and monitoring readiness diagnostics;
+- exportable evidence packs with explicit provenance.
+
+ORCA is currently a **technically validated prototype**. The predictive layer uses historical evidence; the operational digital-twin layer is explicitly synthetic until real enterprise or IoT/telematics integrations are connected.
+
+---
+
+## Why ORCA?
+
+Logistics teams often discover shipment risk too late, after a delay has already started affecting cost, service levels, customer experience, or downstream operations.
+
+Traditional dashboards are useful for visibility, but visibility alone does not answer the operational questions that matter most:
+
+| Operational question | ORCA capability |
+|---|---|
+| Which shipments deserve attention first? | Calibrated late-risk scoring and decision tiers |
+| How severe could the delay become? | Conditional severity estimates with uncertainty intervals |
+| Why is the model raising this risk? | SHAP-based predictive drivers |
+| What could happen under a different scenario? | What-if simulation and re-scoring |
+| Which action should an operator consider? | Decision-engine recommendation layer |
+| Can the model evidence be trusted? | Frozen temporal-holdout reliability and evidence contracts |
+| Is live production drift actually connected? | Explicit monitoring-readiness state instead of fabricated metrics |
+
+The goal is to move operational decision-making from **reactive reporting** toward **predictive, explainable, uncertainty-aware decision support**.
+
+---
+
+## Product at a glance
+
+| Area | Current implementation |
+|---|---|
+| **Product stage** | Deployed and technically tested prototype |
+| **Primary use case** | Shipment risk and logistics decision intelligence |
+| **Decision flow** | Sense → Predict → Explain → Simulate → Decide |
+| **Frontend** | React 19 + TypeScript + TanStack Start |
+| **Backend** | FastAPI ML service |
+| **Risk model** | CatBoost classification + isotonic calibration |
+| **Severity model** | LightGBM conditional quantile models |
+| **Uncertainty** | Split CQR evidence and prediction intervals |
+| **Explainability** | Local SHAP explanations |
+| **Deployment** | Vercel frontend + Railway backend |
+| **Current model registry** | `v2.0.0-demo` |
+| **Prediction contract** | `v1.0` |
+
+---
+
+## Decision workflow
+
+```mermaid
+flowchart LR
+    A[Operational Inputs] --> B[Predict Risk]
+    B --> C[Estimate Severity + Uncertainty]
+    C --> D[Explain Drivers]
+    D --> E[Simulate Alternatives]
+    E --> F[Recommend / Prioritize]
+    F --> G[Operator Decision]
 ```
 
-## Repository structure
+ORCA deliberately keeps the **human operator in the decision loop**. It is a decision-support system, not an autonomous execution engine.
 
-```text
-orca-control-tower/
-├── src/                              # React / TanStack Start frontend
-│   ├── components/orca/              # application shell + ORCA UI primitives
-│   ├── lib/orca/                     # transport, model evidence, monitoring clients
-│   └── routes/                       # product pages + same-origin ORCA proxy
-├── Dockerfile                        # standalone frontend Node container
-├── .dockerignore                     # scoped frontend Docker build context
-├── vite.config.ts                    # native TanStack Start + Nitro node-server build
-├── backend/
-│   ├── src/delay_intelligence/       # FastAPI + model/decision/drift packages
-│   ├── configs/                      # decision, drift, model-related configuration
-│   ├── artifacts/model_registry/v2/  # serving registry and locked validation evidence
-│   ├── contracts/                    # formal production evidence contracts
-│   ├── tests/                        # API/evidence/monitoring contract tests
-│   ├── Dockerfile
-│   └── requirements.railway.txt
-├── docs/
-│   ├── EVIDENCE_POLICY.md
-│   ├── REPRODUCIBILITY.md
-│   └── MONITORING.md
-├── .github/workflows/ci.yml
-└── README.md
-```
+---
 
-## Product areas
+## Product experience
+
+### Operations
 
 | Screen | Purpose |
 |---|---|
-| **Control Tower** | Operational command center with risk, exceptions, events and KPIs. |
-| **Shipments** | Shipment search, inspection, model prediction and explanation. |
-| **Exceptions** | Action-focused view of risk and active operational exceptions. |
-| **Resolution Hub** | Prioritized resolution workflow for operational exceptions. |
-| **Network Map** | Synthetic route/position visualization with explicit provenance. |
-| **Analytics** | Completed-journey / holdout outcome analytics. |
-| **What-If Simulator** | Scenario workbench that re-scores simulated inputs through ORCA. |
-| **Decision Economics** | Planning economics around simulated interventions; not realized savings. |
-| **Model Reliability** | Registry-backed temporal-holdout reliability and uncertainty evidence. |
-| **Drift Readiness** | Separates drift capability, historical evaluation and live-production monitoring readiness. |
-| **Evidence Reports** | Exportable JSON/Markdown Evidence Pack with provenance preserved. |
-| **Settings & Diagnostics** | Transport configuration plus health/reliability/monitoring diagnostics. |
+| **Control Tower** | Executive command center for operational risk, exceptions, events, and KPIs |
+| **Shipments** | Search, inspect, predict, and explain individual shipment risk |
+| **Exceptions** | Prioritized view of operational risks requiring attention |
+| **Resolution Hub** | Decision-oriented workflow for reviewing potential interventions |
+| **Network Map** | Visual route/position demonstration with explicit synthetic-data provenance |
 
-The application shell is responsive: desktop navigation is grouped by Operations, Intelligence and Governance; mobile navigation uses an accessible drawer with route-aware closing and Escape support.
+### Intelligence
 
-## Architecture
+| Screen | Purpose |
+|---|---|
+| **Analytics** | Completed-journey and holdout outcome analysis |
+| **What-If Simulator** | Modify scenario inputs and re-score them through the ORCA model |
+| **Decision Economics** | Planning economics for simulated interventions; not claimed realized savings |
+
+### Governance
+
+| Screen | Purpose |
+|---|---|
+| **Model Reliability** | Registry-backed temporal-holdout performance and uncertainty evidence |
+| **Drift Readiness** | Separates drift capability, historical evaluation, and live monitoring status |
+| **Evidence Reports** | Exportable JSON / Markdown evidence packs with provenance preserved |
+| **Settings & Diagnostics** | Backend connectivity, health, reliability, and monitoring diagnostics |
+
+The application is responsive across desktop and mobile layouts.
+
+---
+
+## AI & decision-intelligence layer
+
+The current serving registry includes:
+
+### Risk prediction
+
+- **CatBoost** late-risk classifier;
+- isotonic probability calibration;
+- frozen decision threshold;
+- operational decision tiers.
+
+### Delay severity and uncertainty
+
+- **LightGBM** `q05`, `q50`, and `q95` conditional severity models;
+- split conformalized quantile regression (**CQR**) evidence;
+- interval coverage and interval-width diagnostics.
+
+### Explainability
+
+- local **SHAP** predictive explanations;
+- ranked model drivers for individual decisions;
+- exploratory causal-stability evidence kept separate from predictive claims.
+
+### Decision support
+
+- recommendation engine for simulated decision requests;
+- what-if scenario re-scoring;
+- planning economics without presenting simulated savings as realized financial impact.
+
+---
+
+## System architecture
+
+ORCA is a monorepo with independently deployable frontend and backend layers.
 
 ```mermaid
 flowchart LR
     Browser["Browser\nReact + TypeScript"]
-    Frontend["TanStack Start\nNode / Docker"]
+    Frontend["TanStack Start\nVercel / Node / Docker"]
     Proxy["Same-origin allow-listed proxy\n/api/orca/*"]
-    API["FastAPI\nbackend/"]
-    Registry["Serving Registry\nCatBoost + LightGBM + calibration"]
-    Explain["SHAP\nlocal explanation"]
+    API["FastAPI\nRailway / Docker"]
+    Registry["Serving Registry\nCatBoost + LightGBM + Calibration"]
+    Explain["SHAP\nLocal Explanation"]
     Decision["Decision Engine"]
-    Drift["Drift Engine\nfeature/prediction/target/uncertainty"]
-    Evidence["Evidence Contracts\nreliability + production monitoring"]
+    Drift["Drift Engine"]
+    Evidence["Evidence Contracts"]
 
     Browser --> Frontend --> Proxy --> API
     API --> Registry
@@ -99,129 +189,151 @@ flowchart LR
     API --> Evidence
 ```
 
-The server-side proxy is intentionally allow-listed. Adding a backend route does not automatically expose it to the browser.
+The browser never talks directly to an arbitrary backend path. The TanStack server exposes an explicit allow-list under `/api/orca/*` and forwards only supported contracts to the FastAPI service.
 
-## Backend API
+---
 
-The frontend currently uses six explicit ORCA contracts:
+## API contracts
+
+The current frontend uses six explicit backend contracts:
 
 | Endpoint | Method | Purpose |
 |---|---:|---|
-| `/health` | `GET` | Service/model health and serving metadata. |
-| `/reliability` | `GET` | Frozen serving-registry temporal-holdout reliability evidence. |
-| `/monitoring-readiness` | `GET` | Truthful drift/production-monitoring readiness and blockers. |
-| `/predict` | `POST` | Calibrated late-risk probability, decision tier and severity uncertainty. |
-| `/explain` | `POST` | SHAP predictive drivers plus exploratory causal candidates. |
-| `/recommend` | `POST` | Decision-engine recommendation for a simulated decision request. |
+| `/health` | `GET` | Service/model health and serving metadata |
+| `/reliability` | `GET` | Frozen serving-registry temporal-holdout reliability evidence |
+| `/monitoring-readiness` | `GET` | Drift/production-monitoring readiness and blockers |
+| `/predict` | `POST` | Calibrated late-risk probability, tier, and severity uncertainty |
+| `/explain` | `POST` | SHAP predictive drivers plus exploratory causal candidates |
+| `/recommend` | `POST` | Decision-engine recommendation for a simulated request |
 
-No `/demo/*` backend routes are required by the current frontend integration.
-
-## ML / decision intelligence layer
-
-The bundled serving registry currently contains:
-
-- CatBoost late-risk classification;
-- isotonic probability calibration;
-- LightGBM `q05`, `q50`, `q95` conditional severity models;
-- split CQR uncertainty evidence;
-- CatBoost local SHAP explanation;
-- a decision-engine recommendation layer;
-- exploratory causal-stability evidence that is never presented as identified intervention efficacy.
-
-The repository registry declares model version `v2.0.0-demo` and prediction contract `v1.0`.
-
-## Reliability evidence
-
-`GET /reliability`, Model Reliability and Evidence Reports read the locked serving-registry validation artifacts. They do not re-run evaluation per request and do not substitute fixture values.
-
-The current registry includes temporal holdout evidence such as ROC-AUC, PR-AUC, Brier score, precision/recall/F1, balanced accuracy, frozen decision threshold, CQR coverage and interval-width diagnostics.
-
-These are **historical temporal-holdout measurements**, not live production SLA or drift measurements.
-
-## Monitoring evidence layers
-
-ORCA distinguishes three layers:
-
-1. **Serving-registry reliability** — immutable temporal holdout evidence.
-2. **Historical development drift** — chronological CV/development drift analysis with final-holdout quarantine.
-3. **Live production drift** — only valid after a separately produced production artifact satisfies contract `1.0` and matches the active serving registry.
-
-Production monitoring is promoted to `CONNECTED` only when:
+The production frontend accesses these through the same-origin proxy:
 
 ```text
-backend/artifacts/monitoring/latest.json
+/api/orca/health
+/api/orca/reliability
+/api/orca/monitoring-readiness
+/api/orca/predict
+/api/orca/explain
+/api/orca/recommend
 ```
 
-exists and passes:
+---
 
-```text
-backend/contracts/production_drift_artifact.schema.json
-```
+## Evidence, reliability & trust
 
-plus the runtime validator in `delay_intelligence.monitoring.readiness`.
+A core design principle of ORCA is that **research evidence, model output, synthetic operations, and production telemetry must not be mixed together**.
 
-Until then, `GET /monitoring-readiness` intentionally reports `NOT_CONNECTED` with explicit blockers instead of inventing drift values.
-
-See [`docs/MONITORING.md`](docs/MONITORING.md).
-
-## Data provenance and trust
+### Evidence labels
 
 | Label | Meaning |
 |---|---|
-| **REAL DATA** | Frozen source/holdout records and completed historical outcomes used by the research/demo workflow. |
-| **MODEL OUTPUT** | Prediction/explanation outputs from the serving model. |
-| **SIMULATED SCENARIO** | What-if inputs and planning context. |
-| **SYNTHETIC LIVE OPERATIONS** | Generated operational events for the digital-twin demonstration. |
-| **SYNTHETIC ROUTE / POSITION** | Generated map movement; not GPS/AIS/TMS/ERP/IoT telemetry. |
-| **PRODUCTION MONITORING** | A separately versioned monitoring artifact that passes the production evidence contract. |
-| **OFFLINE FIXTURE DATA — NOT ORCA OUTPUT** | Explicit fallback data when the intelligence service is unavailable. |
+| **REAL DATA** | Frozen source/holdout records and completed historical outcomes used by the research/demo workflow |
+| **MODEL OUTPUT** | Prediction and explanation outputs from the serving model |
+| **SIMULATED SCENARIO** | What-if inputs and planning context |
+| **SYNTHETIC LIVE OPERATIONS** | Generated operational events used by the digital-twin demonstration |
+| **SYNTHETIC ROUTE / POSITION** | Generated map movement; not GPS/AIS/TMS/ERP/IoT telemetry |
+| **PRODUCTION MONITORING** | Separately versioned monitoring evidence that satisfies the production contract |
+| **OFFLINE FIXTURE DATA — NOT ORCA OUTPUT** | Explicit fallback data when the intelligence service is unavailable |
 
-Detailed policy: [`docs/EVIDENCE_POLICY.md`](docs/EVIDENCE_POLICY.md).
+### Reliability evidence
 
-## Evidence Pack
+`GET /reliability`, **Model Reliability**, and **Evidence Reports** read locked serving-registry validation artifacts rather than recalculating convenient metrics at request time.
 
-The Evidence Reports page exports registry-backed evidence as JSON or Markdown while preserving:
+The registry includes temporal-holdout evidence such as:
 
-- model version;
-- prediction contract version;
-- registry/evaluation roles;
-- evaluation data SHA-256;
-- temporal split chronology;
-- classification metrics;
-- severity CQR coverage and interval-width evidence;
-- interpretation boundaries.
+- ROC-AUC and PR-AUC;
+- Brier score;
+- precision, recall, F1, and balanced accuracy;
+- frozen decision threshold;
+- CQR empirical coverage;
+- interval-width diagnostics.
 
-The Evidence Pack does not claim live drift, live SLA, future reliability or realized causal impact.
+These are **historical temporal-holdout measurements**, not live production SLA or live drift claims.
 
-## CI and reproducibility
+### Monitoring readiness
 
-GitHub Actions currently performs:
+ORCA separates three evidence layers:
 
-- frozen Bun dependency installation;
-- a permanent assertion that `package.json`, `bun.lock`, and `vite.config.ts` contain no `@lovable.dev/*` build/runtime package references;
-- targeted ESLint checks for the hardened ORCA surfaces;
-- a full frontend production build;
-- a standalone frontend Docker image build and HTTP smoke test;
-- Python source compilation;
-- 18 API/registry/monitoring contract tests;
-- a full-stack Docker runtime test that builds and starts the production backend image, loads the serving model, verifies `/health`, `/reliability`, and `/monitoring-readiness`, starts the production frontend image on the same isolated network, and verifies the same contracts through the allow-listed `/api/orca/*` proxy.
+1. **Serving-registry reliability** — immutable temporal-holdout evidence.
+2. **Historical development drift** — chronological development/CV analysis.
+3. **Live production drift** — only valid after a production monitoring artifact is connected and validated.
 
-CI run **#44** passed the complete repository validation, including backend model runtime and backend-to-frontend proxy parity.
+Until that artifact exists, `/monitoring-readiness` intentionally reports `NOT_CONNECTED` with explicit blockers instead of inventing live drift values.
 
-This proves that the two deployable images work together using the repository deployment contract. It does not replace verification of a specific external Railway/hosting deployment after that deployment occurs.
+See [Monitoring](docs/MONITORING.md) and [Evidence Policy](docs/EVIDENCE_POLICY.md).
 
-A repository-wide `eslint .` still exposes substantial pre-existing formatting/legacy/generated-code debt. This work is intentionally kept separate instead of silently reformatting unrelated application surfaces.
+---
 
-Reproducibility guide: [`docs/REPRODUCIBILITY.md`](docs/REPRODUCIBILITY.md).
+## Live deployment
 
-## Local development
+### Frontend
+
+**Production application:** https://orca-control-tower.vercel.app
+
+The frontend runs from the repository root using the native TanStack Start + Nitro toolchain. It no longer requires Lovable packages to build or run.
 
 ### Backend
+
+The canonical backend lives inside this monorepo under:
+
+```text
+/backend
+```
+
+It is deployed independently using the backend Dockerfile and FastAPI/Uvicorn runtime.
+
+The frontend receives the backend base URL through the server-side environment variable:
+
+```text
+ORCA_API_INTERNAL_URL=https://YOUR-ORCA-BACKEND
+```
+
+This keeps backend routing server-side and avoids exposing deployment configuration as a browser-side runtime dependency.
+
+---
+
+## Repository structure
+
+```text
+orca-control-tower/
+├── src/
+│   ├── components/orca/              # application shell + ORCA UI primitives
+│   ├── lib/orca/                     # transport, evidence, monitoring clients
+│   └── routes/                       # product routes + same-origin proxy
+├── backend/
+│   ├── src/delay_intelligence/       # FastAPI + prediction/decision/drift packages
+│   ├── configs/                      # model and decision configuration
+│   ├── artifacts/model_registry/v2/  # serving registry + validation evidence
+│   ├── contracts/                    # formal evidence contracts
+│   ├── tests/                        # API / evidence / monitoring tests
+│   ├── Dockerfile
+│   └── requirements.railway.txt
+├── docs/
+│   ├── EVIDENCE_POLICY.md
+│   ├── MONITORING.md
+│   └── REPRODUCIBILITY.md
+├── public/
+├── Dockerfile                        # standalone frontend container
+├── vite.config.ts                    # native TanStack Start + Nitro build
+├── .github/workflows/ci.yml
+└── README.md
+```
+
+---
+
+## Run locally
+
+### 1. Backend
 
 ```bash
 cd backend
 python -m venv .venv
 pip install -r requirements.railway.txt
+```
+
+macOS / Linux:
+
+```bash
 PYTHONPATH=src uvicorn delay_intelligence.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
@@ -232,7 +344,7 @@ $env:PYTHONPATH="src"
 uvicorn delay_intelligence.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Useful checks:
+Verify:
 
 ```text
 http://127.0.0.1:8000/health
@@ -240,9 +352,9 @@ http://127.0.0.1:8000/reliability
 http://127.0.0.1:8000/monitoring-readiness
 ```
 
-### Frontend
+### 2. Frontend
 
-At repository root:
+From the repository root:
 
 ```bash
 bun install --frozen-lockfile
@@ -250,105 +362,141 @@ cp .env.example .env
 bun run dev
 ```
 
-For a local backend:
+Set the local backend URL:
 
 ```text
 ORCA_API_INTERNAL_URL=http://127.0.0.1:8000
 ```
 
-The browser calls `/api/orca/*`; the TanStack Start server proxy forwards only allow-listed contracts to FastAPI.
+Then open the local frontend and use `/settings` to verify the backend connection.
 
-### Production-style frontend locally
+### Production-style frontend
 
 ```bash
 bun run build
 ORCA_API_INTERNAL_URL=http://127.0.0.1:8000 bun run start
 ```
 
-The native Nitro build is explicitly pinned to the `node-server` preset and emits:
+The Nitro build emits:
 
 ```text
 .output/server/index.mjs
 ```
 
-## Deployment
+---
 
-### Frontend — canonical GitHub / Node / Docker path
+## Docker
 
-The frontend does not require Lovable to install, build, or run. The original `@lovable.dev/mcp-js` and `@lovable.dev/vite-tanstack-config` package dependencies were removed with Bun, and the regenerated lockfile is committed to the repository. CI prevents these build/runtime package references from being reintroduced.
-
-The root `Dockerfile` creates a standalone Node image from the native TanStack Start + Nitro output.
-
-Build it from the repository root:
+### Frontend
 
 ```bash
 docker build -t orca-frontend .
 ```
-
-Run it with the backend base URL as a server-side environment variable:
 
 ```bash
 docker run --rm \
   -p 3000:3000 \
   -e PORT=3000 \
   -e HOST=0.0.0.0 \
-  -e ORCA_API_INTERNAL_URL=https://YOUR-ORCA-BACKEND \
+  -e ORCA_API_INTERNAL_URL=http://host.docker.internal:8000 \
   orca-frontend
 ```
 
-Then verify:
+### Backend
 
-```text
-http://127.0.0.1:3000/settings
-http://127.0.0.1:3000/api/orca/health
-http://127.0.0.1:3000/api/orca/reliability
-http://127.0.0.1:3000/api/orca/monitoring-readiness
+```bash
+cd backend
+docker build -t orca-backend .
 ```
 
-This deployment shape is suitable for container hosts such as Railway or other Node/Docker platforms. The Docker runtime and backend proxy integration are continuously smoke-tested in GitHub Actions.
+The backend container starts the FastAPI application using Uvicorn and the platform-provided `PORT`.
 
-### Legacy Lovable publication
+---
 
-`https://orca-control-tower.lovable.app` remains a legacy published surface and may lag GitHub. It is not required by the current dependency graph, native build, Docker runtime, or GitHub CI path.
+## CI & reproducibility
 
-Repository metadata such as `.lovable/project.json` may remain for historical/project-link context; it is excluded from the frontend Docker build context and is not a build/runtime dependency.
+GitHub Actions validates the deployable frontend/backend contract through:
 
-### Backend — Railway / Docker
+- frozen Bun dependency installation;
+- checks preventing Lovable build/runtime packages from being reintroduced;
+- targeted ESLint validation for hardened ORCA surfaces;
+- full frontend production build;
+- frontend Docker image build and HTTP smoke test;
+- Python source compilation;
+- API / registry / monitoring contract tests;
+- full-stack Docker smoke testing across backend → frontend proxy contracts.
 
-Use this same monorepo and configure Railway **Root Directory** as:
+The current `main` deployment path has been externally validated through both **Vercel** and **Railway** deployment checks.
 
-```text
-/backend
-```
+For a reproducible local workflow, see [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md).
 
-The backend Dockerfile starts:
+---
 
-```text
-uvicorn delay_intelligence.api.main:app --host 0.0.0.0 --port ${PORT:-8000}
-```
+## Target users & product direction
 
-See [`backend/README_RAILWAY.md`](backend/README_RAILWAY.md) for the two-service deployment shape and exact verification steps.
+ORCA is designed for organizations that manage high-volume or operationally complex logistics, including:
+
+- logistics and transportation operators;
+- third-party logistics providers (**3PLs**);
+- fleet and control-tower teams;
+- e-commerce fulfillment networks;
+- enterprises managing multi-party supply chains.
+
+Primary users include operations managers, logistics planners, control-tower analysts, and supply-chain decision makers.
+
+### Next-stage roadmap
+
+The current prototype validates the core decision-intelligence layer. Future product development is intended to focus on:
+
+- pilot deployments with logistics operators;
+- real operational data ingestion;
+- TMS / ERP integration;
+- GPS, telematics, and IoT/AIoT connectivity where available;
+- live production monitoring artifacts;
+- organization-level authentication and permissions;
+- business-model and market validation;
+- scalable regional deployment.
+
+These items are **roadmap targets**, not claims about integrations already present in the current prototype.
+
+---
+
+## Team
+
+**Eslam TagElsir Ali — Team Leader**
+
+Project team:
+
+- Ahmed Shehta
+- Mohamed Hassan
+- Ahmed Ibrahim
+- Osama Mohamed
+
+---
 
 ## Design principles
 
-- GitHub is the canonical source of truth for development and deployment artifacts.
-- One canonical product repository with separately deployable frontend/backend services.
-- Frontend build/runtime is portable and does not require Lovable packages or the Lovable build wrapper.
-- Evidence semantics are explicit in both API and UI.
-- No fabricated model, monitoring or business metrics.
-- Synthetic operations are never described as real telemetry.
-- Holdout reliability is never promoted to live production drift.
-- Production monitoring requires a versioned artifact tied to the serving model contract.
-- Architecture is ready for future ERP/TMS/carrier integrations without pretending those integrations already exist.
+- **Decision support, not automated operational control.**
+- **GitHub is the canonical source of truth.**
+- **One product repository, independently deployable frontend and backend services.**
+- **No fabricated model, monitoring, or business metrics.**
+- **Synthetic operations are never presented as real telemetry.**
+- **Historical holdout reliability is never presented as live production drift.**
+- **Model uncertainty and evidence boundaries remain visible to the operator.**
+- **Future enterprise/IoT integrations are described as roadmap work until actually connected.**
 
-## Research / demo scope
+---
 
-ORCA is a research-validated, demonstration-oriented decision intelligence prototype. The predictive serving registry uses historical evidence, while the digital-twin operational layer remains synthetic unless real operational systems are explicitly connected.
+## Current scope
 
-## Legacy backend repository
+ORCA is a **research-validated, demonstration-oriented decision-intelligence prototype** moving toward real-world pilot validation.
 
-The canonical backend is now `backend/` in this monorepo. The legacy `EslamTagElsir/orca-backend` repository should remain only as temporary rollback/reference material until monorepo deployment verification is complete, then it can be archived to avoid divergence.
+The predictive serving registry is backed by historical evidence. The current operational simulation and route/position layer remain synthetic unless real operational systems are explicitly connected.
+
+This boundary is intentional: ORCA is designed to demonstrate what a production-grade decision-intelligence workflow should look like **without presenting synthetic activity as real-world operational truth**.
+
+---
 
 ## License
 
-No license file is currently included. No usage license should be inferred from repository visibility alone.
+No license file is currently included in this repository. Repository visibility does not imply permission to reuse, redistribute, or commercialize the code.
