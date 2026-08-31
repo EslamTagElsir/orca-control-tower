@@ -17,17 +17,19 @@ Use these repository paths as the authoritative editable sources:
 
 ## Submission metadata
 
-The snapshot files under `submission/` record the author-side state supplied so far:
+The snapshot files under `submission/` record the current author-side state:
 
 - single author: Eslam TagElsir
 - corresponding email: eslam.tagelsir20@gmail.com
+- affiliation: Independent Researcher
+- department: not applicable
 - country: Egypt
 - ORCID: none
 - funding: no external funding
 - competing interests: none
 - generative-AI disclosure: OpenAI ChatGPT and Google Gemini
 
-Institution, Department, and final CRediT role wording remain intentionally unresolved rather than invented.
+Only the final CRediT role wording and originality/no-simultaneous-submission confirmation remain unresolved.
 
 ## Scientific boundaries
 
