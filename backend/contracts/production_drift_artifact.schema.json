@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://orca.local/contracts/production_drift_artifact.schema.json",
+  "title": "ORCA Production Drift Artifact",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "contract_version",
+    "evidence_label",
+    "generated_utc",
+    "model_version",
+    "prediction_contract_version",
+    "reference_window",
+    "detection_window",
+    "drift",
+    "source"
+  ],
+  "properties": {
+    "contract_version": { "const": "1.0" },
+    "evidence_label": { "const": "PRODUCTION MONITORING" },
+    "generated_utc": { "type": "string", "format": "date-time" },
+    "model_version": { "type": "string", "minLength": 1 },
+    "prediction_contract_version": { "type": "string", "minLength": 1 },
+    "reference_window": { "$ref": "#/$defs/window" },
+    "detection_window": { "$ref": "#/$defs/window" },
+    "drift": {
+      "type": "object",
+      "required": [
+        "overall_status",
+        "feature_status",
+        "prediction_status",
+        "trigger_recalibration",
+        "trigger_reasons"
+      ],
+      "properties": {
+        "overall_status": { "$ref": "#/$defs/status" },
+        "feature_status": { "$ref": "#/$defs/status" },
+        "prediction_status": { "$ref": "#/$defs/status" },
+        "target_status": {
+          "anyOf": [{ "$ref": "#/$defs/status" }, { "type": "null" }]
+        },
+        "uncertainty_status": {
+          "anyOf": [{ "$ref": "#/$defs/status" }, { "type": "null" }]
+        },
+        "trigger_recalibration": { "type": "boolean" },
+        "trigger_reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["pipeline_run_id", "producer"],
+      "properties": {
+        "pipeline_run_id": { "type": "string", "minLength": 1 },
+        "producer": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "status": {
+      "enum": ["GREEN", "YELLOW", "RED", "INSUFFICIENT_SAMPLE"]
+    },
+    "window": {
+      "type": "object",
+      "required": ["start", "end", "rows", "data_sha256"],
+      "properties": {
+        "start": { "type": "string", "format": "date-time" },
+        "end": { "type": "string", "format": "date-time" },
+        "rows": { "type": "integer", "minimum": 1 },
+        "data_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{64}$"
+        }
+      }
+    }
+  }
+}

@@ -2,11 +2,16 @@ import { useEffect, useRef } from "react";
 import * as maplibregl from "maplibre-gl";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 
 import type { ShipmentRow } from "@/lib/orca/types";
 import type { SimRouteGeometry } from "@/lib/orca/simulation/selectors";
 import { TIER_CSS_VAR, TIER_LABEL, TIER_MAP_HEX } from "@/lib/orca/risk";
 import { pct } from "@/lib/orca/format";
+
+// Bundlers cannot reliably infer MapLibre's worker path from import.meta.url.
+// Vite's worker pipeline emits a self-contained, hashed same-origin worker.
+maplibregl.setWorkerUrl(workerUrl);
 
 /**
  * Interactive risk map.

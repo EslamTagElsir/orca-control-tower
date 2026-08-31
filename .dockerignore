@@ -1,0 +1,11 @@
+.git
+.github
+.lovable
+node_modules
+.output
+backend
+coverage
+*.log
+.env
+.env.*
+!.env.example

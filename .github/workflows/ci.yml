@@ -1,0 +1,258 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend lint, build, and container smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify Lovable-free build dependency graph
+        run: |
+          set -euo pipefail
+          if grep -q '@lovable.dev/' package.json bun.lock vite.config.ts; then
+            echo 'Lovable build/runtime package reference detected.'
+            exit 1
+          fi
+
+      - name: Verify frontend deployment contract
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const config = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
+          if (config.installCommand !== 'bun install --frozen-lockfile') throw new Error('Unexpected Vercel install command');
+          if (config.buildCommand !== 'bun run build') throw new Error('Unexpected Vercel build command');
+          const ignore = fs.readFileSync('.vercelignore', 'utf8');
+          if (!ignore.includes('backend/')) throw new Error('Vercel payload must exclude backend/');
+          NODE
+
+      - name: Lint changed ORCA surface
+        run: >-
+          bunx eslint
+          src/components/orca/AppShell.tsx
+          src/lib/orca/reliability.ts
+          src/lib/orca/monitoring.ts
+          src/routes/model-monitor.tsx
+          src/routes/monitoring-readiness.tsx
+          src/routes/reports.tsx
+          src/routes/settings.tsx
+          'src/routes/api/orca/$.ts'
+          --rule 'prettier/prettier: off'
+
+      - name: Build full frontend
+        run: bun run build
+
+      - name: Verify Vercel-target frontend build
+        env:
+          VERCEL: "1"
+        run: bun run build
+
+      - name: Build and smoke-test standalone frontend container
+        run: |
+          set -euo pipefail
+          docker build --tag orca-frontend:ci .
+          container_id=$(docker run --detach --publish 3000:3000 --env PORT=3000 --env HOST=0.0.0.0 orca-frontend:ci)
+          trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
+
+          if ! curl \
+            --fail \
+            --silent \
+            --show-error \
+            --retry 20 \
+            --retry-all-errors \
+            --retry-delay 1 \
+            http://127.0.0.1:3000/settings \
+            >/dev/null; then
+            echo "Frontend container failed HTTP smoke test. Container logs:"
+            docker logs "$container_id" || true
+            exit 1
+          fi
+
+          echo "Standalone frontend container served /settings successfully."
+
+  backend-contracts:
+    name: Backend contracts and artifact integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Verify Railway deployment contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          config = json.loads(Path('backend/railway.json').read_text())
+          assert config['build']['builder'] == 'DOCKERFILE'
+          assert config['build']['dockerfilePath'] == 'Dockerfile'
+          assert config['deploy']['healthcheckPath'] == '/health'
+          assert config['deploy']['healthcheckTimeout'] == 300
+          assert config['deploy']['restartPolicyType'] == 'ON_FAILURE'
+          assert config['deploy']['restartPolicyMaxRetries'] == 10
+          PY
+
+      - name: Install lightweight test dependencies
+        run: python -m pip install --upgrade pip pytest pydantic PyYAML
+
+      - name: Compile backend source
+        run: python -m compileall -q backend/src
+
+      - name: Run API, registry, and monitoring contracts
+        env:
+          PYTHONPATH: backend/src
+        run: >-
+          pytest -q
+          backend/tests/test_api_schemas.py
+          backend/tests/test_reliability_artifact.py
+          backend/tests/test_drift_readiness_contract.py
+          backend/tests/test_production_monitoring_contract.py
+
+  full-stack-runtime:
+    name: Full-stack Docker runtime and proxy smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and verify backend + frontend containers together
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          network_name="orca-ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          backend_name="orca-backend-ci"
+          frontend_name="orca-frontend-ci"
+
+          cleanup() {
+            docker rm -f "$frontend_name" >/dev/null 2>&1 || true
+            docker rm -f "$backend_name" >/dev/null 2>&1 || true
+            docker network rm "$network_name" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          dump_logs() {
+            echo "===== backend logs ====="
+            docker logs "$backend_name" 2>&1 || true
+            echo "===== frontend logs ====="
+            docker logs "$frontend_name" 2>&1 || true
+          }
+
+          docker network create "$network_name"
+          docker build --tag orca-backend:ci backend
+          docker run \
+            --detach \
+            --name "$backend_name" \
+            --network "$network_name" \
+            --publish 8000:8000 \
+            --env PORT=8000 \
+            orca-backend:ci
+
+          if ! curl \
+            --fail \
+            --silent \
+            --show-error \
+            --retry 60 \
+            --retry-all-errors \
+            --retry-delay 2 \
+            http://127.0.0.1:8000/health \
+            -o /tmp/orca-health.json; then
+            dump_logs
+            exit 1
+          fi
+
+          curl --fail --silent --show-error http://127.0.0.1:8000/reliability -o /tmp/orca-reliability.json
+          curl --fail --silent --show-error http://127.0.0.1:8000/monitoring-readiness -o /tmp/orca-monitoring.json
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          health = json.loads(Path('/tmp/orca-health.json').read_text())
+          reliability = json.loads(Path('/tmp/orca-reliability.json').read_text())
+          monitoring = json.loads(Path('/tmp/orca-monitoring.json').read_text())
+
+          assert health['status'] == 'ok', health
+          assert health.get('model_version'), health
+          assert reliability['status'] == 'ok', reliability
+          assert reliability.get('model_version') == health.get('model_version'), (health, reliability)
+          assert monitoring['status'] in {'CONNECTED', 'NOT_CONNECTED'}, monitoring
+          assert monitoring.get('evidence_label') == 'SYSTEM STATUS', monitoring
+          PY
+
+          docker build --tag orca-frontend:ci .
+          docker run \
+            --detach \
+            --name "$frontend_name" \
+            --network "$network_name" \
+            --publish 3000:3000 \
+            --env PORT=3000 \
+            --env HOST=0.0.0.0 \
+            --env ORCA_API_INTERNAL_URL="http://${backend_name}:8000" \
+            orca-frontend:ci
+
+          if ! curl \
+            --fail \
+            --silent \
+            --show-error \
+            --retry 30 \
+            --retry-all-errors \
+            --retry-delay 1 \
+            http://127.0.0.1:3000/api/orca/health \
+            -o /tmp/orca-proxy-health.json; then
+            dump_logs
+            exit 1
+          fi
+
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/orca/reliability -o /tmp/orca-proxy-reliability.json
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/orca/monitoring-readiness -o /tmp/orca-proxy-monitoring.json
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          direct_health = json.loads(Path('/tmp/orca-health.json').read_text())
+          direct_reliability = json.loads(Path('/tmp/orca-reliability.json').read_text())
+          direct_monitoring = json.loads(Path('/tmp/orca-monitoring.json').read_text())
+          proxy_health = json.loads(Path('/tmp/orca-proxy-health.json').read_text())
+          proxy_reliability = json.loads(Path('/tmp/orca-proxy-reliability.json').read_text())
+          proxy_monitoring = json.loads(Path('/tmp/orca-proxy-monitoring.json').read_text())
+
+          assert proxy_health == direct_health, (direct_health, proxy_health)
+          assert proxy_reliability == direct_reliability, (direct_reliability, proxy_reliability)
+          assert proxy_monitoring == direct_monitoring, (direct_monitoring, proxy_monitoring)
+          PY
+
+          echo "Full-stack Docker runtime verified: backend model health, registry reliability, monitoring readiness, and same-origin frontend proxy all passed."

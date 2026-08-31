@@ -1,0 +1,13 @@
+# Frontend-only Vercel deployment payload.
+# The FastAPI/ML service is deployed separately from /backend.
+backend/
+docs/
+.github/
+.lovable/
+
+# Local/generated artifacts
+.output/
+.vercel/
+node_modules/
+coverage/
+*.log

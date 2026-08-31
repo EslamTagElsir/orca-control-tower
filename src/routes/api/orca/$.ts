@@ -5,7 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
  *
  * Browser → /api/orca/* → ORCA_API_INTERNAL_URL → FastAPI
  *
- * The public proxy is intentionally allow-listed to the four backend contracts
+ * The public proxy is intentionally allow-listed to the six backend contracts
  * used by this application. Adding a new upstream route requires an explicit
  * code change here rather than automatically exposing future FastAPI endpoints.
  */
@@ -17,6 +17,8 @@ const RETRY_BASE_MS = 500;
 
 const ALLOWED_ENDPOINTS = new Map<string, "GET" | "POST">([
   ["health", "GET"],
+  ["reliability", "GET"],
+  ["monitoring-readiness", "GET"],
   ["predict", "POST"],
   ["explain", "POST"],
   ["recommend", "POST"],
