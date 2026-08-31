@@ -14,7 +14,7 @@
 
 **[Repository](https://github.com/EslamTagElsir/orca-control-tower)** · **[Legacy Published App](https://orca-control-tower.lovable.app)**
 
-> GitHub is the canonical source of truth. The frontend now builds with the native TanStack Start + Nitro toolchain and has a standalone Node/Docker runtime. The legacy Lovable URL can lag the repository until separately republished.
+> GitHub is the canonical source of truth. The frontend builds with the native TanStack Start + Nitro toolchain and has a standalone Node/Docker runtime. The legacy Lovable URL can lag the repository until separately republished.
 
 </div>
 
@@ -197,6 +197,8 @@ The Evidence Pack does not claim live drift, live SLA, future reliability or rea
 
 GitHub Actions currently performs:
 
+- frozen Bun dependency installation;
+- a permanent assertion that `package.json`, `bun.lock`, and `vite.config.ts` contain no `@lovable.dev/*` build/runtime package references;
 - targeted ESLint checks for the hardened ORCA surfaces;
 - a full frontend production build;
 - a standalone frontend Docker image build;
@@ -207,7 +209,7 @@ GitHub Actions currently performs:
 - historical drift-readiness boundary tests;
 - production monitoring artifact contract tests.
 
-The hardening branch has been validated with **18 backend contract tests passing**. CI run **#37** also passed targeted frontend lint, the full native TanStack/Nitro build, the standalone Docker build, and the live container HTTP smoke test.
+The hardening branch has been validated with **18 backend contract tests passing**, targeted frontend lint, the full native TanStack/Nitro build, the standalone Docker build, and the live container HTTP smoke test.
 
 A repository-wide `eslint .` still exposes substantial pre-existing formatting/legacy/generated-code debt. This work is intentionally kept separate instead of silently reformatting unrelated application surfaces.
 
@@ -274,7 +276,9 @@ The native Nitro build is explicitly pinned to the `node-server` preset and emit
 
 ### Frontend — canonical GitHub / Node / Docker path
 
-The frontend no longer requires Lovable to build or run. The root `Dockerfile` creates a standalone Node image from the native TanStack Start + Nitro output.
+The frontend does not require Lovable to install, build, or run. The original `@lovable.dev/mcp-js` and `@lovable.dev/vite-tanstack-config` package dependencies were removed with Bun, and the regenerated lockfile is committed to the repository. CI prevents these build/runtime package references from being reintroduced.
+
+The root `Dockerfile` creates a standalone Node image from the native TanStack Start + Nitro output.
 
 Build it from the repository root:
 
@@ -303,9 +307,9 @@ This deployment shape is suitable for container hosts such as Railway or other N
 
 ### Legacy Lovable publication
 
-`https://orca-control-tower.lovable.app` remains a legacy published surface and may lag GitHub. It is not required by the current native build, Docker runtime, or GitHub CI path.
+`https://orca-control-tower.lovable.app` remains a legacy published surface and may lag GitHub. It is not required by the current dependency graph, native build, Docker runtime, or GitHub CI path.
 
-The dependency manifest still contains legacy Lovable package references inherited from the original project. They are not used by the current `vite.config.ts` build path and should be removed in a dedicated lockfile-cleanup change rather than by manually editing the generated lockfile.
+Repository metadata such as `.lovable/project.json` may remain for historical/project-link context; it is excluded from the frontend Docker build context and is not a build/runtime dependency.
 
 ### Backend — Railway / Docker
 
@@ -327,7 +331,7 @@ See [`backend/README_RAILWAY.md`](backend/README_RAILWAY.md) for exact verificat
 
 - GitHub is the canonical source of truth for development and deployment artifacts.
 - One canonical product repository with separately deployable frontend/backend services.
-- Frontend build/runtime is portable and does not require the Lovable build wrapper.
+- Frontend build/runtime is portable and does not require Lovable packages or the Lovable build wrapper.
 - Evidence semantics are explicit in both API and UI.
 - No fabricated model, monitoring or business metrics.
 - Synthetic operations are never described as real telemetry.
