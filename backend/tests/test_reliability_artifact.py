@@ -21,7 +21,7 @@ def test_registry_and_validation_share_the_same_data_hash() -> None:
     metadata = _load("metadata.json")
     validation = _load("serving_validation.json")
 
-    assert metadata["data_sha256"] == validation["data_sha256"]
+    assert metadata["raw_data_sha256"] == validation["data_sha256"]
     assert re.fullmatch(r"[0-9a-fA-F]{64}", validation["data_sha256"])
 
 
