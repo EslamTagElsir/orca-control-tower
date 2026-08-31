@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -32,6 +33,21 @@ def get_model_loader():
 
 def get_decision_engine():
     return DecisionEngine(config_path=str(DECISION_CONFIG))
+
+
+def _read_registry_json(filename: str) -> dict:
+    """Read a locked registry JSON artifact without inventing fallback values."""
+    path = REGISTRY_PATH / filename
+    if not path.exists():
+        raise HTTPException(status_code=503, detail=f"Registry artifact unavailable: {filename}")
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail=f"Invalid registry artifact {filename}: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=500, detail=f"Registry artifact {filename} must contain an object")
+    return payload
 
 
 def _risk_tier(p_late: float) -> str:
@@ -89,6 +105,31 @@ def health():
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/reliability")
+def reliability():
+    """Expose immutable holdout reliability evidence from the serving registry.
+
+    This is evaluation evidence, not live production telemetry. Keeping it as a
+    dedicated endpoint lets the UI report calibration and discrimination metrics
+    without hard-coded demo values or re-running model evaluation at request time.
+    """
+    validation = _read_registry_json("serving_validation.json")
+    metadata = _read_registry_json("metadata.json")
+    return {
+        "status": "ok",
+        "model_version": metadata.get("model_version"),
+        "prediction_contract_version": metadata.get("prediction_contract_version"),
+        "registry_role": metadata.get("registry_role"),
+        "created_utc": metadata.get("created_utc"),
+        "evidence_label": validation.get("evidence_label", "MODEL OUTPUT"),
+        "evaluation_role": validation.get("evaluation_role"),
+        "data_sha256": validation.get("data_sha256"),
+        "splits": validation.get("splits", {}),
+        "classification": validation.get("classification", {}),
+        "severity_cqr": validation.get("severity_cqr", {}),
+    }
 
 
 @app.post("/predict", response_model=PredictResponse)
