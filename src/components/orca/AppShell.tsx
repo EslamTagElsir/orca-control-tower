@@ -35,6 +35,7 @@ const NAV = [
   { to: "/decision-economics", label: "Decision Economics", icon: Coins },
   { to: "/reports", label: "Reports", icon: ScrollText },
   { to: "/model-monitor", label: "Model Monitor", icon: Gauge },
+  { to: "/monitoring-readiness", label: "Drift Readiness", icon: Activity },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 
