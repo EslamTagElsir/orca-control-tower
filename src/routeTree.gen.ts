@@ -24,6 +24,7 @@ import { Route as ShipmentsRouteImport } from './routes/shipments'
 import { Route as SimulatorRouteImport } from './routes/simulator'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as ApiLearningAuditRouteImport } from './routes/api/learning-audit'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiLearningSplatRouteImport } from './routes/api/learning/$'
 import { Route as ApiOrcaSplatRouteImport } from './routes/api/orca/$'
@@ -105,6 +106,11 @@ const Char91DotwellKnownChar93OauthProtectedResourceRoute =
     path: '/.well-known/oauth-protected-resource',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiLearningAuditRoute = ApiLearningAuditRouteImport.update({
+  id: '/api/learning-audit',
+  path: '/api/learning-audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/simulator': typeof SimulatorRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/api/learning-audit': typeof ApiLearningAuditRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/learning/$': typeof ApiLearningSplatRoute
   '/api/orca/$': typeof ApiOrcaSplatRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/simulator': typeof SimulatorRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/api/learning-audit': typeof ApiLearningAuditRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/learning/$': typeof ApiLearningSplatRoute
   '/api/orca/$': typeof ApiOrcaSplatRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/simulator': typeof SimulatorRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/api/learning-audit': typeof ApiLearningAuditRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/learning/$': typeof ApiLearningSplatRoute
   '/api/orca/$': typeof ApiOrcaSplatRoute
@@ -201,6 +210,7 @@ export interface FileRouteTypes {
     | '/simulator'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/api/learning-audit'
     | '/.mcp/invoke-tool/$tool'
     | '/api/learning/$'
     | '/api/orca/$'
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/simulator'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/api/learning-audit'
     | '/.mcp/invoke-tool/$tool'
     | '/api/learning/$'
     | '/api/orca/$'
@@ -241,6 +252,7 @@ export interface FileRouteTypes {
     | '/simulator'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/api/learning-audit'
     | '/.mcp/invoke-tool/$tool'
     | '/api/learning/$'
     | '/api/orca/$'
@@ -262,6 +274,7 @@ export interface RootRouteChildren {
   SimulatorRoute: typeof SimulatorRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  ApiLearningAuditRoute: typeof ApiLearningAuditRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiLearningSplatRoute: typeof ApiLearningSplatRoute
   ApiOrcaSplatRoute: typeof ApiOrcaSplatRoute
@@ -374,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/learning-audit': {
+      id: '/api/learning-audit'
+      path: '/api/learning-audit'
+      fullPath: '/api/learning-audit'
+      preLoaderRoute: typeof ApiLearningAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
       path: '/.mcp/invoke-tool/$tool'
@@ -415,6 +435,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  ApiLearningAuditRoute: ApiLearningAuditRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiLearningSplatRoute: ApiLearningSplatRoute,
   ApiOrcaSplatRoute: ApiOrcaSplatRoute,
