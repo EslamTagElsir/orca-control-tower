@@ -1,0 +1,5 @@
+• Random splits inflated PR-AUC by 26.2%-99.7% versus temporal evaluation.
+• A 90-day embargo protects prediction-time integrity for shipment-delay labels.
+• Calibration improved probability reliability while preserving risk ranking.
+• CQR audits conditional delay-severity uncertainty in temporally later cohorts.
+• Top-K triage reveals capacity-dependent risk-severity trade-offs.
