@@ -55,6 +55,11 @@ jobs:
       - name: Build full frontend
         run: bun run build
 
+      - name: Verify Vercel-target frontend build
+        env:
+          VERCEL: "1"
+        run: bun run build
+
       - name: Build and smoke-test standalone frontend container
         run: |
           set -euo pipefail
