@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   frontend:
-    name: Frontend targeted lint and full build
+    name: Frontend lint, build, and container smoke
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -46,6 +46,14 @@ jobs:
 
       - name: Build full frontend
         run: bun run build
+
+      - name: Build and smoke-test standalone frontend container
+        run: |
+          set -euo pipefail
+          docker build --tag orca-frontend:ci .
+          container_id=$(docker run --detach --publish 3000:3000 --env PORT=3000 --env HOST=0.0.0.0 orca-frontend:ci)
+          trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
+          curl --fail --silent --show-error --retry 15 --retry-connrefused --retry-delay 1 http://127.0.0.1:3000/settings >/dev/null
 
   backend-contracts:
     name: Backend contracts and artifact integrity
