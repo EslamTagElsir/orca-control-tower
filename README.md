@@ -201,15 +201,14 @@ GitHub Actions currently performs:
 - a permanent assertion that `package.json`, `bun.lock`, and `vite.config.ts` contain no `@lovable.dev/*` build/runtime package references;
 - targeted ESLint checks for the hardened ORCA surfaces;
 - a full frontend production build;
-- a standalone frontend Docker image build;
-- a real container runtime smoke test that starts the Node server and requests `/settings` over HTTP;
+- a standalone frontend Docker image build and HTTP smoke test;
 - Python source compilation;
-- API leakage contract tests;
-- serving-registry integrity tests;
-- historical drift-readiness boundary tests;
-- production monitoring artifact contract tests.
+- 18 API/registry/monitoring contract tests;
+- a full-stack Docker runtime test that builds and starts the production backend image, loads the serving model, verifies `/health`, `/reliability`, and `/monitoring-readiness`, starts the production frontend image on the same isolated network, and verifies the same contracts through the allow-listed `/api/orca/*` proxy.
 
-The hardening branch has been validated with **18 backend contract tests passing**, targeted frontend lint, the full native TanStack/Nitro build, the standalone Docker build, and the live container HTTP smoke test.
+CI run **#44** passed the complete repository validation, including backend model runtime and backend-to-frontend proxy parity.
+
+This proves that the two deployable images work together using the repository deployment contract. It does not replace verification of a specific external Railway/hosting deployment after that deployment occurs.
 
 A repository-wide `eslint .` still exposes substantial pre-existing formatting/legacy/generated-code debt. This work is intentionally kept separate instead of silently reformatting unrelated application surfaces.
 
@@ -301,9 +300,12 @@ Then verify:
 
 ```text
 http://127.0.0.1:3000/settings
+http://127.0.0.1:3000/api/orca/health
+http://127.0.0.1:3000/api/orca/reliability
+http://127.0.0.1:3000/api/orca/monitoring-readiness
 ```
 
-This deployment shape is suitable for container hosts such as Railway or other Node/Docker platforms. The Docker runtime is continuously smoke-tested in GitHub Actions.
+This deployment shape is suitable for container hosts such as Railway or other Node/Docker platforms. The Docker runtime and backend proxy integration are continuously smoke-tested in GitHub Actions.
 
 ### Legacy Lovable publication
 
@@ -325,7 +327,7 @@ The backend Dockerfile starts:
 uvicorn delay_intelligence.api.main:app --host 0.0.0.0 --port ${PORT:-8000}
 ```
 
-See [`backend/README_RAILWAY.md`](backend/README_RAILWAY.md) for exact verification steps.
+See [`backend/README_RAILWAY.md`](backend/README_RAILWAY.md) for the two-service deployment shape and exact verification steps.
 
 ## Design principles
 
