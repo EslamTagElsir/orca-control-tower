@@ -53,7 +53,22 @@ jobs:
           docker build --tag orca-frontend:ci .
           container_id=$(docker run --detach --publish 3000:3000 --env PORT=3000 --env HOST=0.0.0.0 orca-frontend:ci)
           trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
-          curl --fail --silent --show-error --retry 15 --retry-connrefused --retry-delay 1 http://127.0.0.1:3000/settings >/dev/null
+
+          if ! curl \
+            --fail \
+            --silent \
+            --show-error \
+            --retry 20 \
+            --retry-all-errors \
+            --retry-delay 1 \
+            http://127.0.0.1:3000/settings \
+            >/dev/null; then
+            echo "Frontend container failed HTTP smoke test. Container logs:"
+            docker logs "$container_id" || true
+            exit 1
+          fi
+
+          echo "Standalone frontend container served /settings successfully."
 
   backend-contracts:
     name: Backend contracts and artifact integrity
