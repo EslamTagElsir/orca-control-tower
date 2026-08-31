@@ -1,73 +1,50 @@
-# Supplementary Material: Temporal Evaluation, Calibrated Risk, and Conformal Delay-Severity Prediction in Pharmaceutical Logistics
+# Supplementary Material
 
-**Journal**: *Transportation Research Part E: Logistics and Transportation Review*  
-**Date**: August 31, 2026  
+## S1. Evidence hierarchy
 
----
+Primary evidence is the five-fold expanding temporal development evaluation. The 1,013-row Locked Registry Evaluation Set is secondary historical benchmark evidence and is not described as a newly untouched confirmatory holdout.
 
-## Section S1: Complete Prediction-Time Feature Dictionary
+## S2. Frozen model roles and thresholds
 
-The prediction-time feature space $\mathcal{X}$ contains 39 variables strictly observable on or before $T_{\text{pred}, i} = \text{Scheduled Delivery Date}_i - \text{Scheduled Lead Time}_i$.
+- CatBoost: deployment-aligned primary classifier; Platt calibrator; frozen threshold 0.1000.
+- Random Forest: development PR-AUC sensitivity comparator; Platt calibrator; frozen threshold 0.1050.
+- Severity point baseline: conditional median.
+- Quantile/CQR engine: LightGBM quantile models at q0.025, q0.05, q0.10, q0.50, q0.90, q0.95, q0.975.
 
-**Table S1: Complete feature dictionary and measurement specifications.**
+## S3. Full capacity-constrained operational triage [SIMULATED SCENARIO]
 
-| Feature Name | Feature Type | Domain / Values | Description |
-| :--- | :--- | :--- | :--- |
-| `Country` | Categorical (42) | Recipient ISO codes | Destination sovereign nation |
-| `Shipment Mode` | Categorical (4) | Air, Air Charter, Ocean, Truck | Primary international transport mode |
-| `Fulfill Via` | Categorical (2) | Direct Drop, From RDC | Fulfillment channel |
-| `Vendor` | Categorical | Anonymized vendor IDs | International procurement vendor |
-| `Manufacturing Site` | Categorical | Anonymized facility IDs | Manufacturing plant location |
-| `Product Group` | Categorical (5) | ARV, HRDT, MRDT, ANTM, ACT | Therapeutic commodity category |
-| `Sub Classification` | Categorical (6) | Adult, Pediatric, HIV test, etc. | Clinical target demographic |
-| `Dosage Form` | Categorical (17) | Tablet, Capsule, Test kit, etc. | Pharmaceutical physical formulation |
-| `Incoterms` | Categorical | EXW, CIP, DDU, DDP, CIF, etc. | International commercial terms |
-| `Client Department` | Categorical | Ministry of Health, NGO, etc. | In-country recipient agency |
-| `Scheduled Lead Time Duration` | Continuous | Days ($\ge 0$) | Planned procurement-to-delivery lead time |
-| `Line Item Quantity` | Continuous | Units | Order quantity |
-| `Line Item Value` | Continuous | USD | Total purchase order value |
-| `Unit Price` | Continuous | USD | Price per pack/unit |
-| `Weight (Kilograms)` | Continuous | kg | Shipment gross weight |
-| `Freight Cost` | Continuous | USD | Total transportation freight charge |
-| `Historical Vendor Delay Rate` | Continuous | $[0, 1]$ | Past vendor historical delay frequency |
-| `Destination Congestion Index` | Continuous | Standardized score | Historical port/customs delay frequency |
+| K | Inspected | Strategy | Delays captured /61 | High-severity /15 | Delay days captured | Delay-days ratio |
+|---:|---:|---|---:|---:|---:|---:|
+| 1% | 11 | Risk only | 6/61 | 1/15 | 42 | 5.9% |
+| 1% | 11 | Risk x q50 | 9/61 | 8/15 | 318 | 44.4% |
+| 1% | 11 | Risk x q95 | 8/61 | 8/15 | 317 | 44.3% |
+| 5% | 51 | Risk only | 16/61 | 2/15 | 92 | 12.8% |
+| 5% | 51 | Risk x q50 | 21/61 | 10/15 | 414 | 57.8% |
+| 5% | 51 | Risk x q95 | 21/61 | 10/15 | 421 | 58.8% |
+| 10% | 102 | Risk only | 26/61 | 10/15 | 288 | 40.2% |
+| 10% | 102 | Risk x q50 | 31/61 | 13/15 | 510 | 71.2% |
+| 10% | 102 | Risk x q95 | 28/61 | 13/15 | 493 | 68.9% |
+| 20% | 203 | Risk only | 42/61 | 15/15 | 619 | 86.5% |
+| 20% | 203 | Risk x q50 | 36/61 | 15/15 | 574 | 80.2% |
+| 20% | 203 | Risk x q95 | 35/61 | 14/15 | 550 | 76.8% |
 
----
+All values above are retrospective simulated prioritization outcomes. No intervention was delivered and no causal or realized-savings claim is made.
 
-## Section S2: Complete Hyperparameter Configuration
+## S4. Locked CQR exact intervals
 
-All machine learning models were initialized with reproducible seeds (`seed=42`) and trained using the following hyperparameter specifications:
+| Nominal | Covered | Empirical coverage | Exact 95% Clopper-Pearson CI | Mean width | Median width |
+|---:|---:|---:|---:|---:|---:|
+| 80% | 43/61 | 70.49% | 57.43-81.48% | 41.04 d | 32.55 d |
+| 90% | 56/61 | 91.80% | 81.90-97.28% | 46.27 d | 38.38 d |
+| 95% | 61/61 | 100.00% | 94.13-100.00% | 61.74 d | 53.64 d |
 
-- **Logistic Regression ($L_2$)**: `C=1.0`, `solver='lbfgs'`, `max_iter=1000`, `class_weight='balanced'`.
-- **Random Forest**: `n_estimators=300`, `max_depth=8`, `min_samples_leaf=5`, `class_weight='balanced_subsample'`, `random_state=42`.
-- **XGBoost**: `n_estimators=300`, `learning_rate=0.05`, `max_depth=6`, `subsample=0.8`, `colsample_bytree=0.8`, `scale_pos_weight=1.0`, `random_state=42`.
-- **LightGBM**: `n_estimators=300`, `learning_rate=0.05`, `num_leaves=31`, `min_child_samples=20`, `class_weight='balanced'`, `random_state=42`.
-- **CatBoost**: `iterations=300`, `learning_rate=0.05`, `depth=6`, `auto_class_weights='Balanced'`, `random_seed=42`.
-- **LightGBM Quantile Regressors**: `objective='quantile'`, `alpha` $\in \{0.025, 0.05, 0.10, 0.50, 0.90, 0.95, 0.975\}$, `n_estimators=300`, `learning_rate=0.05`, `num_leaves=31`.
+## S5. Reproducibility identifiers
 
----
+- Canonical dataset SHA-256: `918b992dd3e8d4b64d2a727b2c4ea607603d0c58f19484e73f7b78528c6a8673`
+- Final evaluation freeze SHA-256: `631F1FA4241FBE697B46D9658B8720D2CE13CFB5A9F65E32C7532F8A1F6CD21A`
+- Locked benchmark manifest SHA-256: `62BE80CE9BC977767BC983EDABF61DAA23609A1801251F4E93CFA9693EBDD9AB`
+- Frozen integrity tests: 26/26 passed.
 
-## Section S3: Secondary Locked Registry Benchmark Extended Metrics
+## S6. Priority-claim boundary
 
-**Table S2: Multi-metric performance on the Locked Registry Evaluation Set ($N=1,013$, 61 delays).**
-
-| Model | Calibration | Threshold | PR-AUC | ROC-AUC | Brier | ECE (10-bin) | Precision | Recall | F1 | Balanced Acc |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **CatBoost** | Platt | 0.1000 | 0.2709 | 0.7477 | 0.0527 | 0.0568 | 0.2174 | 0.7377 (45/61) | 0.3358 | 0.7838 |
-| **Random Forest** | Platt | 0.1050 | 0.3195 | 0.7898 | 0.0493 | 0.0314 | 0.2117 | 0.7705 (47/61) | 0.3322 | 0.7933 |
-
----
-
-## Section S4: Complete Conformal Uncertainty Adjustments Across Folds
-
-**Table S3: Conformal empirical adjustment quantile ($Q$) across expanding development folds.**
-
-| Development Fold | 80% Nominal $Q$ | 90% Nominal $Q$ | 95% Nominal $Q$ |
-| :---: | :---: | :---: | :---: |
-| Fold 0 | 8.42 d | 32.11 d | 48.90 d |
-| Fold 1 | 9.15 d | 35.80 d | 52.40 d |
-| Fold 2 | 11.20 d | 41.20 d | 60.15 d |
-| Fold 3 | 10.88 d | 39.95 d | 58.70 d |
-| Fold 4 | 11.10 d | 44.84 d | 65.14 d |
-| **Development Mean ($\bar{Q}$)** | **10.15 d** | **38.78 d** | **57.06 d** |
-| **Secondary Benchmark ($Q$)** | **2.45 d** | **3.32 d** | **5.01 d** |
+The literature-priority claim is limited to the joint combination of post-delivery embargoed temporal evaluation, post-hoc probability calibration, conditional severity, CQR, and explicit capacity-constrained shipment prioritization in pharmaceutical logistics. It does not claim novelty for machine learning, conformal prediction, delay-severity modeling, or prediction-to-decision integration individually.
