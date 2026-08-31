@@ -17,9 +17,10 @@ export default defineConfig({
       // Preserve ORCA's explicit SSR error wrapper as the server entry.
       server: { entry: "server" },
     }),
-    // Native Nitro output keeps the frontend portable across Node/Docker and
-    // other supported hosts instead of forcing a Lovable/Cloudflare preset.
-    nitro(),
+    // Pin the deployment artifact to Node even when the build itself runs under
+    // Bun (for example inside the Docker build stage). Auto-detection would
+    // otherwise emit a Bun-specific server that cannot be started by Node.
+    nitro({ preset: "node-server" }),
     viteReact(),
   ],
 });
