@@ -1,0 +1,4 @@
+Severity Model,Evaluated Cohort,MAE (Days +- SD),Median AE (Days +- SD),Pinball Loss q0.50
+Conditional Median Baseline,"1,125 delays",15.62 +- 6.43 d,7.60 +- 0.89 d,7.81
+LightGBM Quantiles,"1,125 delays",16.96 +- 4.66 d,8.74 +- 1.64 d,8.48
+Ridge Regression,"1,125 delays",23.76 +- 3.92 d,15.01 +- 0.54 d,11.88

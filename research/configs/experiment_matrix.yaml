@@ -1,0 +1,195 @@
+# =============================================================================
+# ORCA Research Track — Comprehensive Experiment Matrix Configuration
+# Defines all models, hyperparameter spaces, temporal splits, and evaluation protocols
+# =============================================================================
+
+version: "1.0.0"
+description: "Phase 2 Experiment Matrix for Paper: Calibrated Delay Risk and Conformal Severity Prediction"
+
+# -----------------------------------------------------------------------------
+# Global Seeds & Resampling Settings
+# -----------------------------------------------------------------------------
+random_seeds:
+  primary: 42
+  bootstrap_replicates: 1000
+  bootstrap_ci_alpha: 0.05
+
+# -----------------------------------------------------------------------------
+# 1. Classification Models Benchmark (RQ1 & RQ2)
+# -----------------------------------------------------------------------------
+classifiers:
+  logistic_regression:
+    model_class: "sklearn.linear_model.LogisticRegression"
+    params:
+      C: 1.0
+      solver: "lbfgs"
+      max_iter: 1000
+      class_weight: "balanced"
+      random_state: 42
+
+  random_forest:
+    model_class: "sklearn.ensemble.RandomForestClassifier"
+    params:
+      n_estimators: 300
+      max_depth: 8
+      min_samples_leaf: 5
+      class_weight: "balanced_subsample"
+      random_state: 42
+      n_jobs: -1
+
+  xgboost:
+    model_class: "xgboost.XGBClassifier"
+    params:
+      n_estimators: 300
+      learning_rate: 0.05
+      max_depth: 6
+      subsample: 0.8
+      colsample_bytree: 0.8
+      scale_pos_weight: 7.7
+      random_state: 42
+      eval_metric: "logloss"
+
+  lightgbm:
+    model_class: "lightgbm.LGBMClassifier"
+    params:
+      n_estimators: 300
+      learning_rate: 0.05
+      num_leaves: 31
+      subsample: 0.8
+      colsample_bytree: 0.8
+      class_weight: "balanced"
+      random_state: 42
+      verbose: -1
+
+  catboost:
+    model_class: "catboost.CatBoostClassifier"
+    params:
+      iterations: 300
+      learning_rate: 0.05
+      depth: 6
+      auto_class_weights: "Balanced"
+      random_seed: 42
+      verbose: 0
+
+# -----------------------------------------------------------------------------
+# 2. Probability Calibration Methods (RQ2)
+# -----------------------------------------------------------------------------
+calibration_methods:
+  uncalibrated:
+    method: "none"
+    description: "Raw model scoring / sigmoid output without post-hoc adjustment"
+
+  platt_scaling:
+    method: "sigmoid"
+    description: "Parametric Platt logistic scaling fit on temporal calibration fold"
+    cv_strategy: "prefit"
+
+  isotonic_regression:
+    method: "isotonic"
+    description: "Non-parametric isotonic regression fit on temporal calibration fold"
+    out_of_bounds: "clip"
+
+# -----------------------------------------------------------------------------
+# 3. Evaluation Protocols: Temporal vs Random Diagnostic (RQ1)
+# -----------------------------------------------------------------------------
+evaluation_protocols:
+  temporal_expanding_origin:
+    primary: true
+    n_folds: 5
+    min_train_days: 730
+    val_duration_days: 180
+    gap_days: 90
+    holdout_quarantine_days: 365
+
+  random_split_diagnostic:
+    primary: false
+    description: "Diagnostic only to quantify optimistic leakage bias of random cross-validation"
+    n_splits: 5
+    test_size: 0.15
+    stratified: true
+    seed: 42
+
+# -----------------------------------------------------------------------------
+# 4. Severity Estimation Models (RQ3)
+# -----------------------------------------------------------------------------
+severity_models:
+  conditional_median_baseline:
+    model_class: "baseline.ConditionalMedian"
+    description: "Historical median delay days conditioned on delayed status"
+
+  ridge_regression:
+    model_class: "sklearn.linear_model.Ridge"
+    params:
+      alpha: 1.0
+
+  lightgbm_quantiles:
+    model_class: "lightgbm.LGBMRegressor"
+    quantiles: [0.05, 0.50, 0.95]
+    params:
+      objective: "quantile"
+      n_estimators: 300
+      learning_rate: 0.05
+      num_leaves: 31
+      subsample: 0.8
+      colsample_bytree: 0.8
+      random_state: 42
+      verbose: -1
+
+# -----------------------------------------------------------------------------
+# 5. Uncertainty & Conformal Prediction (RQ3 & RQ4)
+# -----------------------------------------------------------------------------
+uncertainty:
+  method: "Split_CQR"
+  nominal_coverage_levels: [0.80, 0.90, 0.95]
+  finite_sample_correction: true
+  quantile_interpolation: "higher"
+  recalibration_strategies:
+    - name: "static"
+      description: "Fixed calibration factor Q computed once on initial calibration fold"
+    - name: "rolling"
+      description: "Periodic recalibration of Q every 90 days using matured calibration window"
+    - name: "drift_triggered"
+      description: "Recalibration triggered by PSI / Wasserstein / Coverage alarms"
+
+# -----------------------------------------------------------------------------
+# 6. Operational Decision Utility Benchmarks (RQ5)
+# -----------------------------------------------------------------------------
+decision_utility:
+  capacity_k_levels: [10, 25, 50, 100, 200]
+  ranking_strategies:
+    strategy_1_risk_only:
+      formula: "Rank by p_late descending"
+    strategy_2_risk_x_severity:
+      formula: "Rank by (p_late * severity_p50) descending"
+    strategy_3_uncertainty_aware:
+      formula: "Rank by (p_late * severity_upper_90) descending with high-uncertainty triage"
+  simulated_cost_scenarios:
+    low_cost:
+      base_delay_cost_per_day: 50.0
+      expedite_cost: 500.0
+    base_cost:
+      base_delay_cost_per_day: 150.0
+      expedite_cost: 500.0
+    high_cost:
+      base_delay_cost_per_day: 500.0
+      expedite_cost: 500.0
+
+# -----------------------------------------------------------------------------
+# 7. Stepwise Ablation Study Matrix
+# -----------------------------------------------------------------------------
+ablation_stages:
+  M0_base_classifier:
+    description: "Raw uncalibrated CatBoost classifier"
+    target_metric: "PR-AUC / ROC-AUC"
+  M1_calibrated_classifier:
+    description: "CatBoost + Isotonic Probability Calibration"
+    target_metric: "Brier Score / ECE"
+  M2_severity_prediction:
+    description: "M1 + LightGBM Conditional Quantile Regressors (p50)"
+    target_metric: "Pinball Loss / Median AE"
+  M3_conformal_uncertainty:
+    description: "M2 + Conformalized Quantile Regression (CQR 90%)"
+    target_metric: "Empirical Coverage / Mean Interval Width"
+  M4_decision_prioritization:
+    description: "M3 + Integrated Risk-Severity-Uncertainty Decision Layer"
+    target_metric: "Delay-Days Captured@K / Normalized Net Benefit"

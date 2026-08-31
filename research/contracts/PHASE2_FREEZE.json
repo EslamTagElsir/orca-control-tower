@@ -1,0 +1,112 @@
+{
+  "contract_name": "ORCA_PHASE2_DEVELOPMENT_FREEZE",
+  "phase": "PHASE_2_DEVELOPMENT_EXPERIMENTS",
+  "frozen_utc": "2026-08-31T17:45:00+00:00",
+  "git_commit": "6f71396ac38466c9d18e2706bea8688d9c2ea8ac",
+  "paper_framing": {
+    "title": "Calibrated Delay Risk and Conformal Severity Prediction under Temporal Distribution Shift in Pharmaceutical Supply Chains",
+    "domain": "Pharmaceutical and Health Commodity Logistics (USAID SCMS)",
+    "scope": "Empirical methodology and decision intelligence framework"
+  },
+  "canonical_data": {
+    "name": "USAID SCMS Delivery History Dataset",
+    "path": "E:/delay_intelligence_system/data/raw/SCMS_Delivery_History_Dataset.csv",
+    "sha256": "918b992dd3e8d4b64d2a727b2c4ea607603d0c58f19484e73f7b78528c6a8673",
+    "total_rows": 10324,
+    "total_columns": 33,
+    "target_prevalence": 0.114878,
+    "strict_modeling_cohort_rows": 8319
+  },
+  "target_definitions": {
+    "classification": {
+      "name": "Delay_Flag",
+      "formula": "Delivered to Client Date > Scheduled Delivery Date",
+      "positive_class": 1,
+      "negative_class": 0
+    },
+    "regression": {
+      "name": "Delay_Days",
+      "formula": "(Delivered to Client Date - Scheduled Delivery Date).days",
+      "evaluation_condition": "Delay_Flag == 1"
+    }
+  },
+  "prediction_timestamp": {
+    "anchor": "T_pred",
+    "strategy": "dual_channel_operational_milestone",
+    "direct_drop": "PO Sent to Vendor Date",
+    "from_rdc": "PQ First Sent to Client Date",
+    "invariant": "T_pred <= Delivered to Client Date"
+  },
+  "forbidden_leakage_fields": [
+    "ID",
+    "ASN/DN #",
+    "Weight (Kilograms)",
+    "Freight Cost (USD)",
+    "Delivered to Client Date",
+    "Delivery Recorded Date",
+    "Delay_Days",
+    "Delay_Flag",
+    "is_temporal_anomaly"
+  ],
+  "temporal_development_contract": {
+    "development_cutoff": "2014-08-24",
+    "n_folds": 5,
+    "val_duration_days": 180,
+    "embargo_days": 90,
+    "min_train_days": 730
+  },
+  "holdout_quarantine_statement": {
+    "status": "STRICTLY_QUARANTINED",
+    "window_start": "2014-08-24",
+    "window_end": "2015-08-24",
+    "rows": 1013,
+    "delayed_rows": 61,
+    "quarantine_rule": "Final holdout labels must remain completely inaccessible to all model selection, hyperparameter tuning, calibration fitting, and threshold selection in Phase 2."
+  },
+  "random_seed": 42,
+  "classifier_families": [
+    "Logistic Regression",
+    "Random Forest",
+    "XGBoost",
+    "LightGBM",
+    "CatBoost"
+  ],
+  "calibration_methods": [
+    "uncalibrated",
+    "platt_scaling",
+    "isotonic_regression"
+  ],
+  "severity_models": [
+    "conditional_median_baseline",
+    "ridge_regression",
+    "lightgbm_quantiles"
+  ],
+  "uncertainty_coverage_levels": [
+    0.80,
+    0.90,
+    0.95
+  ],
+  "decision_utility_levels": [
+    0.01,
+    0.05,
+    0.10,
+    0.20
+  ],
+  "environment": {
+    "python": "3.11.9",
+    "catboost": "1.2.10",
+    "lightgbm": "4.7.0",
+    "xgboost": "3.2.0",
+    "scikit-learn": "1.8.0",
+    "shap": "0.51.0",
+    "pandas": "2.3.3",
+    "numpy": "2.4.6",
+    "pyarrow": "24.0.0",
+    "pytest": "9.0.3"
+  },
+  "output_paths": {
+    "metrics": "research/outputs/metrics",
+    "tables": "research/outputs/tables",
+    "figures": "research/outputs/figures"
+  }
+}

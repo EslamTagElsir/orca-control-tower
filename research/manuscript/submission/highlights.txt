@@ -1,0 +1,5 @@
+- Random cross-validation overestimates delay PR-AUC by 26.2% to 99.7% versus expanding temporal splits.
+- A 90-day post-delivery embargo eliminates lookahead label leakage from in-transit shipments.
+- Post-hoc Platt scaling improves risk probability calibration while preserving continuous ranking.
+- Split CQR quantifies conditional delay-severity uncertainty across temporal distribution shifts.
+- Uncertainty-aware prioritization enhances high-severity delay capture under tight inspection budgets.

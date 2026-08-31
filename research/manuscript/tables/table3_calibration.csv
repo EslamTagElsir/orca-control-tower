@@ -1,0 +1,4 @@
+Model,Calibration Strategy,Brier Score (mean +- SD),ECE 10-Bins (mean +- SD),Validation PR-AUC
+CatBoost,Isotonic Regression,0.1336 +- 0.0536,0.0760 +- 0.0551,0.2730 +- 0.1292
+CatBoost,Platt / Sigmoid Scaling,0.1357 +- 0.0556,0.0807 +- 0.0501,0.2999 +- 0.1573
+CatBoost,Raw Uncalibrated,0.1398 +- 0.0292,0.0850 +- 0.0543,0.2999 +- 0.1573

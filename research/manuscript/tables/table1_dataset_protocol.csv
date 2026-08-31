@@ -1,0 +1,13 @@
+Split Identifier,Temporal Window,Total Rows (N),Delayed Rows (N_pos),Delay Prevalence (%),Scientific Role
+Fold 0: Train,T_pred <= 2011-12-08,"3,747",530,14.14%,Development Training Cohort
+Fold 0: Validation,2012-03-07 <= T_pred <= 2012-09-03,598,39,6.52%,Development Temporal Fold 0
+Fold 1: Train,T_pred <= 2012-06-05,"4,302",564,13.11%,Development Training Cohort
+Fold 1: Validation,2012-09-03 <= T_pred <= 2013-03-02,618,99,16.02%,Development Temporal Fold 1
+Fold 2: Train,T_pred <= 2012-12-02,"4,942",643,13.01%,Development Training Cohort
+Fold 2: Validation,2013-03-02 <= T_pred <= 2013-08-29,738,195,26.42%,Development Temporal Fold 2
+Fold 3: Train,T_pred <= 2013-05-31,"5,614",783,13.95%,Development Training Cohort
+Fold 3: Validation,2013-08-29 <= T_pred <= 2014-02-25,606,121,19.97%,Development Temporal Fold 3
+Fold 4: Train,T_pred <= 2013-11-27,"6,312",959,15.19%,Development Training Cohort
+Fold 4: Validation,2014-02-25 <= T_pred <= 2014-08-24,717,103,14.37%,Development Temporal Fold 4
+Calibration Buffer,2014-02-25 <= T_pred < 2014-08-24,717,103,14.37%,Platt & Conformal Calibration Split
+Locked Registry Benchmark,2014-08-24 <= T_pred <= 2015-08-24,"1,013",61,6.02%,Secondary Replication Benchmark
