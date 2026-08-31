@@ -8,12 +8,13 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)
 ![TanStack Start](https://img.shields.io/badge/TanStack%20Start-Frontend-FF4154)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi)
+![Docker](https://img.shields.io/badge/Docker-Frontend%20%2B%20Backend-2496ED?logo=docker&logoColor=white)
 ![CatBoost](https://img.shields.io/badge/CatBoost-Risk%20Model-FFCC00)
 ![LightGBM](https://img.shields.io/badge/LightGBM-Severity-4CAF50)
 
-**[Live App](https://orca-control-tower.lovable.app)** · **[Repository](https://github.com/EslamTagElsir/orca-control-tower)** · **[Lovable Editor](https://lovable.dev/projects/5f9c9dc3-04f6-409f-8f74-c04ca6fc140c)**
+**[Repository](https://github.com/EslamTagElsir/orca-control-tower)** · **[Legacy Published App](https://orca-control-tower.lovable.app)**
 
-> The repository source may be ahead of the currently published Lovable deployment. A green repository CI run does not by itself prove the published runtime has been updated.
+> GitHub is the canonical source of truth. The frontend now builds with the native TanStack Start + Nitro toolchain and has a standalone Node/Docker runtime. The legacy Lovable URL can lag the repository until separately republished.
 
 </div>
 
@@ -38,6 +39,9 @@ orca-control-tower/
 │   ├── components/orca/              # application shell + ORCA UI primitives
 │   ├── lib/orca/                     # transport, model evidence, monitoring clients
 │   └── routes/                       # product pages + same-origin ORCA proxy
+├── Dockerfile                        # standalone frontend Node container
+├── .dockerignore                     # scoped frontend Docker build context
+├── vite.config.ts                    # native TanStack Start + Nitro node-server build
 ├── backend/
 │   ├── src/delay_intelligence/       # FastAPI + model/decision/drift packages
 │   ├── configs/                      # decision, drift, model-related configuration
@@ -61,20 +65,24 @@ orca-control-tower/
 | **Control Tower** | Operational command center with risk, exceptions, events and KPIs. |
 | **Shipments** | Shipment search, inspection, model prediction and explanation. |
 | **Exceptions** | Action-focused view of risk and active operational exceptions. |
+| **Resolution Hub** | Prioritized resolution workflow for operational exceptions. |
 | **Network Map** | Synthetic route/position visualization with explicit provenance. |
 | **Analytics** | Completed-journey / holdout outcome analytics. |
 | **What-If Simulator** | Scenario workbench that re-scores simulated inputs through ORCA. |
 | **Decision Economics** | Planning economics around simulated interventions; not realized savings. |
-| **Model Monitor** | Registry-backed temporal-holdout reliability and uncertainty evidence. |
-| **Reports** | Exportable JSON/Markdown Evidence Pack with provenance preserved. |
+| **Model Reliability** | Registry-backed temporal-holdout reliability and uncertainty evidence. |
 | **Drift Readiness** | Separates drift capability, historical evaluation and live-production monitoring readiness. |
-| **Settings** | ORCA transport and connection configuration. |
+| **Evidence Reports** | Exportable JSON/Markdown Evidence Pack with provenance preserved. |
+| **Settings & Diagnostics** | Transport configuration plus health/reliability/monitoring diagnostics. |
+
+The application shell is responsive: desktop navigation is grouped by Operations, Intelligence and Governance; mobile navigation uses an accessible drawer with route-aware closing and Escape support.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
     Browser["Browser\nReact + TypeScript"]
+    Frontend["TanStack Start\nNode / Docker"]
     Proxy["Same-origin allow-listed proxy\n/api/orca/*"]
     API["FastAPI\nbackend/"]
     Registry["Serving Registry\nCatBoost + LightGBM + calibration"]
@@ -83,7 +91,7 @@ flowchart LR
     Drift["Drift Engine\nfeature/prediction/target/uncertainty"]
     Evidence["Evidence Contracts\nreliability + production monitoring"]
 
-    Browser --> Proxy --> API
+    Browser --> Frontend --> Proxy --> API
     API --> Registry
     API --> Explain
     API --> Decision
@@ -124,7 +132,7 @@ The repository registry declares model version `v2.0.0-demo` and prediction cont
 
 ## Reliability evidence
 
-`GET /reliability`, Model Monitor and Reports read the locked serving-registry validation artifacts. They do not re-run evaluation per request and do not substitute fixture values.
+`GET /reliability`, Model Reliability and Evidence Reports read the locked serving-registry validation artifacts. They do not re-run evaluation per request and do not substitute fixture values.
 
 The current registry includes temporal holdout evidence such as ROC-AUC, PR-AUC, Brier score, precision/recall/F1, balanced accuracy, frozen decision threshold, CQR coverage and interval-width diagnostics.
 
@@ -172,7 +180,7 @@ Detailed policy: [`docs/EVIDENCE_POLICY.md`](docs/EVIDENCE_POLICY.md).
 
 ## Evidence Pack
 
-The Reports page exports registry-backed evidence as JSON or Markdown while preserving:
+The Evidence Reports page exports registry-backed evidence as JSON or Markdown while preserving:
 
 - model version;
 - prediction contract version;
@@ -191,13 +199,15 @@ GitHub Actions currently performs:
 
 - targeted ESLint checks for the hardened ORCA surfaces;
 - a full frontend production build;
+- a standalone frontend Docker image build;
+- a real container runtime smoke test that starts the Node server and requests `/settings` over HTTP;
 - Python source compilation;
 - API leakage contract tests;
 - serving-registry integrity tests;
 - historical drift-readiness boundary tests;
 - production monitoring artifact contract tests.
 
-The hardening branch has been validated with **18 backend contract tests passing** plus frontend targeted lint and full production build.
+The hardening branch has been validated with **18 backend contract tests passing**. CI run **#37** also passed targeted frontend lint, the full native TanStack/Nitro build, the standalone Docker build, and the live container HTTP smoke test.
 
 A repository-wide `eslint .` still exposes substantial pre-existing formatting/legacy/generated-code debt. This work is intentionally kept separate instead of silently reformatting unrelated application surfaces.
 
@@ -234,9 +244,9 @@ http://127.0.0.1:8000/monitoring-readiness
 At repository root:
 
 ```bash
-npm install
+bun install --frozen-lockfile
 cp .env.example .env
-npm run dev
+bun run dev
 ```
 
 For a local backend:
@@ -247,16 +257,55 @@ ORCA_API_INTERNAL_URL=http://127.0.0.1:8000
 
 The browser calls `/api/orca/*`; the TanStack Start server proxy forwards only allow-listed contracts to FastAPI.
 
+### Production-style frontend locally
+
+```bash
+bun run build
+ORCA_API_INTERNAL_URL=http://127.0.0.1:8000 bun run start
+```
+
+The native Nitro build is explicitly pinned to the `node-server` preset and emits:
+
+```text
+.output/server/index.mjs
+```
+
 ## Deployment
 
-### Frontend — Lovable
+### Frontend — canonical GitHub / Node / Docker path
 
-- repository root: `/`
-- framework: TanStack Start / React
-- backend server variable: `ORCA_API_INTERNAL_URL`
-- published project: `https://orca-control-tower.lovable.app`
+The frontend no longer requires Lovable to build or run. The root `Dockerfile` creates a standalone Node image from the native TanStack Start + Nitro output.
 
-The published Lovable app may lag this GitHub branch until explicitly republished.
+Build it from the repository root:
+
+```bash
+docker build -t orca-frontend .
+```
+
+Run it with the backend base URL as a server-side environment variable:
+
+```bash
+docker run --rm \
+  -p 3000:3000 \
+  -e PORT=3000 \
+  -e HOST=0.0.0.0 \
+  -e ORCA_API_INTERNAL_URL=https://YOUR-ORCA-BACKEND \
+  orca-frontend
+```
+
+Then verify:
+
+```text
+http://127.0.0.1:3000/settings
+```
+
+This deployment shape is suitable for container hosts such as Railway or other Node/Docker platforms. The Docker runtime is continuously smoke-tested in GitHub Actions.
+
+### Legacy Lovable publication
+
+`https://orca-control-tower.lovable.app` remains a legacy published surface and may lag GitHub. It is not required by the current native build, Docker runtime, or GitHub CI path.
+
+The dependency manifest still contains legacy Lovable package references inherited from the original project. They are not used by the current `vite.config.ts` build path and should be removed in a dedicated lockfile-cleanup change rather than by manually editing the generated lockfile.
 
 ### Backend — Railway / Docker
 
@@ -266,7 +315,7 @@ Use this same monorepo and configure Railway **Root Directory** as:
 /backend
 ```
 
-The Dockerfile then starts:
+The backend Dockerfile starts:
 
 ```text
 uvicorn delay_intelligence.api.main:app --host 0.0.0.0 --port ${PORT:-8000}
@@ -276,7 +325,9 @@ See [`backend/README_RAILWAY.md`](backend/README_RAILWAY.md) for exact verificat
 
 ## Design principles
 
+- GitHub is the canonical source of truth for development and deployment artifacts.
 - One canonical product repository with separately deployable frontend/backend services.
+- Frontend build/runtime is portable and does not require the Lovable build wrapper.
 - Evidence semantics are explicit in both API and UI.
 - No fabricated model, monitoring or business metrics.
 - Synthetic operations are never described as real telemetry.
@@ -295,7 +346,3 @@ The canonical backend is now `backend/` in this monorepo. The legacy `EslamTagEl
 ## License
 
 No license file is currently included. No usage license should be inferred from repository visibility alone.
-
-## Credits
-
-Frontend workflow built with [Lovable](https://lovable.dev/projects/5f9c9dc3-04f6-409f-8f74-c04ca6fc140c). The intelligence service is versioned and served from the monorepo `backend/` package.
