@@ -107,3 +107,121 @@ jobs:
           backend/tests/test_reliability_artifact.py
           backend/tests/test_drift_readiness_contract.py
           backend/tests/test_production_monitoring_contract.py
+
+  full-stack-runtime:
+    name: Full-stack Docker runtime and proxy smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and verify backend + frontend containers together
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          network_name="orca-ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          backend_name="orca-backend-ci"
+          frontend_name="orca-frontend-ci"
+
+          cleanup() {
+            docker rm -f "$frontend_name" >/dev/null 2>&1 || true
+            docker rm -f "$backend_name" >/dev/null 2>&1 || true
+            docker network rm "$network_name" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          dump_logs() {
+            echo "===== backend logs ====="
+            docker logs "$backend_name" 2>&1 || true
+            echo "===== frontend logs ====="
+            docker logs "$frontend_name" 2>&1 || true
+          }
+
+          docker network create "$network_name"
+          docker build --tag orca-backend:ci backend
+          docker run \
+            --detach \
+            --name "$backend_name" \
+            --network "$network_name" \
+            --publish 8000:8000 \
+            --env PORT=8000 \
+            orca-backend:ci
+
+          if ! curl \
+            --fail \
+            --silent \
+            --show-error \
+            --retry 60 \
+            --retry-all-errors \
+            --retry-delay 2 \
+            http://127.0.0.1:8000/health \
+            -o /tmp/orca-health.json; then
+            dump_logs
+            exit 1
+          fi
+
+          curl --fail --silent --show-error http://127.0.0.1:8000/reliability -o /tmp/orca-reliability.json
+          curl --fail --silent --show-error http://127.0.0.1:8000/monitoring-readiness -o /tmp/orca-monitoring.json
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          health = json.loads(Path('/tmp/orca-health.json').read_text())
+          reliability = json.loads(Path('/tmp/orca-reliability.json').read_text())
+          monitoring = json.loads(Path('/tmp/orca-monitoring.json').read_text())
+
+          assert health['status'] == 'ok', health
+          assert health.get('model_version'), health
+          assert reliability['status'] == 'ok', reliability
+          assert reliability.get('model_version') == health.get('model_version'), (health, reliability)
+          assert monitoring['status'] in {'CONNECTED', 'NOT_CONNECTED'}, monitoring
+          assert monitoring.get('evidence_label') == 'SYSTEM STATUS', monitoring
+          PY
+
+          docker build --tag orca-frontend:ci .
+          docker run \
+            --detach \
+            --name "$frontend_name" \
+            --network "$network_name" \
+            --publish 3000:3000 \
+            --env PORT=3000 \
+            --env HOST=0.0.0.0 \
+            --env ORCA_API_INTERNAL_URL="http://${backend_name}:8000" \
+            orca-frontend:ci
+
+          if ! curl \
+            --fail \
+            --silent \
+            --show-error \
+            --retry 30 \
+            --retry-all-errors \
+            --retry-delay 1 \
+            http://127.0.0.1:3000/api/orca/health \
+            -o /tmp/orca-proxy-health.json; then
+            dump_logs
+            exit 1
+          fi
+
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/orca/reliability -o /tmp/orca-proxy-reliability.json
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/orca/monitoring-readiness -o /tmp/orca-proxy-monitoring.json
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          direct_health = json.loads(Path('/tmp/orca-health.json').read_text())
+          direct_reliability = json.loads(Path('/tmp/orca-reliability.json').read_text())
+          direct_monitoring = json.loads(Path('/tmp/orca-monitoring.json').read_text())
+          proxy_health = json.loads(Path('/tmp/orca-proxy-health.json').read_text())
+          proxy_reliability = json.loads(Path('/tmp/orca-proxy-reliability.json').read_text())
+          proxy_monitoring = json.loads(Path('/tmp/orca-proxy-monitoring.json').read_text())
+
+          assert proxy_health == direct_health, (direct_health, proxy_health)
+          assert proxy_reliability == direct_reliability, (direct_reliability, proxy_reliability)
+          assert proxy_monitoring == direct_monitoring, (direct_monitoring, proxy_monitoring)
+          PY
+
+          echo "Full-stack Docker runtime verified: backend model health, registry reliability, monitoring readiness, and same-origin frontend proxy all passed."
