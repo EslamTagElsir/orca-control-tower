@@ -1,134 +1,82 @@
 # Transportation Research Part E (TRE) Submission Readiness Report
 
-**Document ID**: `TRE_SUBMISSION_READINESS_V2`  
+**Document ID**: `TRE_SUBMISSION_READINESS_V3`  
 **Date**: 2026-09-01  
 **Target Journal**: *Transportation Research Part E: Logistics and Transportation Review*  
-**Status**: **READY FOR FINAL PORTAL PRECHECK**
+**Status**: **SOURCE CORRECTION APPLIED — REGENERATE SUBMISSION BINARIES BEFORE PORTAL PRECHECK**
 
 ---
 
 ## 1. Target Journal
 - ***Transportation Research Part E: Logistics and Transportation Review* (Elsevier)**.
 
----
+## 2. Recommended Title
+**"Temporal Evaluation, Calibrated Risk, and Conformal Delay-Severity Prediction in Pharmaceutical Logistics"**
 
-## 2. Final Recommended Title
-- **Selected Title**:  
-  **"Temporal Evaluation, Calibrated Risk, and Conformal Delay-Severity Prediction in Pharmaceutical Logistics"**  
-- **Rationale**: Foregrounds freight transportation and delivery lead-time management while placing temporal evaluation, calibrated risk, and conformal delay-severity prediction at the center of the methodological contribution.
+## 3. Journal / Novelty Fit
+- **Journal fit**: strong alignment with freight lead-time uncertainty, shipment-delay risk, and capacity-constrained logistics decision support.
+- **Novelty rating**: **moderate and defensible**.
+- The approved novelty boundary is the qualified Level-2 joint-combination statement; broad absolute "first" claims are prohibited.
 
----
+## 4. Canonical Evidence Hierarchy
 
-## 3. Journal Fit Assessment
-- **Assessment**: **STRONG ALIGNMENT**.
-- **Scope Alignment**: Addresses freight lead-time uncertainty, multi-modal international shipment delays (Air, Ocean, Truck), delivery milestone prediction, and capacity-constrained inspection triage in global health supply chains.
+A Research Integrity CI audit identified a post-freeze narrative count error. Canonical current counts are:
 
----
+| Cohort | Rows | Delays | Role |
+|---|---:|---:|---|
+| Raw standardized SCMS source population | 10,324 | 1,186 | Historical source population |
+| Strict prediction-eligible modeling cohort | 8,319 | 1,169 | Versioned research feature cache |
+| Temporal development cohort | 7,306 | **1,108** | Primary development population |
+| Locked registry benchmark | 1,013 | 61 | Secondary historical replication benchmark |
 
-## 4. Novelty Fit
-- **Rating**: **MODERATE & DEFENSIBLE**.
-- **Approved boundary**: The manuscript uses a qualified, literature-backed Level-2 novelty statement and prohibits broad "first" claims.
-- **Contribution**: Joint evaluation of leakage-aware temporal validation with a post-delivery embargo, post-hoc probability calibration, decoupled conditional severity, conformalized quantile uncertainty, and capacity-constrained shipment prioritization.
+The five temporal validation windows contain `3,277` validation observations and **557 delayed validation observations** in total.
 
----
+Earlier prose that described the 7,306-row development cohort as containing `1,125` delayed shipments is superseded by [`../../COHORT_COUNT_CORRECTION.md`](../../COHORT_COUNT_CORRECTION.md). Frozen hashed contracts/manifests are retained for provenance rather than silently rewritten after execution.
 
-## 5. Desk-Rejection Risk Audit
-- **Residual Risk Level**: **LOW**.
-- Full audit: [`../TRE_DESK_REJECTION_RISK_AUDIT.md`](../TRE_DESK_REJECTION_RISK_AUDIT.md).
-- Generic-ML framing risk is mitigated by focusing the manuscript on pre-outcome freight milestones, temporal leakage, calibrated risk, uncertainty, and inspection-queue decision support. Single-dataset scope remains explicitly bounded in Limitations.
+## 5. Scientific Boundaries
 
----
+- The locked registry set is **secondary historical benchmark evidence**, not a newly untouched confirmatory holdout.
+- CatBoost remains the deployment-aligned primary model; Random Forest remains the sensitivity comparator.
+- The Conditional Median baseline remains the stronger point-MAE baseline where observed; LightGBM quantiles are used for asymmetric uncertainty roles.
+- CQR coverage in later cohorts is empirical out-of-time validation, not a formal guarantee under arbitrary temporal shift.
+- Operational prioritization remains explicitly **SIMULATED SCENARIO**.
+- No realized savings or causal intervention effect is claimed.
 
-## 6. Manuscript Adaptations
+## 6. Manuscript / Figure / Table Sources
+
 - Canonical TRE manuscript: [`manuscript_TRE.md`](manuscript_TRE.md).
-- Generated LaTeX companion: [`manuscript_TRE.tex`](manuscript_TRE.tex).
-- Venue-neutral manuscript sources remain preserved under `research/manuscript/`.
-- Core operational tables are embedded in the manuscript; detailed schemas, manifests, and additional evidence remain in supplementary material.
+- LaTeX companion: [`manuscript_TRE.tex`](manuscript_TRE.tex).
+- Figures: [`figures/`](figures/).
+- Table placement: [`TABLE_PLACEMENT_PLAN.md`](TABLE_PLACEMENT_PLAN.md).
+- Supplementary source: [`supplementary/supplementary_TRE.md`](supplementary/supplementary_TRE.md).
 
----
+Any source that still carries the superseded `1,125` development-count wording must be corrected before regeneration.
 
-## 7. Abstract Status
-- **Status**: **READY**.
-- Covers the logistics problem, temporal leakage risk, methodology, random-vs-temporal optimism, calibrated risk, CQR uncertainty, operational triage, and evidence boundaries.
+## 7. Author Metadata / Declarations
 
----
-
-## 8. Highlights Status
-- **Status**: **READY**.
-- File: [`../submission/highlights.txt`](../submission/highlights.txt).
-
----
-
-## 9. Cover Letter Status
-- **Status**: **READY**.
-- File: [`../submission/cover_letter_TRE.md`](../submission/cover_letter_TRE.md).
-
----
-
-## 10. Figure Readiness
-- **Status**: **READY**.
-- Publication figures: [`figures/`](figures/).
-
----
-
-## 11. Table Readiness
-- **Status**: **READY**.
-- Placement plan: [`TABLE_PLACEMENT_PLAN.md`](TABLE_PLACEMENT_PLAN.md).
-
----
-
-## 12. Supplementary Material Readiness
-- **Status**: **READY**.
-- Source: [`supplementary/supplementary_TRE.md`](supplementary/supplementary_TRE.md).
-
----
-
-## 13. Author Metadata
-- **Status**: **FINALIZED**.
 - Author: **Eslam TagElsir**.
-- Role: single and corresponding author.
+- Single and corresponding author.
 - Affiliation: **Independent Researcher, Egypt**.
 - ORCID: none supplied.
 - Funding: no external funding.
 - Competing interests: none declared.
-- Historical metadata template retained at [`../AUTHOR_INFORMATION_REQUIRED.md`](../AUTHOR_INFORMATION_REQUIRED.md) for provenance only; it is no longer an active blocker.
+- CRediT roles and AI disclosure remain finalized in the submission workspace.
 
----
+## 8. Experimental Artifact Freeze
 
-## 14. Declarations & CRediT
-- **Status**: **FINALIZED**.
-- Confirmed CRediT roles: Conceptualization; Methodology; Software; Validation; Formal analysis; Investigation; Data curation; Visualization; Writing – original draft; Writing – review & editing; Project administration.
-- Originality and no-simultaneous-submission confirmation are finalized in the canonical TRE workspace.
-- Generative-AI disclosure names OpenAI ChatGPT and Google Gemini.
-- Declaration template retained at [`DECLARATIONS_REQUIRED.md`](DECLARATIONS_REQUIRED.md) for provenance.
+The post-freeze cohort-count correction does **not** alter model predictions, fold metrics, thresholds, temporal split dates, CQR benchmark outputs, or the locked benchmark membership. It corrects narrative cohort accounting discovered by CI.
 
----
+## 9. Current Submission Verdict
 
-## 15. Evidence Hierarchy
-1. **Primary scientific evidence**: five expanding-origin temporal development folds with a 90-day label-maturity embargo (`N = 7,306`; `1,125` delayed shipments).
-2. **Secondary evidence**: the `N = 1,013` / `61`-delay Locked Registry Evaluation Set, treated as a historical replication benchmark rather than a newly untouched confirmatory holdout.
-3. **Operational utility**: explicitly labeled **SIMULATED SCENARIO**, not realized business impact or causal intervention evidence.
+# **DO NOT UPLOAD THE PRE-CORRECTION PDF/DOCX/ZIP**
 
----
+The scientific evidence remains usable, but generated submission binaries created before the cohort-count correction must be regenerated from corrected canonical sources and re-previewed before journal upload.
 
-## 16. Experimental Artifact Freeze
-- **Frozen experiment/model/threshold/split artifacts modified by the submission-preparation pass**: **NONE**.
-- Canonical CSV/JSON evidence, model roles, thresholds, temporal splits, and benchmark manifests remain frozen.
+## 10. Remaining Activity
 
----
-
-## 17. Editorial Simulation Verdict
-# **SEND TO REVIEW**
-
----
-
-## 18. Remaining Activity
-The research workspace is **READY FOR FINAL PORTAL PRECHECK**. Remaining work is procedural only:
-
-1. Re-check the live TRE Guide for Authors / Editorial Manager requirements immediately before upload.
-2. Fill only mandatory portal address/city fields with verified information; do not invent institutional metadata.
-3. Refresh the generated submission render from the canonical Markdown source if required by the portal format.
-4. Preview the final submission PDF and supplementary files.
-5. Submit through the journal portal.
-
-The versioned `submission_package/2026-08-31/` directory is retained as a dated preparation snapshot. The canonical current status is this document together with [`README.md`](README.md).
+1. Correct any remaining `1,125` development-count wording in canonical manuscript/table sources.
+2. Regenerate manuscript/supplementary PDF and DOCX files.
+3. Recompute package checksums and rebuild the submission ZIP.
+4. Preview the regenerated files.
+5. Re-check the live TRE Guide for Authors / Editorial Manager fields.
+6. Only then mark the package **READY FOR FINAL PORTAL PRECHECK**.
