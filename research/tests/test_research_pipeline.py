@@ -33,17 +33,33 @@ def test_raw_data_integrity():
         )
     df = load_canonical_raw_data()
     assert len(df) == 10324
-    assert df["Delay_Flag"].sum() == 1186
+    assert int(df["Delay_Flag"].sum()) == 1186
 
 
 def test_versioned_research_feature_cache_integrity():
-    """Verify the portable research feature cache used by CI and peer review."""
+    """Verify the strict modeling cache and its temporal evidence partition."""
     cache_path = REPO_ROOT / "research" / "outputs" / "scms_research_features.parquet"
     assert cache_path.exists(), f"Research feature cache missing at {cache_path}"
     df = pd.read_parquet(cache_path)
+
+    # Strict prediction-eligible modeling cohort after temporal/anomaly filtering.
     assert len(df) == 8319, f"Expected 8,319 eligible research rows, got {len(df)}"
-    assert int(df["Delay_Flag"].sum()) == 1186
+    assert int(df["Delay_Flag"].sum()) == 1169
     assert "T_pred" in df.columns
+
+    t_pred = pd.to_datetime(df["T_pred"])
+    cutoff = pd.Timestamp("2014-08-24")
+    benchmark_end = pd.Timestamp("2015-08-24")
+
+    df_dev = df[t_pred < cutoff]
+    df_benchmark = df[(t_pred >= cutoff) & (t_pred <= benchmark_end)]
+
+    assert len(df_dev) == 7306
+    assert int(df_dev["Delay_Flag"].sum()) == 1108
+    assert len(df_benchmark) == 1013
+    assert int(df_benchmark["Delay_Flag"].sum()) == 61
+    assert len(df_dev) + len(df_benchmark) == len(df)
+    assert int(df_dev["Delay_Flag"].sum()) + int(df_benchmark["Delay_Flag"].sum()) == int(df["Delay_Flag"].sum())
 
 
 def test_feature_columns_and_schema():
@@ -58,6 +74,7 @@ def test_quarantine_integrity_in_development():
     """Verify strictly 0 rows in development cohort violate the 2014-08-24 quarantine."""
     df_dev = get_development_data()
     assert len(df_dev) == 7306, f"Expected 7,306 development rows, got {len(df_dev)}"
+    assert int(df_dev["Delay_Flag"].sum()) == 1108
     max_tpred = pd.to_datetime(df_dev["T_pred"]).max()
     assert max_tpred < pd.Timestamp("2014-08-24"), f"Quarantine breach: found T_pred {max_tpred}"
 
