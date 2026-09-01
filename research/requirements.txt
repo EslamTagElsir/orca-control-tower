@@ -1,0 +1,9 @@
+# Research-only dependencies for reproducibility and CI.
+# Production runtime dependencies remain isolated in backend/requirements.railway.txt.
+-r ../backend/requirements.railway.txt
+
+pytest>=8.0
+scipy>=1.11
+matplotlib>=3.8
+pyarrow>=15.0
+xgboost>=2.0

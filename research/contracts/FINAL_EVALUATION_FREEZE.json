@@ -1,0 +1,124 @@
+{
+  "contract_name": "ORCA_FINAL_EVALUATION_FREEZE_CONTRACT",
+  "version": "2.3.0",
+  "created_at": "2026-08-31T18:03:15Z",
+  "git_commit": "6f71396ac38466c9d18e2706bea8688d9c2ea8ac",
+  "canonical_data_sha256": "918b992dd3e8d4b64d2a727b2c4ea607603d0c58f19484e73f7b78528c6a8673",
+  "status": "DEVELOPMENT_FREEZE_COMPLETE_AWAITING_REGISTRY_BENCHMARK_AUTHORIZATION",
+  "evidence_hierarchy": {
+    "primary_evidence_base": "5-fold expanding-origin temporal development evaluation (N=7,306 rows, 1,125 delays, 90-day embargo)",
+    "secondary_evidence_base": "Locked Registry Evaluation Set (N=1,013 rows, 61 delays) as secondary locked benchmark and replication check"
+  },
+  "locked_registry_evaluation_set": {
+    "t_pred_start": "2014-08-24",
+    "t_pred_end": "2015-08-24",
+    "total_rows": 1013,
+    "delayed_rows": 61,
+    "delay_prevalence": 0.060217,
+    "prior_evaluation_status": "HISTORICALLY_EVALUATED_BY_SERVING_REGISTRY_PRIOR_TO_RESEARCH_TRACK",
+    "research_quarantine_status": "SEALED_DURING_DEVELOPMENT_AND_AMENDMENTS",
+    "labels_read_status": "LABELS_REMAIN_UNREAD_AND_UNPEEKED",
+    "evaluation_nature": "SECONDARY_LOCKED_BENCHMARK_REPLICATION_CHECK"
+  },
+  "predeclared_classifier_benchmarks": {
+    "primary_model": {
+      "name": "CatBoost",
+      "evidence_role": "Deployment-aligned primary model",
+      "hyperparameters": {
+        "iterations": 300,
+        "learning_rate": 0.05,
+        "depth": 6,
+        "auto_class_weights": "Balanced",
+        "random_seed": 42
+      },
+      "calibration_method": "Platt / Sigmoid Scaling",
+      "frozen_threshold": 0.1,
+      "development_oof_f1": 0.3786,
+      "development_mean_pr_auc": 0.3164,
+      "development_mean_roc_auc": 0.7401
+    },
+    "sensitivity_comparator": {
+      "name": "Random Forest",
+      "evidence_role": "Development PR-AUC sensitivity comparator",
+      "hyperparameters": {
+        "n_estimators": 300,
+        "max_depth": 8,
+        "min_samples_leaf": 5,
+        "class_weight": "balanced_subsample",
+        "random_state": 42
+      },
+      "calibration_method": "Platt / Sigmoid Scaling",
+      "frozen_threshold": 0.105,
+      "development_oof_f1": 0.3989,
+      "development_mean_pr_auc": 0.3238,
+      "development_mean_roc_auc": 0.7269
+    },
+    "threshold_derivation_policy": "Pooled development out-of-fold (OOF) validation F1 maximization over tau in [0.05, 0.95] (N=3,277 rows)"
+  },
+  "benchmark_reporting_matrix": {
+    "threshold_independent_metrics": [
+      "PR-AUC",
+      "ROC-AUC",
+      "Brier Score",
+      "Expected Calibration Error (10 bins)"
+    ],
+    "threshold_dependent_metrics": [
+      "Precision",
+      "Recall",
+      "F1 Score",
+      "Balanced Accuracy"
+    ],
+    "rule": "Both classifiers evaluated side-by-side on locked benchmark using their respective frozen thresholds"
+  },
+  "severity_policy": {
+    "point_prediction_baseline": "Conditional Median Baseline (development MAE 15.62d vs 16.96d)",
+    "quantile_prediction_framework": "LightGBM Quantile Regressors (q0.05, q0.50, q0.95)",
+    "quantile_hyperparameters": {
+      "n_estimators": 300,
+      "learning_rate": 0.05,
+      "num_leaves": 31,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "random_state": 42
+    },
+    "usage_rule": "Quantiles used strictly for asymmetric spread estimation and CQR prediction interval generation"
+  },
+  "conformal_uncertainty_policy": {
+    "method": "Split Conformalized Quantile Regression (CQR)",
+    "reporting_rule": "Unconditional reporting of all three nominal coverage levels with exact Clopper-Pearson binomial CIs",
+    "nominal_levels": {
+      "coverage_80": {
+        "alpha": 0.2,
+        "lower_quantile": 0.1,
+        "upper_quantile": 0.9,
+        "correction_rule": "min(1.0, 0.80 * (1.0 + 1.0 / n_cal))"
+      },
+      "coverage_90": {
+        "alpha": 0.1,
+        "lower_quantile": 0.05,
+        "upper_quantile": 0.95,
+        "correction_rule": "min(1.0, 0.90 * (1.0 + 1.0 / n_cal))"
+      },
+      "coverage_95": {
+        "alpha": 0.05,
+        "lower_quantile": 0.025,
+        "upper_quantile": 0.975,
+        "correction_rule": "min(1.0, 0.95 * (1.0 + 1.0 / n_cal))"
+      }
+    },
+    "calibration_split": {
+      "condition": "Delay_Flag == 1",
+      "rows": 103
+    }
+  },
+  "operational_decision_simulation": {
+    "capacities": [
+      0.01,
+      0.05,
+      0.1,
+      0.2
+    ],
+    "evidence_label": "SIMULATED SCENARIO"
+  },
+  "sha256_contract_hash": "631F1FA4241FBE697B46D9658B8720D2CE13CFB5A9F65E32C7532F8A1F6CD21A"
+}

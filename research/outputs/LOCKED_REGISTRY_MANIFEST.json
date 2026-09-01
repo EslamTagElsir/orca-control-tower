@@ -1,0 +1,23 @@
+{
+  "experiment_id": "EXP_LOCKED_REGISTRY_BENCHMARK_FINAL",
+  "execution_timestamp": "2026-08-31T18:06:29.087335",
+  "git_commit": "6f71396ac38466c9d18e2706bea8688d9c2ea8ac",
+  "canonical_dataset_sha256": "918b992dd3e8d4b64d2a727b2c4ea607603d0c58f19484e73f7b78528c6a8673",
+  "frozen_contract_path": "research/contracts/FINAL_EVALUATION_FREEZE.json",
+  "cohort_counts": {
+    "train_rows": 6312,
+    "calib_rows": 717,
+    "locked_registry_rows": 1013,
+    "locked_registry_delayed": 61
+  },
+  "frozen_models": {
+    "primary_classifier": "CatBoost (iter=300, lr=0.05, depth=6, Balanced, Platt)",
+    "primary_threshold": 0.1,
+    "sensitivity_classifier": "Random Forest (n=300, depth=8, leaf=5, Platt)",
+    "sensitivity_threshold": 0.105,
+    "severity_point_estimator": "Conditional Median Baseline",
+    "conformal_quantile_framework": "LightGBM Quantiles (q0.025, q0.05, q0.10, q0.50, q0.90, q0.95, q0.975)"
+  },
+  "random_seed": 42,
+  "manifest_sha256": "62BE80CE9BC977767BC983EDABF61DAA23609A1801251F4E93CFA9693EBDD9AB"
+}

@@ -1,0 +1,156 @@
+# =============================================================================
+# ORCA Research Track — Formal Experiment Contract
+# Governs reproducible experimentation for:
+# "Calibrated Delay Risk and Conformal Severity Prediction under Temporal Distribution Shift"
+# =============================================================================
+
+contract_version: "1.0.0"
+track_name: "orca-paper-experiments-v1"
+created_utc: "2026-08-31T17:35:00+00:00"
+
+# -----------------------------------------------------------------------------
+# 1. Canonical Data Source & Provenance
+# -----------------------------------------------------------------------------
+data_source:
+  name: "USAID Global Health SCMS Delivery History Dataset"
+  raw_relative_path: "data/raw/SCMS_Delivery_History_Dataset.csv"
+  external_system_path: "E:/delay_intelligence_system/data/raw/SCMS_Delivery_History_Dataset.csv"
+  raw_sha256: "918b992dd3e8d4b64d2a727b2c4ea607603d0c58f19484e73f7b78528c6a8673"
+  total_raw_rows: 10324
+  total_raw_columns: 33
+  primary_key: "ID"
+  is_read_only: true
+  secondary_datasets:
+    olist:
+      status: "NOT_VALIDATED"
+      note: "Configured in backend/configs/datasets/olist.yaml but raw data is not packaged in repository archive."
+    dataco:
+      status: "NOT_VALIDATED"
+      note: "Configured in backend/configs/datasets/dataco.yaml but raw data is not packaged in repository archive."
+
+# -----------------------------------------------------------------------------
+# 2. Target Definitions
+# -----------------------------------------------------------------------------
+targets:
+  classification:
+    name: "is_delayed"
+    alias: "Delay_Flag"
+    type: "binary"
+    positive_class: 1
+    negative_class: 0
+    formula: "Delivered to Client Date > Scheduled Delivery Date"
+    full_dataset_prevalence: 0.114878
+    loss_asymmetry: "Stockout / clinical risk exceeds inventory holding cost (C_late >> C_early)"
+  regression:
+    name: "Delay_Days"
+    type: "continuous_integer"
+    formula: "(Delivered to Client Date - Scheduled Delivery Date).days"
+    conditioned_on: "Delay_Flag == 1"
+    note: "Severity evaluation is strictly conditioned on actually delayed shipments (Delay_Days > 0)."
+
+# -----------------------------------------------------------------------------
+# 3. Prediction-Time Boundary & Dual-Channel Anchoring
+# -----------------------------------------------------------------------------
+prediction_time:
+  anchor_name: "T_pred"
+  strategy: "dual_channel_operational_milestone"
+  direct_drop_anchor: "PO Sent to Vendor Date"
+  from_rdc_anchor: "PQ First Sent to Client Date"
+  fallback_policy: "If Direct Drop has null PO date, use PQ date only if explicitly flagged; otherwise ineligible"
+  eligibility_filter: "base_eligible == 1 and T_pred is not null and T_pred <= Delivered to Client Date and is_temporal_anomaly == 0"
+
+# -----------------------------------------------------------------------------
+# 4. Forbidden Leakage Fields
+# -----------------------------------------------------------------------------
+forbidden_leakage_fields:
+  - name: "ID"
+    reason: "Surrogate database primary key causes row-order memorization."
+  - name: "ASN/DN #"
+    reason: "Post-PO packing / consignment identifier generated at warehouse packing."
+  - name: "Weight (Kilograms)"
+    reason: "Gross scale weight measured at warehouse dispatch; contains mixed parent ASN references."
+  - name: "Freight Cost (USD)"
+    reason: "Final carrier invoices reflecting post-dispatch demurrage / emergency air expediting."
+  - name: "Delivered to Client Date"
+    reason: "Target outcome timestamp; 100% target leakage."
+  - name: "Delivery Recorded Date"
+    reason: "Administrative ERP database commit timestamp logged post-delivery."
+  - name: "Delay_Days"
+    reason: "Continuous regression target label."
+  - name: "Delay_Flag"
+    reason: "Binary classification target label."
+  - name: "is_temporal_anomaly"
+    reason: "Calculated using post-outcome timestamps; allowed only as cohort exclusion filter."
+
+# -----------------------------------------------------------------------------
+# 5. Temporal Ordering, Folds & Embargo Governance
+# -----------------------------------------------------------------------------
+temporal_governance:
+  ordering_column: "T_pred"
+  min_train_days: 730
+  val_duration_days: 180
+  embargo_days: 90
+  holdout_quarantine:
+    duration_days: 365
+    start_date: "2014-08-24"
+    end_date: "2015-08-24"
+    quarantine_policy: "STRICT_QUARANTINE"
+    allowed_use: "Final one-shot frozen benchmark evaluation only after all models, hyperparameters, calibration methods, and decision thresholds are frozen."
+    prohibited_use: "Never use for model exploration, feature selection, hyperparameter tuning, threshold optimization, or CQR conformal calibration."
+
+# -----------------------------------------------------------------------------
+# 6. Model Selection & Calibration Policies
+# -----------------------------------------------------------------------------
+policies:
+  model_selection: "Select best model architecture and hyperparameters strictly via historical expanding-origin temporal validation folds."
+  probability_calibration:
+    allowed_methods: ["uncalibrated", "platt_scaling", "isotonic_regression"]
+    fitting_data: "Strictly on temporal calibration windows (never on training set or final holdout)."
+  conformal_calibration:
+    method: "Conformalized Quantile Regression (CQR)"
+    fitting_data: "Strictly on delayed observations in temporal calibration windows (never on holdout)."
+    finite_sample_correction: true
+  decision_utility:
+    status: "SIMULATED_SCENARIO"
+    note: "Intervention efficacy and cost assumptions are synthetic scenarios. Do not claim verified financial savings without empirical intervention ground truth."
+
+# -----------------------------------------------------------------------------
+# 7. Reproducibility & Random Seeds
+# -----------------------------------------------------------------------------
+reproducibility:
+  master_seed: 42
+  evaluation_seeds: [42, 123, 456, 789, 101112]
+  python_version_min: "3.11"
+  deterministic_algorithms: true
+
+# -----------------------------------------------------------------------------
+# 8. Required Metrics & Statistical Reporting
+# -----------------------------------------------------------------------------
+metrics:
+  classification:
+    primary_discrimination: ["pr_auc", "roc_auc"]
+    threshold_metrics: ["f1", "precision", "recall", "balanced_accuracy"]
+    probabilistic_reliability: ["brier_score", "expected_calibration_error"]
+  severity:
+    regression_metrics: ["mae", "median_ae", "rmse", "pinball_loss_q05", "pinball_loss_q50", "pinball_loss_q95"]
+  uncertainty:
+    coverage_levels: [0.80, 0.90, 0.95]
+    diagnostics: ["nominal_coverage", "empirical_coverage", "coverage_error", "mean_interval_width", "median_interval_width", "exact_binomial_ci"]
+  decision_utility:
+    operational_metrics: ["recall_at_k", "delay_days_captured_at_k", "high_severity_capture_at_k", "ranking_stability_jaccard"]
+
+# -----------------------------------------------------------------------------
+# 9. Repository Protection & Safety Invariants
+# -----------------------------------------------------------------------------
+safety_invariants:
+  prohibited_modifications:
+    - "backend/artifacts/model_registry/v2/*"
+    - "backend/api/*"
+    - "src/*"
+    - "public/*"
+    - "railway.json"
+    - "vercel.json"
+  allowed_output_roots:
+    - "research/outputs/metrics"
+    - "research/outputs/tables"
+    - "research/outputs/figures"

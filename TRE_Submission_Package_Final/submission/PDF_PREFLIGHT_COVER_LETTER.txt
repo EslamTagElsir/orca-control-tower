@@ -1,0 +1,6 @@
+PDF: /mnt/data/TRE_Submission_Package_Final/submission/cover_letter_TRE_Eslam_TagElsir.pdf
+Pages: 1
+Encrypted: False
+Openable (PyMuPDF): True
+Likely scanned: False
+XFA present: False

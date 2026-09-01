@@ -1,60 +1,164 @@
 # ORCA Reproducibility Guide
 
-This document defines the minimum evidence required to reproduce and review the ORCA serving-registry evaluation without turning the production UI into a second evaluation pipeline.
+This document explains how to reproduce and review ORCA's deployed serving-registry checks and its isolated research-integrity checks without mixing production evidence with experimental evaluation.
 
-## Source of truth
+## 1. Sources of truth
 
-The serving registry under `backend/artifacts/model_registry/v2/` is the source of truth for the currently packaged model version and its frozen validation evidence.
+### Deployed serving registry
 
-Key files include:
+The currently packaged production-style model evidence lives under:
 
-- `metadata.json` — model version, registry role, prediction contract, raw-data hash, evidence labels, and registry creation metadata.
-- `serving_validation.json` — untouched temporal holdout metrics, temporal split chronology, evaluation role, and evaluation data hash.
-- calibration and model artifacts used by the serving pipeline.
+```text
+backend/artifacts/model_registry/v2/
+```
 
-## Temporal evaluation contract
+Key artifacts include:
 
-The validation artifact must preserve an ordered train → embargo → calibration → holdout chronology. The holdout is not used for fitting, threshold calibration, or conformal calibration.
+- `metadata.json` — model version, registry role, prediction contract, source-data hash, and evidence labels.
+- `serving_validation.json` — frozen historical evaluation metrics and chronology.
+- model/calibration artifacts used by the serving pipeline.
+- production-monitoring artifacts only when they satisfy the explicit monitoring contract.
 
-Automated tests verify that:
+Historical registry evidence must not be presented as live production drift.
 
-- train ends before calibration begins;
-- calibration ends no later than holdout begins;
-- embargo duration is non-negative;
-- classification metrics and decision threshold are in valid probability-score ranges;
-- CQR coverage and interval widths are internally consistent;
-- the registry and validation artifacts refer to the same source-data SHA-256;
-- model and prediction-contract versions are declared.
+### Research track
 
-## CI gates
+The isolated research workflow lives under:
 
-Pull requests run two focused CI jobs:
+```text
+research/
+```
 
-1. Frontend targeted lint plus a full production build.
-2. Backend source compilation plus API leakage-contract and registry-integrity tests.
+Its sources of truth include frozen experiment contracts, temporal-fold outputs, benchmark manifests, versioned tables/figures, and the manuscript claim-traceability documents. Research experiments must never overwrite the serving registry.
 
-The frontend lint is intentionally targeted because the repository contains pre-existing generated/legacy formatting debt outside the ORCA reliability surface. The full build still validates integration across the application.
+## 2. Deployment architecture
 
-## Reproducing the current checks locally
+The monorepo has two independently deployable services:
 
-Frontend:
+- frontend at repository root (`/`) — TanStack Start / React / TypeScript, deployed to Vercel;
+- backend at `/backend` — FastAPI, deployed to Railway.
+
+The frontend calls the backend through the same-origin allow-listed `/api/orca/*` proxy, with the backend base URL supplied server-side through `ORCA_API_INTERNAL_URL`.
+
+## 3. Main CI gates
+
+`.github/workflows/ci.yml` validates the deployable product through three jobs:
+
+1. **Frontend lint, build, and container smoke**
+   - frozen Bun install;
+   - Lovable build/runtime dependency guard;
+   - Vercel deployment-contract check;
+   - targeted ORCA lint;
+   - full production build;
+   - Vercel-target build;
+   - standalone frontend Docker HTTP smoke test.
+
+2. **Backend contracts and artifact integrity**
+   - Railway deployment-contract check;
+   - Python compilation;
+   - API schema checks;
+   - serving-registry reliability checks;
+   - drift/production-monitoring contract checks.
+
+3. **Full-stack Docker runtime and proxy smoke**
+   - builds backend and frontend containers together;
+   - verifies backend `/health`, `/reliability`, and `/monitoring-readiness`;
+   - verifies the same responses through the frontend `/api/orca/*` proxy.
+
+## 4. Research CI gate
+
+`.github/workflows/research-ci.yml` runs when research or relevant backend-contract files change. It:
+
+- installs `research/requirements.txt`;
+- compiles the research source;
+- executes `research/tests/test_research_pipeline.py`;
+- checks the versioned feature cache;
+- checks temporal quarantine and fold disjointness;
+- checks required research artifacts and the locked-registry manifest;
+- confirms the research tree and production registry remain separate.
+
+The raw SCMS CSV is intentionally not required in GitHub Actions. Raw-source verification can be run locally by setting `ORCA_SCMS_DATA_PATH`; CI uses the versioned research feature cache for portable integrity checks.
+
+## 5. Reproduce product checks locally
+
+### Frontend
 
 ```bash
 bun install --frozen-lockfile
-bunx eslint src/lib/orca/reliability.ts src/routes/model-monitor.tsx src/routes/reports.tsx 'src/routes/api/orca/$.ts' --rule 'prettier/prettier: off'
 bun run build
 ```
 
-Backend contract checks:
+Optional targeted lint equivalent to CI:
+
+```bash
+bunx eslint \
+  src/components/orca/AppShell.tsx \
+  src/lib/orca/reliability.ts \
+  src/lib/orca/monitoring.ts \
+  src/routes/model-monitor.tsx \
+  src/routes/monitoring-readiness.tsx \
+  src/routes/reports.tsx \
+  src/routes/settings.tsx \
+  'src/routes/api/orca/$.ts' \
+  --rule 'prettier/prettier: off'
+```
+
+### Backend
 
 ```bash
 python -m pip install --upgrade pip pytest pydantic PyYAML
 python -m compileall -q backend/src
-PYTHONPATH=backend/src pytest -q backend/tests/test_api_schemas.py backend/tests/test_reliability_artifact.py
 ```
 
-On PowerShell, set `PYTHONPATH` with `$env:PYTHONPATH = "backend/src"` before running pytest.
+Linux/macOS:
 
-## Interpretation boundary
+```bash
+PYTHONPATH=backend/src pytest -q \
+  backend/tests/test_api_schemas.py \
+  backend/tests/test_reliability_artifact.py \
+  backend/tests/test_drift_readiness_contract.py \
+  backend/tests/test_production_monitoring_contract.py
+```
 
-Passing these checks verifies code integration, leakage guards, artifact consistency, and the integrity of the frozen evidence contract. It does not prove live production reliability, absence of distribution drift, or causal effectiveness after deployment. Those require separately collected and versioned production evidence.
+PowerShell:
+
+```powershell
+$env:PYTHONPATH = "backend/src"
+pytest -q backend/tests/test_api_schemas.py backend/tests/test_reliability_artifact.py backend/tests/test_drift_readiness_contract.py backend/tests/test_production_monitoring_contract.py
+```
+
+## 6. Reproduce research-integrity checks locally
+
+Create/activate a Python 3.11 environment, then:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r research/requirements.txt
+pytest -q research/tests/test_research_pipeline.py
+```
+
+To verify or regenerate from the canonical raw SCMS source, set:
+
+```bash
+ORCA_SCMS_DATA_PATH=/absolute/path/to/SCMS_Delivery_History_Dataset.csv
+```
+
+PowerShell:
+
+```powershell
+$env:ORCA_SCMS_DATA_PATH = "C:\path\to\SCMS_Delivery_History_Dataset.csv"
+```
+
+The expected raw-data SHA-256 is frozen in the research data utility. If the raw file is absent, the raw-source test skips while the versioned-cache and artifact-integrity checks still run.
+
+## 7. Interpretation boundary
+
+Passing these checks verifies code integration, deployment contracts, leakage guards, versioned artifact consistency, and research provenance. It does **not** prove:
+
+- future production reliability under arbitrary distribution shift;
+- live production drift when no production monitoring artifact is connected;
+- causal effectiveness of an intervention;
+- realized financial savings from simulated decision scenarios;
+- universal generalization beyond the evaluated historical logistics dataset.
+
+Those claims require separately collected, versioned, real-world evidence.
