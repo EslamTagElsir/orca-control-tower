@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Dict, List, Tuple, Any
 import numpy as np
@@ -15,7 +16,13 @@ from delay_intelligence.data.adapters.scms import SCMSAdapter
 from delay_intelligence.validation.contract_validator import PredictionContractValidator
 from delay_intelligence.features.builder import TemporalFeatureBuilder
 
-CANONICAL_DATA_PATH = Path("E:/delay_intelligence_system/data/raw/SCMS_Delivery_History_Dataset.csv")
+# Keep the research code portable. The raw SCMS CSV is intentionally not bundled in
+# this repository. Set ORCA_SCMS_DATA_PATH to the local source file when raw-data
+# verification or feature regeneration is required.
+DEFAULT_CANONICAL_DATA_PATH = REPO_ROOT / "data" / "raw" / "SCMS_Delivery_History_Dataset.csv"
+CANONICAL_DATA_PATH = Path(
+    os.environ.get("ORCA_SCMS_DATA_PATH", str(DEFAULT_CANONICAL_DATA_PATH))
+).expanduser()
 CANONICAL_SHA256 = "918b992dd3e8d4b64d2a727b2c4ea607603d0c58f19484e73f7b78528c6a8673"
 SCHEMA_PATH = REPO_ROOT / "backend" / "artifacts" / "model_registry" / "v2" / "feature_schema.json"
 CACHE_PATH = REPO_ROOT / "research" / "outputs" / "scms_research_features.parquet"
@@ -27,6 +34,7 @@ FORBIDDEN_FIELDS = {
     "Delivered to Client Date", "Delivery Recorded Date",
     "Delay_Days", "Delay_Flag", "is_temporal_anomaly"
 }
+
 
 def load_canonical_raw_data() -> pd.DataFrame:
     """Load canonical standardized SCMS dataset with SHA-256 verification."""
@@ -45,6 +53,12 @@ def load_and_verify_features(force_recompute: bool = False) -> pd.DataFrame:
     if CACHE_PATH.exists() and not force_recompute:
         df = pd.read_parquet(CACHE_PATH)
         return df
+
+    if not CANONICAL_DATA_PATH.exists():
+        raise FileNotFoundError(
+            "Canonical SCMS raw data was not found. Set ORCA_SCMS_DATA_PATH to "
+            "SCMS_Delivery_History_Dataset.csv, or use the versioned research feature cache."
+        )
 
     adapter = SCMSAdapter(data_path=CANONICAL_DATA_PATH)
     actual_hash = adapter._compute_sha256()
@@ -73,11 +87,13 @@ def load_and_verify_features(force_recompute: bool = False) -> pd.DataFrame:
     df_features.to_parquet(CACHE_PATH, index=False)
     return df_features
 
+
 def get_feature_columns() -> Tuple[List[str], List[str]]:
     """Return numeric and categorical feature column names from frozen schema."""
     with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
         schema = json.load(f)
     return schema["num_cols"], schema["cat_cols"]
+
 
 def get_development_data() -> pd.DataFrame:
     """Return strictly development records (T_pred < 2014-08-24). Quarantine holdout!"""
@@ -85,6 +101,7 @@ def get_development_data() -> pd.DataFrame:
     dev_end = pd.Timestamp("2014-08-24")
     df_dev = df[df["T_pred"] < dev_end].copy().reset_index(drop=True)
     return df_dev
+
 
 def get_temporal_folds(df_dev: pd.DataFrame, n_folds: int = 5, val_days: int = 180, embargo_days: int = 90) -> List[Dict[str, Any]]:
     """Generate 5 expanding-origin temporal folds strictly within development data."""
