@@ -3,11 +3,15 @@
 - **Author:** Eslam TagElsir
 - **Authorship:** Single author
 - **Corresponding author:** Yes
-- **Email:** eslam.tagelsir20@gmail.com
+- **Affiliation:** Independent Researcher
+- **Department:** Not applicable
+- **Institution:** Independent Researcher
 - **Country:** Egypt
+- **Email:** eslam.tagelsir20@gmail.com
 - **ORCID:** None
-- **Department:** [Department - not yet provided]
-- **Institution:** [Institution - not yet provided]
+- **Funding:** No external funding
+- **Competing interests:** None declared
 
-## Still required
-Supply the exact Department and Institution (or explicitly confirm that the affiliation should be listed as Independent Researcher).
+## Remaining author confirmations
+1. Confirm final CRediT roles.
+2. Confirm originality and no simultaneous submission.
