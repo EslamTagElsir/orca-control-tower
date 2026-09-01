@@ -1,20 +1,23 @@
-# ORCA - TRE Submission Package
+# ORCA TRE Submission Package
 
-Final preparation package for:
+Target journal: **Transportation Research Part E: Logistics and Transportation Review**
 
-**Temporal Evaluation, Calibrated Risk, and Conformal Delay-Severity Prediction in Pharmaceutical Logistics**
+Manuscript: **Temporal Evaluation, Calibrated Risk, and Conformal Delay-Severity Prediction in Pharmaceutical Logistics**
 
-## Author metadata
+## Final author metadata
 - Eslam TagElsir
-- Single / corresponding author
-- Affiliation: Independent Researcher, Egypt
-- Email: eslam.tagelsir20@gmail.com
-- ORCID: None
-- Funding: No external funding
-- Competing interests: None
+- Single and corresponding author
+- Independent Researcher, Egypt
+- eslam.tagelsir20@gmail.com
+- ORCID: none
+- No external funding
+- No competing interests
 
-## Remaining confirmations before portal submission
-1. Final CRediT roles.
-2. Originality / no-simultaneous-submission confirmation.
+## Confirmed CRediT roles
+Conceptualization; Methodology; Software; Validation; Formal analysis; Investigation; Data curation; Visualization; Writing - original draft; Writing - review & editing; Project administration.
 
-Scientific evidence and experiment artifacts remain frozen.
+## Originality
+The author confirms that the manuscript is original, has not been published previously, and is not under consideration by another journal.
+
+## Status
+**READY FOR FINAL PORTAL PRECHECK.** The scientific package and author-side declarations are complete. Re-check the current TRE submission portal fields and Guide for Authors immediately before upload, preview the system-generated PDF, and then submit.

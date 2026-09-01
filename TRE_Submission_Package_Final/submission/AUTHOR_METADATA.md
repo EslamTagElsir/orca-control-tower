@@ -12,6 +12,10 @@
 - **Funding:** No external funding
 - **Competing interests:** None declared
 
-## Remaining author confirmations
-1. Confirm final CRediT roles.
-2. Confirm originality and no simultaneous submission.
+## Confirmed CRediT roles
+
+Eslam TagElsir: Conceptualization; Methodology; Software; Validation; Formal analysis; Investigation; Data curation; Visualization; Writing - original draft; Writing - review & editing; Project administration.
+
+## Originality confirmation
+
+The author confirms that the manuscript is original, has not been published previously, and is not under consideration by another journal.
