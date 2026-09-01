@@ -11,7 +11,7 @@
 ## 1. Objectives & Provenance
 
 This audit provides a formal side-by-side comparison between:
-1. **Historical Serving Registry Baseline**: The pre-existing production evidence recorded in [`backend/artifacts/model_registry/v2/serving_validation.json`](file:///e:/orca-control-tower-main/backend/artifacts/model_registry/v2/serving_validation.json) prior to the research track.
+1. **Historical Serving Registry Baseline**: The pre-existing production evidence recorded in [`backend/artifacts/model_registry/v2/serving_validation.json`](../backend/artifacts/model_registry/v2/serving_validation.json) prior to the research track.
 2. **Newly Executed Research Benchmark Pipeline**: The end-to-end frozen research pipeline executed under contract `FINAL_EVALUATION_FREEZE.json`.
 
 ---
