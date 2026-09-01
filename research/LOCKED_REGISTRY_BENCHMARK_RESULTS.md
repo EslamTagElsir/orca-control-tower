@@ -49,7 +49,7 @@ Both pre-registered classifiers were evaluated on the Locked Registry Benchmark 
 | **CatBoost** | Deployment-Aligned Primary Model | Platt / Sigmoid | **0.1000** | **0.2709** | **0.7477** | **0.0527** | **0.0568** | 0.2174 | 0.7377 (45/61) | **0.3358** | 0.7899 | 20.43% |
 | **Random Forest** | Development PR-AUC Sensitivity Comparator | Platt / Sigmoid | **0.1050** | **0.3195** | **0.7898** | **0.0493** | **0.0314** | 0.2117 | 0.7705 (47/61) | **0.3322** | 0.8037 | 21.91% |
 
-*Artifact*: [`research/outputs/tables/locked_registry_classification.csv`](file:///e:/orca-control-tower-main/research/outputs/tables/locked_registry_classification.csv)
+*Artifact*: [`outputs/tables/locked_registry_classification.csv`](outputs/tables/locked_registry_classification.csv)
 
 ### Scientific Interpretation:
 - Both classifiers demonstrate robust out-of-distribution delay discrimination on the benchmark window.
@@ -69,7 +69,7 @@ Both pre-registered classifiers were evaluated on the Locked Registry Benchmark 
 | **Random Forest** | **Platt / Sigmoid Scaling** | **0.0493** | **0.0314** | **0.3195** | **0.7898** |
 | **Random Forest** | Isotonic Regression | 0.0477 | 0.0196 | 0.2799 | 0.7896 |
 
-*Artifacts*: [`research/outputs/tables/locked_registry_calibration.csv`](file:///e:/orca-control-tower-main/research/outputs/tables/locked_registry_calibration.csv), [`research/outputs/figures/locked_registry_calibration_catboost.png`](file:///e:/orca-control-tower-main/research/outputs/figures/locked_registry_calibration_catboost.png), [`research/outputs/figures/locked_registry_calibration_rf.png`](file:///e:/orca-control-tower-main/research/outputs/figures/locked_registry_calibration_rf.png)
+*Artifacts*: [`outputs/tables/locked_registry_calibration.csv`](outputs/tables/locked_registry_calibration.csv), [`outputs/figures/locked_registry_calibration_catboost.png`](outputs/figures/locked_registry_calibration_catboost.png), [`outputs/figures/locked_registry_calibration_rf.png`](outputs/figures/locked_registry_calibration_rf.png)
 
 ### Scientific Interpretation:
 - Platt scaling substantially reduces Brier score and ECE for both classifiers (ECE reduced by $82.4\%$ on Random Forest from $0.1780$ to $0.0314$) while perfectly preserving continuous rank-ordering (PR-AUC / ROC-AUC unchanged).
@@ -83,7 +83,7 @@ Both pre-registered classifiers were evaluated on the Locked Registry Benchmark 
 | **Conditional Median Baseline** | Predeclared Primary Point Estimator | 61 delays | **9.05 days** | **7.00 days** | **4.52** | — |
 | **LightGBM Quantile Models** | Asymmetric Quantile & CQR Estimator | 61 delays | 14.21 days | 4.91 days | 7.10 | 1.83 |
 
-*Artifact*: [`research/outputs/tables/locked_registry_severity.csv`](file:///e:/orca-control-tower-main/research/outputs/tables/locked_registry_severity.csv)
+*Artifact*: [`outputs/tables/locked_registry_severity.csv`](outputs/tables/locked_registry_severity.csv)
 
 ### Scientific Interpretation:
 - As established during development, the **Conditional Median Baseline** outperforms quantile regression on point MAE ($9.05$d vs. $14.21$d). Quantile regressors are confirmed as specialized spread estimators for CQR interval generation rather than superior point estimators.
@@ -98,7 +98,7 @@ Both pre-registered classifiers were evaluated on the Locked Registry Benchmark 
 | **90%** | 56 | 61 | **91.80%** | **+1.80%** | **[81.90%, 97.28%]** | **46.27 days** | **38.38 days** | **11.23d** | **94.85d** | **3.3216** |
 | **95%** | 61 | 61 | **100.00%** | +5.00% | [94.13%, 100.00%] | **61.74 days** | 53.64 days | 25.10d | 108.92d | 5.0118 |
 
-*Artifacts*: [`research/outputs/tables/locked_registry_cqr.csv`](file:///e:/orca-control-tower-main/research/outputs/tables/locked_registry_cqr.csv), [`research/outputs/figures/locked_registry_coverage_vs_width.png`](file:///e:/orca-control-tower-main/research/outputs/figures/locked_registry_coverage_vs_width.png)
+*Artifacts*: [`outputs/tables/locked_registry_cqr.csv`](outputs/tables/locked_registry_cqr.csv), [`outputs/figures/locked_registry_coverage_vs_width.png`](outputs/figures/locked_registry_coverage_vs_width.png)
 
 > [!WARNING]
 > **Finite-Sample Uncertainty Warning**:
@@ -118,7 +118,7 @@ Both pre-registered classifiers were evaluated on the Locked Registry Benchmark 
 | **CQR 90% Empirical Coverage** | 85.76% | 15.24% | 91.80% | +6.05% | Replicates nominal target ($90\%$) within CI |
 | **CQR 90% Mean Width** | 110.33 d | 108.53 d | 46.27 d | -64.05 d | Tighter intervals reflecting lower variance |
 
-*Artifact*: [`research/outputs/tables/development_vs_registry.csv`](file:///e:/orca-control-tower-main/research/outputs/tables/development_vs_registry.csv)
+*Artifact*: [`outputs/tables/development_vs_registry.csv`](outputs/tables/development_vs_registry.csv)
 
 ---
 
@@ -139,7 +139,7 @@ Both pre-registered classifiers were evaluated on the Locked Registry Benchmark 
 | | 203 | Strategy 2: Risk $\times$ Severity ($\hat{p} \times \hat{y}_{50}$) | 36 | 59.0% | 15 | 100.0% | 574.0 d | 80.2% |
 | | 203 | Strategy 3: Uncertainty-Aware ($\hat{p} \times \hat{y}_{95}$) | **35** | **57.4%** | **14** | **93.3%** | **550.0 d** | **76.8%** |
 
-*Artifact*: [`research/outputs/tables/locked_registry_decision_utility.csv`](file:///e:/orca-control-tower-main/research/outputs/tables/locked_registry_decision_utility.csv)
+*Artifact*: [`outputs/tables/locked_registry_decision_utility.csv`](outputs/tables/locked_registry_decision_utility.csv)
 
 ### Scientific Interpretation:
 - At tight operational inspection bandwidth ($K = 1\%$ and $K = 5\%$), uncertainty-aware triage ($\hat{p} \times \hat{y}_{95}$) captures **$53.3\%$** and **$66.7\%$** of all high-severity delays, compared to only $6.7\%$ and $13.3\%$ for naive risk-only ranking ($\mathbf{+700\%}$ and $\mathbf{+400\%}$ relative gain).
@@ -151,7 +151,7 @@ Both pre-registered classifiers were evaluated on the Locked Registry Benchmark 
 - **Replication Status**: **CLEAN REPLICATION WITH VALID METHODOLOGICAL ATTRIBUTION**.
 - CatBoost PR-AUC replicated historical serving baseline ($0.2709$ vs. $0.2696$).
 - Research pipeline improvements (Platt calibration, out-of-fold threshold $\tau^* = 0.1000$) increased operational delay recall from $47.5\%$ (29 delays) to **$73.8\%$ (45 delays)**.
-- Full details documented in [`research/LOCKED_REGISTRY_REPLICATION_AUDIT.md`](file:///e:/orca-control-tower-main/research/LOCKED_REGISTRY_REPLICATION_AUDIT.md).
+- Full details documented in [`LOCKED_REGISTRY_REPLICATION_AUDIT.md`](LOCKED_REGISTRY_REPLICATION_AUDIT.md).
 
 ---
 
