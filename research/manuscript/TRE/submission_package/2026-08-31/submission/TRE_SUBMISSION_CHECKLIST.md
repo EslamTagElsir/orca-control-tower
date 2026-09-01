@@ -1,6 +1,6 @@
 # TRE Submission Checklist
 
-Status uses READY / NEEDS USER INPUT / VERIFY AT SUBMISSION.
+Status uses READY / VERIFY AT SUBMISSION.
 
 | Item | Status | Notes |
 |---|---|---|
@@ -14,14 +14,19 @@ Status uses READY / NEEDS USER INPUT / VERIFY AT SUBMISSION.
 | Tables | READY | Six core main-text tables; detailed material in supplementary. |
 | Supplementary material | READY | CQR, triage, provenance and novelty boundaries retained. |
 | References | READY | Core bibliography plus independently corrected priority references. |
-| Cover letter | NEEDS USER INPUT | Originality/no-simultaneous-submission confirmation required. |
+| Cover letter | READY | Originality/no-simultaneous-submission confirmation inserted. |
 | Title page | READY | Eslam TagElsir; Independent Researcher, Egypt; corresponding email recorded. |
 | Funding statement | READY | No external funding. |
 | Competing interests | READY | None declared. |
-| CRediT statement | NEEDS USER INPUT | Confirm roles actually performed by Eslam TagElsir. |
+| CRediT statement | READY | Conceptualization; Methodology; Software; Validation; Formal analysis; Investigation; Data curation; Visualization; Writing – original draft; Writing – review & editing; Project administration. |
 | AI-use declaration | READY | OpenAI ChatGPT and Google Gemini disclosed. |
+| Originality declaration | READY | Manuscript confirmed original, unpublished, and not under consideration elsewhere. |
 | Data availability | VERIFY AT SUBMISSION | Confirm current stable public SCMS access route. |
 | Code availability | VERIFY AT SUBMISSION | Keep repository identity blinded if the live review workflow requires it. |
 | Review model | VERIFY AT SUBMISSION | Confirm current TRE portal workflow. |
 | Graphical abstract | VERIFY AT SUBMISSION | Use candidate only if requested/optional. |
 | Final Guide-for-Authors check | VERIFY AT SUBMISSION | Re-check immediately before portal upload. |
+
+## Status
+
+**AUTHOR-SIDE INPUTS COMPLETE — READY FOR FINAL PORTAL PRECHECK.**

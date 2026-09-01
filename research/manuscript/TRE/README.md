@@ -49,13 +49,13 @@ Broad "first" claims are prohibited.
 
 ## Submission status
 
-**CONDITIONAL PASS.** Scientific, evidence, bibliography, and affiliation metadata are frozen. Remaining author-side inputs:
-
-- final CRediT role statement;
-- originality / no-simultaneous-submission confirmation;
-- live Guide-for-Authors / portal check immediately before upload.
+**READY FOR FINAL PORTAL PRECHECK.** Scientific evidence, bibliography, affiliation metadata, CRediT roles, funding/COI declarations, and originality/no-simultaneous-submission confirmation are finalized.
 
 Final author metadata: **Eslam TagElsir**, single and corresponding author; **Independent Researcher, Egypt**; `eslam.tagelsir20@gmail.com`; no ORCID; no external funding; no competing interests. Department is not applicable. Generative-AI disclosure names OpenAI ChatGPT and Google Gemini.
+
+Confirmed CRediT roles: Conceptualization; Methodology; Software; Validation; Formal analysis; Investigation; Data curation; Visualization; Writing – original draft; Writing – review & editing; Project administration.
+
+Remaining activity is procedural only: re-check the live TRE Guide for Authors / Editorial Manager requirements, verify any mandatory city/address field without inventing information, preview the submission PDF, then submit.
 
 ## Binary build artifacts
 
