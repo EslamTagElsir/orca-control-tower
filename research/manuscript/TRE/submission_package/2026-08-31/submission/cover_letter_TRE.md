@@ -14,13 +14,12 @@ The manuscript is positioned for TR-E because its scientific focus is logistics 
 
 The study uses a public historical dataset, reports frozen provenance hashes and a reproducible temporal protocol, and labels all operational prioritization results as simulated scenarios.
 
-[AUTHOR CONFIRMATION REQUIRED: This manuscript is original, has not been published previously, and is not under consideration by another journal.]
+I confirm that this manuscript is original, has not been published previously, and is not under consideration by another journal.
 
 Sincerely,
 
 **Eslam TagElsir**  
 Corresponding author  
-Independent Researcher  
-Egypt  
+Independent Researcher, Egypt  
 eslam.tagelsir20@gmail.com  
 ORCID: None
