@@ -1,9 +1,9 @@
 # Transportation Research Part E (TRE) Submission Readiness Report
 
-**Document ID**: `TRE_SUBMISSION_READINESS_V1`  
-**Date**: 2026-08-31  
+**Document ID**: `TRE_SUBMISSION_READINESS_V2`  
+**Date**: 2026-09-01  
 **Target Journal**: *Transportation Research Part E: Logistics and Transportation Review*  
-**Coordinating Role**: Antigravity Research Team  
+**Status**: **READY FOR FINAL PORTAL PRECHECK**
 
 ---
 
@@ -15,105 +15,105 @@
 ## 2. Final Recommended Title
 - **Selected Title**:  
   **"Temporal Evaluation, Calibrated Risk, and Conformal Delay-Severity Prediction in Pharmaceutical Logistics"**  
-- **Rationale**: Elevates "Pharmaceutical Logistics" to foreground freight transportation and delivery lead-time management; places "Temporal Evaluation" as the primary methodological pillar; establishes "Calibrated Risk" and "Conformal Delay-Severity Prediction" as the dual probabilistic decision engines without promotional language.
+- **Rationale**: Foregrounds freight transportation and delivery lead-time management while placing temporal evaluation, calibrated risk, and conformal delay-severity prediction at the center of the methodological contribution.
 
 ---
 
 ## 3. Journal Fit Assessment
 - **Assessment**: **STRONG ALIGNMENT**.
-- **Scope Alignment**: Directly addresses freight lead-time uncertainty, multi-modal international shipment delays (Air, Ocean, Truck), delivery milestone prediction, and capacity-constrained inspection triage in global health supply chains.
+- **Scope Alignment**: Addresses freight lead-time uncertainty, multi-modal international shipment delays (Air, Ocean, Truck), delivery milestone prediction, and capacity-constrained inspection triage in global health supply chains.
 
 ---
 
 ## 4. Novelty Fit
 - **Rating**: **MODERATE & DEFENSIBLE**.
-- **Contribution**: The first integrated study in supply chain literature that jointly evaluates: (1) expanding temporal validation with 90-day post-delivery embargoes, (2) post-hoc probability calibration under class imbalance, (3) decoupled conditional severity duration, (4) Split CQR prediction intervals, and (5) capacity-constrained triage queues ($K \in \{1\%, 5\%, 10\%, 20\%\}$).
+- **Approved boundary**: The manuscript uses a qualified, literature-backed Level-2 novelty statement and prohibits broad "first" claims.
+- **Contribution**: Joint evaluation of leakage-aware temporal validation with a post-delivery embargo, post-hoc probability calibration, decoupled conditional severity, conformalized quantile uncertainty, and capacity-constrained shipment prioritization.
 
 ---
 
 ## 5. Desk-Rejection Risk Audit
 - **Residual Risk Level**: **LOW**.
-- Full audit documented in [`research/manuscript/TRE_DESK_REJECTION_RISK_AUDIT.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE_DESK_REJECTION_RISK_AUDIT.md).
-- Generic ML risks mitigated by framing all analyses around pre-outcome freight milestones and inspection queuing models. Single-dataset scope justified and bounded in Limitations.
+- Full audit: [`../TRE_DESK_REJECTION_RISK_AUDIT.md`](../TRE_DESK_REJECTION_RISK_AUDIT.md).
+- Generic-ML framing risk is mitigated by focusing the manuscript on pre-outcome freight milestones, temporal leakage, calibrated risk, uncertainty, and inspection-queue decision support. Single-dataset scope remains explicitly bounded in Limitations.
 
 ---
 
-## 6. Manuscript Adaptations Made
-- Created TRE-adapted versions: [`research/manuscript/TRE/manuscript_TRE.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE/manuscript_TRE.md) and [`research/manuscript/TRE/manuscript_TRE.tex`](file:///e:/orca-control-tower-main/research/manuscript/TRE/manuscript_TRE.tex).
-- Canonical sources (`manuscript.md` and `manuscript.tex`) preserved untouched.
-- Embedded 6 core operational tables in the main text and moved detailed schemas/manifests to Supplementary Material.
-- Integrated author and declaration templates (`[AUTHOR INFORMATION REQUIRED]`).
+## 6. Manuscript Adaptations
+- Canonical TRE manuscript: [`manuscript_TRE.md`](manuscript_TRE.md).
+- Generated LaTeX companion: [`manuscript_TRE.tex`](manuscript_TRE.tex).
+- Venue-neutral manuscript sources remain preserved under `research/manuscript/`.
+- Core operational tables are embedded in the manuscript; detailed schemas, manifests, and additional evidence remain in supplementary material.
 
 ---
 
 ## 7. Abstract Status
-- **Status**: **READY (234 words)**.
-- Covers logistics problem, temporal leakage, methodology, primary inflation results ($+26.2\%$ to $+99.7\%$), CQR benchmark coverage ($91.80\%$), operational triage ($1/15 \to 8/15$ at $K=1\%$), and domain boundaries.
+- **Status**: **READY**.
+- Covers the logistics problem, temporal leakage risk, methodology, random-vs-temporal optimism, calibrated risk, CQR uncertainty, operational triage, and evidence boundaries.
 
 ---
 
 ## 8. Highlights Status
-- **Status**: **READY (5 concise bullet points)**.
-- Located in [`research/manuscript/submission/highlights.txt`](file:///e:/orca-control-tower-main/research/manuscript/submission/highlights.txt).
+- **Status**: **READY**.
+- File: [`../submission/highlights.txt`](../submission/highlights.txt).
 
 ---
 
 ## 9. Cover Letter Status
-- **Status**: **READY (1-page formal letter)**.
-- Located in [`research/manuscript/submission/cover_letter_TRE.md`](file:///e:/orca-control-tower-main/research/manuscript/submission/cover_letter_TRE.md).
+- **Status**: **READY**.
+- File: [`../submission/cover_letter_TRE.md`](../submission/cover_letter_TRE.md).
 
 ---
 
 ## 10. Figure Readiness
-- **Status**: **READY (7 publication figures)**.
-- Copied to [`research/manuscript/TRE/figures/`](file:///e:/orca-control-tower-main/research/manuscript/TRE/figures/).
+- **Status**: **READY**.
+- Publication figures: [`figures/`](figures/).
 
 ---
 
 ## 11. Table Readiness
-- **Status**: **READY (6 main text tables + 4 supplementary tables)**.
-- Table placement documented in [`research/manuscript/TRE/TABLE_PLACEMENT_PLAN.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE/TABLE_PLACEMENT_PLAN.md).
+- **Status**: **READY**.
+- Placement plan: [`TABLE_PLACEMENT_PLAN.md`](TABLE_PLACEMENT_PLAN.md).
 
 ---
 
 ## 12. Supplementary Material Readiness
 - **Status**: **READY**.
-- Package compiled in [`research/manuscript/TRE/supplementary/supplementary_TRE.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE/supplementary/supplementary_TRE.md).
+- Source: [`supplementary/supplementary_TRE.md`](supplementary/supplementary_TRE.md).
 
 ---
 
-## 13. Author Information Gaps
-- **Status**: **PENDING USER INPUT**.
-- Template provided in [`research/manuscript/AUTHOR_INFORMATION_REQUIRED.md`](file:///e:/orca-control-tower-main/research/manuscript/AUTHOR_INFORMATION_REQUIRED.md). Awaiting real legal names, institutional affiliations, emails, and ORCID iDs.
+## 13. Author Metadata
+- **Status**: **FINALIZED**.
+- Author: **Eslam TagElsir**.
+- Role: single and corresponding author.
+- Affiliation: **Independent Researcher, Egypt**.
+- ORCID: none supplied.
+- Funding: no external funding.
+- Competing interests: none declared.
+- Historical metadata template retained at [`../AUTHOR_INFORMATION_REQUIRED.md`](../AUTHOR_INFORMATION_REQUIRED.md) for provenance only; it is no longer an active blocker.
 
 ---
 
-## 14. Declaration Gaps
-- **Status**: **PENDING USER INPUT**.
-- Template provided in [`research/manuscript/TRE/DECLARATIONS_REQUIRED.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE/DECLARATIONS_REQUIRED.md). Awaiting grant numbers, funding specifics, and formal COI signatures.
+## 14. Declarations & CRediT
+- **Status**: **FINALIZED**.
+- Confirmed CRediT roles: Conceptualization; Methodology; Software; Validation; Formal analysis; Investigation; Data curation; Visualization; Writing – original draft; Writing – review & editing; Project administration.
+- Originality and no-simultaneous-submission confirmation are finalized in the canonical TRE workspace.
+- Generative-AI disclosure names OpenAI ChatGPT and Google Gemini.
+- Declaration template retained at [`DECLARATIONS_REQUIRED.md`](DECLARATIONS_REQUIRED.md) for provenance.
 
 ---
 
-## 15. Files Created in This Phase
-- [`research/manuscript/TRE_DESK_REJECTION_RISK_AUDIT.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE_DESK_REJECTION_RISK_AUDIT.md)
-- [`research/manuscript/AUTHOR_INFORMATION_REQUIRED.md`](file:///e:/orca-control-tower-main/research/manuscript/AUTHOR_INFORMATION_REQUIRED.md)
-- [`research/manuscript/VENUE_FALLBACK_PLAN.md`](file:///e:/orca-control-tower-main/research/manuscript/VENUE_FALLBACK_PLAN.md)
-- [`research/manuscript/submission/highlights.txt`](file:///e:/orca-control-tower-main/research/manuscript/submission/highlights.txt)
-- [`research/manuscript/submission/cover_letter_TRE.md`](file:///e:/orca-control-tower-main/research/manuscript/submission/cover_letter_TRE.md)
-- [`research/manuscript/TRE/manuscript_TRE.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE/manuscript_TRE.md)
-- [`research/manuscript/TRE/manuscript_TRE.tex`](file:///e:/orca-control-tower-main/research/manuscript/TRE/manuscript_TRE.tex)
-- [`research/manuscript/TRE/TABLE_PLACEMENT_PLAN.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE/TABLE_PLACEMENT_PLAN.md)
-- [`research/manuscript/TRE/supplementary/supplementary_TRE.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE/supplementary/supplementary_TRE.md)
-- [`research/manuscript/TRE/REPRODUCIBILITY_STATEMENT.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE/REPRODUCIBILITY_STATEMENT.md)
-- [`research/manuscript/TRE/DECLARATIONS_REQUIRED.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE/DECLARATIONS_REQUIRED.md)
-- [`research/manuscript/TRE/TRE_SUBMISSION_CHECKLIST.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE/TRE_SUBMISSION_CHECKLIST.md)
-- [`research/manuscript/TRE/TRE_EDITORIAL_SCREEN.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE/TRE_EDITORIAL_SCREEN.md)
-- [`research/manuscript/TRE/TRE_SUBMISSION_READINESS.md`](file:///e:/orca-control-tower-main/research/manuscript/TRE/TRE_SUBMISSION_READINESS.md)
+## 15. Evidence Hierarchy
+1. **Primary scientific evidence**: five expanding-origin temporal development folds with a 90-day label-maturity embargo (`N = 7,306`; `1,125` delayed shipments).
+2. **Secondary evidence**: the `N = 1,013` / `61`-delay Locked Registry Evaluation Set, treated as a historical replication benchmark rather than a newly untouched confirmatory holdout.
+3. **Operational utility**: explicitly labeled **SIMULATED SCENARIO**, not realized business impact or causal intervention evidence.
 
 ---
 
-## 16. Experimental Artifacts Modified
-- **NONE (0)**. Canonical CSVs, models, thresholds, splits, and metrics remain 100% frozen.
+## 16. Experimental Artifact Freeze
+- **Frozen experiment/model/threshold/split artifacts modified by the submission-preparation pass**: **NONE**.
+- Canonical CSV/JSON evidence, model roles, thresholds, temporal splits, and benchmark manifests remain frozen.
 
 ---
 
@@ -122,6 +122,13 @@
 
 ---
 
-## 18. TRE SUBMISSION READINESS
-# **CONDITIONAL PASS**
-*(The submission package is 100% prepared, verified, and audited. Status is CONDITIONAL PASS solely pending the insertion of real author identity metadata and grant funding details by the user prior to journal portal upload.)*
+## 18. Remaining Activity
+The research workspace is **READY FOR FINAL PORTAL PRECHECK**. Remaining work is procedural only:
+
+1. Re-check the live TRE Guide for Authors / Editorial Manager requirements immediately before upload.
+2. Fill only mandatory portal address/city fields with verified information; do not invent institutional metadata.
+3. Refresh the generated submission render from the canonical Markdown source if required by the portal format.
+4. Preview the final submission PDF and supplementary files.
+5. Submit through the journal portal.
+
+The versioned `submission_package/2026-08-31/` directory is retained as a dated preparation snapshot. The canonical current status is this document together with [`README.md`](README.md).
