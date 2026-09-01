@@ -13,9 +13,14 @@
 - **Funding:** No external funding
 - **Competing interests:** None declared
 
-## Remaining author confirmations
+## Confirmed CRediT roles
 
-1. Confirm the final CRediT roles actually performed by Eslam TagElsir.
-2. Confirm that the manuscript is original, has not been published previously, and is not under consideration by another journal.
+Eslam TagElsir: Conceptualization; Methodology; Software; Validation; Formal analysis; Investigation; Data curation; Visualization; Writing – original draft; Writing – review & editing; Project administration.
 
-The affiliation should be entered in the journal portal as **Independent Researcher, Egypt** unless the portal requires a city field, in which case the author should provide the actual city rather than invent one.
+## Originality confirmation
+
+The author confirms that the manuscript is original, has not been published previously, and is not under consideration by another journal.
+
+## Portal affiliation
+
+Enter the affiliation as **Independent Researcher, Egypt**. If the journal portal requires a city field, provide the actual city at submission time rather than inventing one.
