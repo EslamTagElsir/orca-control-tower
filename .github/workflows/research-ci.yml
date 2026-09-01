@@ -1,0 +1,74 @@
+name: Research Integrity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "research/**"
+      - "backend/src/**"
+      - "backend/configs/**"
+      - "backend/artifacts/model_registry/v2/feature_schema.json"
+      - ".github/workflows/research-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "research/**"
+      - "backend/src/**"
+      - "backend/configs/**"
+      - "backend/artifacts/model_registry/v2/feature_schema.json"
+      - ".github/workflows/research-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  research-integrity:
+    name: Research contracts, quarantine, and artifact integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.railway.txt
+            research/requirements.txt
+
+      - name: Install research dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r research/requirements.txt
+
+      - name: Compile research source
+        run: python -m compileall -q research
+
+      - name: Run research integrity suite
+        env:
+          MPLBACKEND: Agg
+        run: pytest -q research/tests/test_research_pipeline.py
+
+      - name: Confirm no production registry mutation in research tree
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path.cwd().resolve()
+          registry = (root / "backend" / "artifacts" / "model_registry" / "v2").resolve()
+          research = (root / "research").resolve()
+
+          assert registry != research
+          assert research not in registry.parents
+          assert registry not in research.parents
+          print("Research and production registry paths are isolated.")
+          PY
