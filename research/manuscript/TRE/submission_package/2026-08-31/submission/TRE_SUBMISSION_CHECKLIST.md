@@ -15,7 +15,7 @@ Status uses READY / NEEDS USER INPUT / VERIFY AT SUBMISSION.
 | Supplementary material | READY | CQR, triage, provenance and novelty boundaries retained. |
 | References | READY | Core bibliography plus independently corrected priority references. |
 | Cover letter | NEEDS USER INPUT | Originality/no-simultaneous-submission confirmation required. |
-| Title page | NEEDS USER INPUT | Exact Institution and Department still required. |
+| Title page | READY | Eslam TagElsir; Independent Researcher, Egypt; corresponding email recorded. |
 | Funding statement | READY | No external funding. |
 | Competing interests | READY | None declared. |
 | CRediT statement | NEEDS USER INPUT | Confirm roles actually performed by Eslam TagElsir. |

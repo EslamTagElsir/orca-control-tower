@@ -49,14 +49,13 @@ Broad "first" claims are prohibited.
 
 ## Submission status
 
-**CONDITIONAL PASS.** Scientific, evidence, and bibliography work is frozen. Remaining author-side inputs:
+**CONDITIONAL PASS.** Scientific, evidence, bibliography, and affiliation metadata are frozen. Remaining author-side inputs:
 
-- exact Institution / affiliation;
-- exact Department, or explicit Independent Researcher affiliation;
 - final CRediT role statement;
-- originality / no-simultaneous-submission confirmation.
+- originality / no-simultaneous-submission confirmation;
+- live Guide-for-Authors / portal check immediately before upload.
 
-Known metadata: single author Eslam TagElsir; `eslam.tagelsir20@gmail.com`; Egypt; no ORCID; no external funding; no competing interests. Generative-AI disclosure names OpenAI ChatGPT and Google Gemini.
+Final author metadata: **Eslam TagElsir**, single and corresponding author; **Independent Researcher, Egypt**; `eslam.tagelsir20@gmail.com`; no ORCID; no external funding; no competing interests. Department is not applicable. Generative-AI disclosure names OpenAI ChatGPT and Google Gemini.
 
 ## Binary build artifacts
 

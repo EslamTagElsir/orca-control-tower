@@ -15,16 +15,16 @@
 - Highlights and cover-letter source
 - AI disclosure finalized for OpenAI ChatGPT and Google Gemini
 - Single-author metadata captured for Eslam TagElsir
+- Affiliation finalized as **Independent Researcher, Egypt**
 - Funding confirmed: no external funding
 - Competing interests confirmed: none
 - No frozen experiment/model/threshold/split artifact modified
 
 ## Human inputs still required before portal upload
 
-1. Exact Department and Institution, or explicit confirmation of an Independent Researcher affiliation.
-2. CRediT roles actually performed by the single author.
-3. Originality / no-simultaneous-submission confirmation.
-4. Re-check live TRE Guide for Authors / portal requirements immediately before upload.
+1. CRediT roles actually performed by the single author.
+2. Originality / no-simultaneous-submission confirmation.
+3. Re-check live TRE Guide for Authors / portal requirements immediately before upload.
 
 ## Scientific boundaries that must not change
 
