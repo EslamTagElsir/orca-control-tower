@@ -1,110 +1,90 @@
 # Final Bibliographic Integrity Audit Report
 
-**Document ID**: `FINAL_BIBLIOGRAPHY_INTEGRITY_REPORT_V1`  
-**Date**: 2026-08-31  
-**Audit Scope**: Fail-Closed Verification of `references.bib`, Crossref Resolution, PubMed Alignment, and In-Text Citation Integrity.
+**Document ID**: `FINAL_BIBLIOGRAPHY_INTEGRITY_REPORT_V2`  
+**Date**: 2026-09-01  
+**Audit Scope**: Canonical `references.bib`, foundational/method references, domain references, closest prior art, DOI/venue metadata corrections, and manuscript citation governance.
 
 ---
 
 ## 1. Executive Verdict
-# **PASS**
-All bibliographic records have been audited against primary scholarly metadata (Crossref, PubMed, INFORMS, Taylor & Francis, Springer, Elsevier, NeurIPS/PMLR proceedings, and official USAID repositories). All corrupted DOIs, incorrect journal assignments, and misattributed author lists have been corrected or replaced with verified authentic entries. Zero fabricated DOIs, phantom authors, or hallucinated venues remain.
+
+# **PASS — NO UNRESOLVED BIBLIOGRAPHIC INTEGRITY BLOCKERS IDENTIFIED**
+
+The canonical bibliography has evolved since the earlier audit snapshot. The current `references.bib` contains **41 records**:
+
+- **28 core/foundational/domain records**; and
+- **13 closest-prior-art / priority-review records** added during the final novelty review.
+
+The earlier hard-coded counts of 25 or 32 in intermediate audit documents are superseded by this report and the current canonical BibTeX file.
+
+The 13 priority records are governed by the independently corrected [`../priority_review/FINAL_PRIORITY_REFERENCE_INTEGRITY.md`](../priority_review/FINAL_PRIORITY_REFERENCE_INTEGRITY.md), which explicitly identifies the 2026 Faulkner record as an **arXiv preprint, not peer reviewed as of the 31 August 2026 cutoff**.
 
 ---
 
-## 2. Bibliographic Audit Statistics
+## 2. Canonical Sources of Truth
 
-| Audit Metric | Count / Percentage | Details & Audit Findings |
-| :--- | :---: | :--- |
-| **Total References Audited** | **32** | 100% of entries in `references.bib` inspected |
-| **VERIFIED_EXACT (at source)** | **28** | Exact match on Title, Authors, Year, Venue, and DOI |
-| **METADATA_CORRECTED** | **4** | Corrected publisher metadata (see below) |
-| **WRONG_DOI (Identified & Fixed)** | **3** | `vledder2019improving`, `simchilevi2020power`, `kurentzes2019another` |
-| **WRONG_TITLE (Identified & Fixed)** | **2** | `baryannis2019supply`, `bastani2021efficient` |
-| **WRONG_AUTHORS (Identified & Fixed)** | **2** | `baryannis2019supply`, `bastani2021efficient` |
-| **WRONG_VENUE (Identified & Fixed)** | **2** | `vledder2019improving` (*Health Systems & Reform*, not *Management Science*); `yadav2015health` (*Health Systems & Reform*, not *Health Affairs*) |
-| **Removed / Replaced References** | **2** | `simchilevi2020power` $\to$ `simchilevi2014superstorms`; `kurentzes2019another` $\to$ `kurentzes2020optimising` |
-| **Final Verified Reference Count** | **32** | Complete, self-contained, and relevant |
-| **DOI Resolution Success Rate** | **100%** | All 19 DOI-bearing entries resolve to identical published papers |
-| **Manuscript Citation Integrity** | **100%** | All 32 BibTeX entries are cited in LaTeX; 0 missing keys |
+- [`references.bib`](references.bib) — current manuscript bibliography.
+- [`BIBLIOGRAPHY_AUDIT.csv`](BIBLIOGRAPHY_AUDIT.csv) — detailed foundational/domain bibliography audit history.
+- [`../priority_review/PRIORITY_REFERENCE_AUDIT.csv`](../priority_review/PRIORITY_REFERENCE_AUDIT.csv) — closest-prior-art audit.
+- [`../priority_review/FINAL_PRIORITY_REFERENCE_INTEGRITY.md`](../priority_review/FINAL_PRIORITY_REFERENCE_INTEGRITY.md) — final novelty/reference governance.
+- [`CITATION_MAP.md`](CITATION_MAP.md) — citation mapping and manuscript integration history.
+
+The current bibliography count should be derived from `references.bib`; downstream narrative documents should not maintain independent stale counts.
 
 ---
 
-## 3. Detailed Audit Findings & Corrections for Specific Known Issues
+## 3. Important Metadata Corrections Preserved from the Audit History
 
-### 1. `baryannis2019supply`
-- **Issue Found**: Current title was informal; author order was partially inverted.
-- **Resolution**: Verified against Taylor & Francis / Crossref (DOI: `10.1080/00207543.2018.1530476`).
-  - **Correct Title**: *"Supply chain risk management and artificial intelligence: state of the art and future research directions"*
-  - **Authors**: George Baryannis, Sahar Validi, Samir Dani, Grigoris Antoniou
-  - **Venue**: *International Journal of Production Research*, Vol. 57, Issue 7, pp. 2179–2202 (2018/2019).
-  - **Status**: **VERIFIED_EXACT**.
+The audit process identified and corrected multiple earlier metadata problems, including:
 
-### 2. `vledder2019improving`
-- **Issue Found**: Prior BibTeX had assigned DOI `10.1287/mnsc.2018.3190` (*Management Science*), which belonged to an unrelated IT outsourcing paper.
-- **Resolution**: Verified against PubMed and Taylor & Francis (DOI: `10.1080/23288604.2019.1596050`).
-  - **Correct Title**: *"Improving Supply Chain for Essential Drugs in Low-Income Countries: Results from a Large Scale Randomized Experiment in Zambia"*
-  - **Authors**: Monique Vledder, Jed Friedman, Mirja Sjöblom, Thomas Brown, Prashant Yadav
-  - **Venue**: *Health Systems & Reform*, Vol. 5, Issue 2, pp. 158–177 (2019).
-  - **Status**: **VERIFIED_EXACT**.
+- `vledder2019improving` — corrected to the *Health Systems & Reform* article and DOI `10.1080/23288604.2019.1596050`.
+- `baryannis2019supply` — title/author metadata aligned with the published *International Journal of Production Research* paper.
+- the invalid `simchilevi2020power` record — removed/replaced in the audit history rather than retained with an unrelated DOI.
+- the invalid `kurentzes2019another` record — replaced by the authentic Kourentzes, Trapero & Barrow inventory-planning paper (`10.1016/j.ijpe.2019.107597`).
+- `bastani2021efficient` — title/author metadata corrected during the earlier audit history; it is not retained merely to preserve a stale citation if it is not needed in the current canonical bibliography.
 
-### 3. `simchilevi2020power`
-- **Issue Found**: DOI `10.1287/mnsc.2020.3687` belonged to an unrelated financial intermediation paper.
-- **Resolution**: Removed invalid record. Replaced with David Simchi-Levi's landmark high-impact disruption risk paper:
-  - **Key**: `simchilevi2014superstorms`
-  - **Title**: *"From Superstorms to Factory Fires: Managing High-Impact Supply Chain Risks"*
-  - **Authors**: David Simchi-Levi, William Schmidt, Yehua Wei
-  - **Venue**: *Harvard Business Review*, Vol. 92, Issue 1–2, pp. 96–101 (2014).
-  - **Status**: **VERIFIED_EXACT**.
-
-### 4. `bastani2021efficient`
-- **Issue Found**: Title and author list had generic phrasing.
-- **Resolution**: Verified against Nature / Crossref (DOI: `10.1038/s41586-021-04014-z`).
-  - **Correct Title**: *"Efficient and targeted COVID-19 border testing via reinforcement learning"*
-  - **Authors**: Hamsa Bastani, Kimon Drakopoulos, Vishal Gupta, Ioannis Vlachogiannis, Christos Hadjichristodoulou, Pagona Lagiou, Gkikas Magiorkinis, Dimitrios Paraskevis, Sotirios Tsiodras
-  - **Venue**: *Nature*, Vol. 599, Issue 7883, pp. 108–113 (2021).
-  - **Status**: **VERIFIED_EXACT**.
-
-### 5. `kurentzes2019another` $\to$ `kurentzes2020optimising`
-- **Issue Found**: Assigned DOI `10.1016/j.ejor.2019.10.024` belonged to an unrelated dialysis facility network paper.
-- **Resolution**: Replaced with the authentic Kourentzes inventory optimization publication:
-  - **DOI**: `10.1016/j.ijpe.2019.107597`
-  - **Title**: *"Optimising forecasting models for inventory planning"*
-  - **Authors**: Nikolaos Kourentzes, Juan R. Trapero, Devon K. Barrow
-  - **Venue**: *International Journal of Production Economics*, Vol. 225, Article 107597 (2020).
-  - **Status**: **VERIFIED_EXACT**.
+This report records audit provenance; the **current `references.bib` is authoritative** for what is actually cited and shipped.
 
 ---
 
-## 4. Novelty Framing After Literature Review
-The literature review confirms that:
-1. Tabular machine learning algorithms for supply chain risk have been evaluated predominantly under random cross-validation without temporal embargoes (Baryannis et al., 2019; Kapoor & Narayanan, 2023).
-2. Conformal prediction literature (Romano et al., 2019; Barber et al., 2023; Gibbs & Candès, 2021) has recently focused on non-exchangeability, but has not been applied to multi-country global health pharmaceutical shipments with decoupled severity and capacity-constrained triage.
-- **Manuscript Novelty Framing**: Cautious, defensible, and evidence-based:
-  > *"To our knowledge, while individual components (tree boosting, probability calibration, quantile regression, and conformal prediction) have been studied independently, we did not identify prior work in the reviewed literature that jointly evaluates: (1) leakage-safe temporal validation with post-delivery embargoes, (2) post-hoc probability calibration under class imbalance, (3) decoupled conformal severity estimation, and (4) uncertainty-aware operational prioritization under constrained inspection capacities."*
+## 4. Priority / Closest-Prior-Art Review
+
+The final priority review added or rechecked 13 closest records spanning pharmaceutical delivery prediction, supply-chain delay classification, joint occurrence/duration modeling, conformal uncertainty, and capacity-constrained logistics decisions.
+
+The review explicitly rejects broad novelty claims such as:
+
+- first machine-learning study of pharmaceutical delivery delays;
+- first use of conformal prediction in logistics;
+- first joint delay-occurrence and delay-duration model;
+- first prediction-to-decision framework in logistics.
+
+The approved novelty boundary is the qualified **joint-combination** claim documented in [`../priority_review/FINAL_PRIORITY_REFERENCE_INTEGRITY.md`](../priority_review/FINAL_PRIORITY_REFERENCE_INTEGRITY.md).
 
 ---
 
-## 5. Artifact and Source Integrity Confirmation
-- **Files Modified**:
-  - `research/manuscript/references/references.bib`
-  - `research/manuscript/references/BIBLIOGRAPHY_AUDIT.csv`
-  - `research/manuscript/references/CITATION_MAP.md`
-  - `research/manuscript/CLAIM_TRACEABILITY.md`
-  - `research/manuscript/manuscript.md`
-  - `research/manuscript/manuscript.tex`
-- **Experimental Artifacts Modified**: **NONE (0)**.
-- **Production Code (`backend/`, `frontend/`)**: **100% UNTOUCHED**.
-- **Automated Test Suite**: **26 / 26 PASSED (100%)**.
+## 5. Current Novelty Wording Policy
+
+Approved wording is narrow and qualified:
+
+> **To the best of our knowledge, this is the first study to jointly evaluate, in pharmaceutical shipment logistics, a leakage-aware temporally ordered delay-risk pipeline with post-delivery embargoes, post-hoc probability calibration, conditional delay-severity modeling, conformalized quantile uncertainty, and capacity-constrained shipment prioritization.**
+
+This is a literature-priority statement bounded by the documented search cutoff; it is not an absolute proof of worldwide priority.
 
 ---
 
-## 6. Remaining Bibliography Blockers
-- **0 BLOCKERS**.
-- **0 MAJOR ISSUES**.
+## 6. Integrity Status
+
+- Canonical BibTeX entries: **41**.
+- Closest-prior-art records separately rechecked: **13**.
+- Known preprint status: explicitly labeled where applicable.
+- Previously identified wrong DOI/title/author/venue cases: corrected or removed from the canonical bibliography.
+- Broad novelty overclaims: prohibited by the final priority-review policy.
+- Unresolved bibliographic-integrity blocker identified by the final combined review: **none**.
 
 ---
 
 ## 7. Audit Conclusion
+
 # **FINAL VERDICT: PASS**
-*(The bibliography and in-text citations are verified, DOI-synchronized, and ready for publication venue selection.)*
+
+For manuscript or submission checks, use `references.bib` plus the two audit layers above rather than copying old hard-coded bibliography counts into new documents.
