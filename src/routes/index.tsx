@@ -1,8 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-const TITLE = "ORCA Control Tower — Supply Chain Delay Intelligence";
-const DESCRIPTION =
-  "Enterprise control tower for the ORCA delay-intelligence model: calibrated shipment risk, exception triage and intervention economics.";
+const TITLE = "ORCA Command Center — Performance & Decision Intelligence";
+const DESCRIPTION = "Unified supply-chain performance, forward risk and decision intelligence.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -16,6 +15,6 @@ export const Route = createFileRoute("/")({
     ],
   }),
   beforeLoad: () => {
-    throw redirect({ to: "/control-tower" });
+    throw redirect({ to: "/command-center" });
   },
 });
