@@ -1,0 +1,58 @@
+/* ORCA calm light theme — layered after the existing semantic system. */
+:root {
+  color-scheme: light;
+  --background: oklch(0.975 0.008 250);
+  --foreground: oklch(0.245 0.025 255);
+  --surface: oklch(0.995 0.003 250);
+  --surface-raised: oklch(1 0 0);
+  --surface-sunken: oklch(0.965 0.009 250);
+  --hairline: oklch(0.89 0.018 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.245 0.025 255);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.245 0.025 255);
+  --primary: oklch(0.57 0.13 244);
+  --primary-foreground: oklch(0.99 0.003 250);
+  --secondary: oklch(0.95 0.014 250);
+  --secondary-foreground: oklch(0.3 0.025 255);
+  --muted: oklch(0.95 0.012 250);
+  --muted-foreground: oklch(0.53 0.025 255);
+  --accent: oklch(0.94 0.018 244);
+  --accent-foreground: oklch(0.28 0.03 250);
+  --destructive: oklch(0.62 0.18 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.89 0.018 250);
+  --input: oklch(0.89 0.018 250);
+  --ring: oklch(0.65 0.12 244);
+  --success: oklch(0.63 0.13 158);
+  --success-foreground: oklch(0.2 0.04 158);
+  --warn: oklch(0.72 0.14 78);
+  --warn-foreground: oklch(0.25 0.04 78);
+  --danger: oklch(0.62 0.18 25);
+  --danger-foreground: oklch(0.99 0 0);
+  --critical: oklch(0.57 0.19 20);
+  --critical-foreground: oklch(0.99 0 0);
+  --model: oklch(0.6 0.13 235);
+  --model-foreground: oklch(0.99 0 0);
+  --risk-low: oklch(0.63 0.13 158);
+  --risk-watch: oklch(0.72 0.14 78);
+  --risk-high: oklch(0.68 0.16 52);
+  --risk-critical: oklch(0.62 0.18 25);
+  --sidebar: oklch(0.985 0.006 250);
+  --sidebar-foreground: oklch(0.34 0.025 255);
+  --sidebar-primary: oklch(0.57 0.13 244);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.94 0.018 244);
+  --sidebar-accent-foreground: oklch(0.27 0.03 250);
+  --sidebar-border: oklch(0.9 0.016 250);
+  --sidebar-ring: oklch(0.65 0.12 244);
+  --chart-1: oklch(0.57 0.13 244);
+  --chart-2: oklch(0.63 0.13 158);
+  --chart-3: oklch(0.72 0.14 78);
+  --chart-4: oklch(0.62 0.18 25);
+  --chart-5: oklch(0.6 0.13 235);
+  --chart-6: oklch(0.66 0.1 190);
+}
+html { color-scheme: light; }
+body { background-color: var(--background); color: var(--foreground); }
+.dark { color-scheme: light; }
