@@ -21,7 +21,7 @@ import type {
   RunRef,
 } from "./engine";
 import type { SimEvent } from "./types";
-import type { FeatureMap } from "./types";
+import type { FeatureMap } from "../source-data";
 import type { PredictResponse } from "@/lib/orca/types";
 
 /* ------------------------------------------------------------------ */
@@ -112,8 +112,7 @@ async function postLearning<T = Record<string, unknown>>(
       body: JSON.stringify(body),
     });
     const payload = (await response.json().catch(() => null)) as
-      | (Record<string, unknown> & { detail?: string })
-      | null;
+      (Record<string, unknown> & { detail?: string }) | null;
     if (!response.ok) {
       throw new Error(payload?.detail ?? `POST /api/learning/${path} failed (${response.status})`);
     }
@@ -136,9 +135,10 @@ function swallow(promise: Promise<unknown>) {
 export async function testLearningDbConnection(): Promise<LearningDbHealth> {
   try {
     const response = await fetch("/api/learning/health", { method: "GET" });
-    const payload = (await response.json().catch(() => null)) as
-      | { connected?: boolean; detail?: string }
-      | null;
+    const payload = (await response.json().catch(() => null)) as {
+      connected?: boolean;
+      detail?: string;
+    } | null;
     if (!response.ok || !payload?.connected) {
       throw new Error(payload?.detail ?? `Learning DB health check failed (${response.status})`);
     }

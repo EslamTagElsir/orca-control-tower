@@ -4,7 +4,7 @@ import viteReact from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 
-const nitroPreset = process.env.VERCEL ? undefined : "node-server";
+const nitroPreset = process.env["VERCEL"] ? undefined : "node-server";
 
 export default defineConfig({
   server: {
@@ -22,7 +22,14 @@ export default defineConfig({
     // Docker/local production builds stay pinned to a portable Node server.
     // On Vercel, leave the preset unset so Nitro can select Vercel's native
     // deployment target exactly as recommended by Vercel for TanStack Start.
-    nitro({ preset: nitroPreset }),
+    nitro({
+      ...(nitroPreset ? { preset: nitroPreset } : {}),
+      output: {
+        dir: "dist",
+        publicDir: "dist/client",
+        serverDir: "dist/server",
+      },
+    }),
     viteReact(),
   ],
 });

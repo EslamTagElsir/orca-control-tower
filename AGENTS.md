@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Emit Nitro production output under `dist/` with client and server subdirectories because Lovable's deployment checks require that output root.

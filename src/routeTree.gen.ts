@@ -16,6 +16,7 @@ import { Route as DecisionEconomicsRouteImport } from './routes/decision-economi
 import { Route as ExceptionsRouteImport } from './routes/exceptions'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as ModelMonitorRouteImport } from './routes/model-monitor'
+import { Route as MonitoringReadinessRouteImport } from './routes/monitoring-readiness'
 import { Route as NetworkMapRouteImport } from './routes/network-map'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ResolutionHubRouteImport } from './routes/resolution-hub'
@@ -63,6 +64,11 @@ const McpRoute = McpRouteImport.update({
 const ModelMonitorRoute = ModelMonitorRouteImport.update({
   id: '/model-monitor',
   path: '/model-monitor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonitoringReadinessRoute = MonitoringReadinessRouteImport.update({
+  id: '/monitoring-readiness',
+  path: '/monitoring-readiness',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NetworkMapRoute = NetworkMapRouteImport.update({
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/exceptions': typeof ExceptionsRoute
   '/mcp': typeof McpRoute
   '/model-monitor': typeof ModelMonitorRoute
+  '/monitoring-readiness': typeof MonitoringReadinessRoute
   '/network-map': typeof NetworkMapRoute
   '/reports': typeof ReportsRoute
   '/resolution-hub': typeof ResolutionHubRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/exceptions': typeof ExceptionsRoute
   '/mcp': typeof McpRoute
   '/model-monitor': typeof ModelMonitorRoute
+  '/monitoring-readiness': typeof MonitoringReadinessRoute
   '/network-map': typeof NetworkMapRoute
   '/reports': typeof ReportsRoute
   '/resolution-hub': typeof ResolutionHubRoute
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/exceptions': typeof ExceptionsRoute
   '/mcp': typeof McpRoute
   '/model-monitor': typeof ModelMonitorRoute
+  '/monitoring-readiness': typeof MonitoringReadinessRoute
   '/network-map': typeof NetworkMapRoute
   '/reports': typeof ReportsRoute
   '/resolution-hub': typeof ResolutionHubRoute
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
     | '/exceptions'
     | '/mcp'
     | '/model-monitor'
+    | '/monitoring-readiness'
     | '/network-map'
     | '/reports'
     | '/resolution-hub'
@@ -233,6 +243,7 @@ export interface FileRouteTypes {
     | '/exceptions'
     | '/mcp'
     | '/model-monitor'
+    | '/monitoring-readiness'
     | '/network-map'
     | '/reports'
     | '/resolution-hub'
@@ -255,6 +266,7 @@ export interface FileRouteTypes {
     | '/exceptions'
     | '/mcp'
     | '/model-monitor'
+    | '/monitoring-readiness'
     | '/network-map'
     | '/reports'
     | '/resolution-hub'
@@ -278,6 +290,7 @@ export interface RootRouteChildren {
   ExceptionsRoute: typeof ExceptionsRoute
   McpRoute: typeof McpRoute
   ModelMonitorRoute: typeof ModelMonitorRoute
+  MonitoringReadinessRoute: typeof MonitoringReadinessRoute
   NetworkMapRoute: typeof NetworkMapRoute
   ReportsRoute: typeof ReportsRoute
   ResolutionHubRoute: typeof ResolutionHubRoute
@@ -342,6 +355,13 @@ declare module '@tanstack/react-router' {
       path: '/model-monitor'
       fullPath: '/model-monitor'
       preLoaderRoute: typeof ModelMonitorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/monitoring-readiness': {
+      id: '/monitoring-readiness'
+      path: '/monitoring-readiness'
+      fullPath: '/monitoring-readiness'
+      preLoaderRoute: typeof MonitoringReadinessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/network-map': {
@@ -446,6 +466,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExceptionsRoute: ExceptionsRoute,
   McpRoute: McpRoute,
   ModelMonitorRoute: ModelMonitorRoute,
+  MonitoringReadinessRoute: MonitoringReadinessRoute,
   NetworkMapRoute: NetworkMapRoute,
   ReportsRoute: ReportsRoute,
   ResolutionHubRoute: ResolutionHubRoute,
