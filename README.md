@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/readme-hero.svg" alt="ORCA Control Tower decision intelligence banner" width="100%">
+
 # ORCA Control Tower
 
 ### **Operational Risk & Cost Analytics**
@@ -65,6 +67,12 @@ Traditional dashboards are useful for visibility, but visibility alone does not 
 The goal is to move operational decision-making from **reactive reporting** toward **predictive, explainable, uncertainty-aware decision support**.
 
 ---
+
+## Decision workflow at a glance
+
+<p align="center"><img src="assets/decision-flow.svg" alt="ORCA operational risk decision workflow" width="100%"></p>
+
+The workflow is intentionally **human-governed**: predictions, uncertainty intervals, and explanations inform the operator rather than trigger autonomous actions.
 
 ## Product at a glance
 
