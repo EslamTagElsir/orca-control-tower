@@ -46,6 +46,7 @@ jobs:
           const config = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
           if (config.installCommand !== 'bun install --frozen-lockfile') throw new Error('Unexpected Vercel install command');
           if (config.buildCommand !== 'bun run build') throw new Error('Unexpected Vercel build command');
+          if (config.framework !== 'tanstack-start') throw new Error('Vercel framework preset must be tanstack-start');
           const ignore = fs.readFileSync('.vercelignore', 'utf8');
           if (!ignore.includes('backend/')) throw new Error('Vercel payload must exclude backend/');
           NODE
